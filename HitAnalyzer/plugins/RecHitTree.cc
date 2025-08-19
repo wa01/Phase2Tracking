@@ -1,3 +1,5 @@
+// This is largely copied from https://github.com/cms-sw/cmssw/blob/master/RecoLocalTracker/Phase2TrackerRecHits/test/RecHitsValidation.cc
+
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "CommonTools/Utils/interface/TFileDirectory.h"
 
@@ -37,9 +39,20 @@
 
 struct HitInfo
 {
-  std::vector<float> Hit_x;
-  std::vector<float> Hit_y;
-  std::vector<float> Hit_z;
+  std::vector<float> Hit_cluster_global_x;
+  std::vector<float> Hit_cluster_global_y;
+  std::vector<float> Hit_cluster_global_z;
+  std::vector<int> Hit_layer;
+  std::vector<int> Hit_ModuleType;
+  std::vector<int> Hit_cluster_size;
+  std::vector<int> Hit_cluster_SimTrack_size;
+  std::vector<float> Hit_cluster_local_x;
+  std::vector<float> Hit_cluster_local_y;
+  std::vector<float> Hit_cluster_local_z;
+  std::vector<bool> Hit_cluster_haveSimHit;
+  std::vector<float> Hit_cluster_closestSimHit_local_x;
+  std::vector<float> Hit_cluster_closestSimHit_local_y;
+  std::vector<float> Hit_cluster_closestSimHit_local_z;
 };
 
 class RecHitTree : public edm::one::EDAnalyzer<edm::one::SharedResources> {
@@ -51,11 +64,18 @@ class RecHitTree : public edm::one::EDAnalyzer<edm::one::SharedResources> {
     virtual void beginJob() override;
     virtual void endJob() override;
     void initEventStructure();
+    std::vector<unsigned int> getSimTrackId(const edm::Handle<edm::DetSetVector<PixelDigiSimLink> >&, const DetId&, unsigned int);
 
     const edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> esTokenGeom_;
     const edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> esTokenTopo_;
     const edm::EDGetTokenT<Phase2TrackerRecHit1DCollectionNew> tokenRecHits_;
     const edm::EDGetTokenT<Phase2TrackerCluster1DCollectionNew> tokenClusters_;
+    const edm::EDGetTokenT<edm::DetSetVector<PixelDigiSimLink> > tokenLinks_;
+    const edm::EDGetTokenT<edm::PSimHitContainer> tokenSimHitsB_;
+    const edm::EDGetTokenT<edm::PSimHitContainer> tokenSimHitsE_;
+    const edm::EDGetTokenT<edm::SimTrackContainer> tokenSimTracks_;
+
+    const double simtrackminpt_;
 
     TTree* hitTree;
     HitInfo* hitInfo;
@@ -65,7 +85,12 @@ RecHitTree::RecHitTree(const edm::ParameterSet& cfg)
   : esTokenGeom_(esConsumes()),
     esTokenTopo_(esConsumes()),
     tokenRecHits_(consumes<Phase2TrackerRecHit1DCollectionNew>(cfg.getParameter<edm::InputTag>("rechits"))),
-    tokenClusters_(consumes<Phase2TrackerCluster1DCollectionNew>(cfg.getParameter<edm::InputTag>("clusters")))
+    tokenClusters_(consumes<Phase2TrackerCluster1DCollectionNew>(cfg.getParameter<edm::InputTag>("clusters"))),
+    tokenLinks_(consumes<edm::DetSetVector<PixelDigiSimLink> >(cfg.getParameter<edm::InputTag>("links"))),
+    tokenSimHitsB_(consumes<edm::PSimHitContainer>(cfg.getParameter<edm::InputTag>("simhitsbarrel"))),
+    tokenSimHitsE_(consumes<edm::PSimHitContainer>(cfg.getParameter<edm::InputTag>("simhitsendcap"))),
+    tokenSimTracks_(consumes<edm::SimTrackContainer>(cfg.getParameter<edm::InputTag>("simtracks"))),
+    simtrackminpt_(cfg.getParameter<double>("SimTrackMinPt"))
 {
   hitInfo = new HitInfo;
 }
@@ -85,10 +110,50 @@ void RecHitTree::analyze(const edm::Event& event, const edm::EventSetup& eventSe
   edm::Handle<Phase2TrackerCluster1DCollectionNew> clusters;
   event.getByToken(tokenClusters_, clusters);
 
+  // Get the PixelDigiSimLinks
+  edm::Handle<edm::DetSetVector<PixelDigiSimLink> > pixelSimLinks;
+  event.getByToken(tokenLinks_, pixelSimLinks);
+
+  // Get the SimHits
+  edm::Handle<edm::PSimHitContainer> simHitsRaw[2];
+  event.getByToken(tokenSimHitsB_, simHitsRaw[0]);
+  event.getByToken(tokenSimHitsE_, simHitsRaw[1]);
+
+  // Get the SimTracks
+  edm::Handle<edm::SimTrackContainer> simTracksRaw;
+  event.getByToken(tokenSimTracks_, simTracksRaw);
+
+  // Rearrange the simTracks for ease of use <simTrackID, simTrack>
+  std::map<unsigned int, SimTrack> simTracks;
+  for (edm::SimTrackContainer::const_iterator simTrackIt(simTracksRaw->begin()); simTrackIt != simTracksRaw->end();
+       ++simTrackIt) {
+    if (simTrackIt->momentum().pt() > simtrackminpt_) {
+      simTracks.insert(std::pair<unsigned int, SimTrack>(simTrackIt->trackId(), *simTrackIt));
+    }
+  }
+
   for (Phase2TrackerRecHit1DCollectionNew::const_iterator DSViter = rechits->begin(); DSViter != rechits->end(); ++DSViter) {
     // Get the detector unit's id
     unsigned int rawid(DSViter->detId());
     DetId detId(rawid);
+    unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
+    layer += tTopo->layer(detId);
+    //if (!layer) {
+    //  layer += tTopo->layer(detId);
+    //} else {
+    //  layer += (catECasRings_ ? tTopo->tidRing(detId) * 10 : tTopo->layer(detId));
+    //}
+    
+    // determine the detector we are in
+    TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
+    unsigned int det = 0;
+    if (mType == TrackerGeometry::ModuleType::Ph2PSP) {
+      det = 1;
+    } else if (mType == TrackerGeometry::ModuleType::Ph2PSS || mType == TrackerGeometry::ModuleType::Ph2SS) {
+      det = 2;
+    } else {
+      std::cout << "UNKNOWN DETECTOR TYPE!" << std::endl;
+    }
 
     // Get the geomdet
     const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
@@ -101,9 +166,78 @@ void RecHitTree::analyze(const edm::Event& event, const edm::EventSetup& eventSe
       LocalPoint localPosClu = rechitIt->localPosition();
       Global3DPoint globalPosClu = geomDetUnit->surface().toGlobal(localPosClu);
 
-      hitInfo->Hit_x.push_back(globalPosClu.x());
-      hitInfo->Hit_y.push_back(globalPosClu.y());
-      hitInfo->Hit_z.push_back(globalPosClu.z());
+      // Get the cluster from the rechit
+      const Phase2TrackerCluster1D* clustIt = &*rechitIt->cluster();
+
+      // Get all the simTracks that form the cluster
+      std::vector<unsigned int> clusterSimTrackIds;
+      for (unsigned int i(0); i < clustIt->size(); ++i) {
+        unsigned int channel(Phase2TrackerDigi::pixelToChannel(clustIt->firstRow() + i, clustIt->column()));
+        std::vector<unsigned int> simTrackIds_unselected(getSimTrackId(pixelSimLinks, detId, channel));
+        std::vector<unsigned int> simTrackIds;
+        for (auto istId : simTrackIds_unselected) {
+          std::map<unsigned int, SimTrack>::const_iterator istfind(simTracks.find(istId));
+          if (istfind != simTracks.end())
+            simTrackIds.push_back(istId);
+        }
+        for (unsigned int i = 0; i < simTrackIds.size(); ++i) {
+          bool add = true;
+          for (unsigned int j = 0; j < clusterSimTrackIds.size(); ++j) {
+            // only save simtrackids that are not present yet
+            if (simTrackIds.at(i) == clusterSimTrackIds.at(j))
+              add = false;
+          }
+          if (add)
+            clusterSimTrackIds.push_back(simTrackIds.at(i));
+        }
+      }
+
+      // find the closest simhit
+      // this is needed because otherwise you get cases with simhits and clusters being swapped
+      // when there are more than 1 cluster with common simtrackids
+      const PSimHit* simhit = 0;  // bad naming to avoid changing code below. This is the closest simhit in x
+      float minx = 10000;
+      for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
+        for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
+             simhitIt != simHitsRaw[simhitidx]->end();
+             ++simhitIt) {
+          // check SimHit detId is the same with the RecHit
+          if (rawid == simhitIt->detUnitId()) {
+            //std::cout << "=== " << rawid << " " << &*simhitIt << " " << simhitIt->trackId() << " " << simhitIt->localPosition().x() << " " << simhitIt->localPosition().y() << std::endl;
+            auto it = std::lower_bound(clusterSimTrackIds.begin(), clusterSimTrackIds.end(), simhitIt->trackId());
+            // check SimHit track id is included in the cluster
+            if (it != clusterSimTrackIds.end() && *it == simhitIt->trackId()) {
+              if (!simhit || fabs(simhitIt->localPosition().x() - localPosClu.x()) < minx) {
+                minx = fabs(simhitIt->localPosition().x() - localPosClu.x());
+                simhit = &*simhitIt;
+              }
+            }
+          }
+        }
+      }
+
+      hitInfo->Hit_cluster_global_x.push_back(globalPosClu.x());
+      hitInfo->Hit_cluster_global_y.push_back(globalPosClu.y());
+      hitInfo->Hit_cluster_global_z.push_back(globalPosClu.z());
+      hitInfo->Hit_layer.push_back(layer);
+      hitInfo->Hit_ModuleType.push_back(det);
+      hitInfo->Hit_cluster_size.push_back(clustIt->size());
+      hitInfo->Hit_cluster_SimTrack_size.push_back(clusterSimTrackIds.size());
+      hitInfo->Hit_cluster_local_x.push_back(localPosClu.x());
+      hitInfo->Hit_cluster_local_y.push_back(localPosClu.y());
+      hitInfo->Hit_cluster_local_z.push_back(localPosClu.z());
+      if (!simhit){
+        hitInfo->Hit_cluster_haveSimHit.push_back(false);
+        hitInfo->Hit_cluster_closestSimHit_local_x.push_back(999);
+        hitInfo->Hit_cluster_closestSimHit_local_y.push_back(999);
+        hitInfo->Hit_cluster_closestSimHit_local_z.push_back(999);
+      }
+      else {
+        hitInfo->Hit_cluster_haveSimHit.push_back(true);
+        hitInfo->Hit_cluster_closestSimHit_local_x.push_back(simhit->localPosition().x());
+        hitInfo->Hit_cluster_closestSimHit_local_y.push_back(simhit->localPosition().y());
+        hitInfo->Hit_cluster_closestSimHit_local_z.push_back(simhit->localPosition().z());
+      }
     }
   }
   hitTree->Fill();
@@ -114,9 +248,21 @@ void RecHitTree::beginJob()
   edm::Service<TFileService> fs;
   hitTree = fs->make<TTree>( "HitTree", "HitTree" );
 
-  hitTree->Branch("Hit_x",    &hitInfo->Hit_x);
-  hitTree->Branch("Hit_y",    &hitInfo->Hit_y);
-  hitTree->Branch("Hit_z",    &hitInfo->Hit_z);
+  hitTree->Branch("Hit_cluster_global_x",                   &hitInfo->Hit_cluster_global_x);
+  hitTree->Branch("Hit_cluster_global_y",                   &hitInfo->Hit_cluster_global_y);
+  hitTree->Branch("Hit_cluster_global_z",                   &hitInfo->Hit_cluster_global_z);
+  hitTree->Branch("Hit_layer",                              &hitInfo->Hit_layer);
+  hitTree->Branch("Hit_ModuleType",                         &hitInfo->Hit_ModuleType);
+  hitTree->Branch("Hit_cluster_size",                       &hitInfo->Hit_cluster_size);
+  hitTree->Branch("Hit_cluster_SimTrack_size",              &hitInfo->Hit_cluster_SimTrack_size);
+  hitTree->Branch("Hit_cluster_local_x",                    &hitInfo->Hit_cluster_local_x);
+  hitTree->Branch("Hit_cluster_local_y",                    &hitInfo->Hit_cluster_local_y);
+  hitTree->Branch("Hit_cluster_local_z",                    &hitInfo->Hit_cluster_local_z);
+  hitTree->Branch("Hit_cluster_haveSimHit",                 &hitInfo->Hit_cluster_haveSimHit);
+  hitTree->Branch("Hit_cluster_closestSimHit_local_x",      &hitInfo->Hit_cluster_closestSimHit_local_x);
+  hitTree->Branch("Hit_cluster_closestSimHit_local_y",      &hitInfo->Hit_cluster_closestSimHit_local_y);
+  hitTree->Branch("Hit_cluster_closestSimHit_local_z",      &hitInfo->Hit_cluster_closestSimHit_local_z);
+
 }
 
 void RecHitTree::endJob()
@@ -124,9 +270,34 @@ void RecHitTree::endJob()
 
 void RecHitTree::initEventStructure()
 {
-  hitInfo->Hit_x.clear();
-  hitInfo->Hit_y.clear();
-  hitInfo->Hit_z.clear();
+  hitInfo->Hit_cluster_global_x.clear();
+  hitInfo->Hit_cluster_global_y.clear();
+  hitInfo->Hit_cluster_global_z.clear();
+  hitInfo->Hit_layer.clear();
+  hitInfo->Hit_ModuleType.clear();
+  hitInfo->Hit_cluster_size.clear();
+  hitInfo->Hit_cluster_SimTrack_size.clear();
+  hitInfo->Hit_cluster_local_x.clear();
+  hitInfo->Hit_cluster_local_y.clear();
+  hitInfo->Hit_cluster_local_z.clear();
+  hitInfo->Hit_cluster_haveSimHit.clear();
+  hitInfo->Hit_cluster_closestSimHit_local_x.clear();
+  hitInfo->Hit_cluster_closestSimHit_local_y.clear();
+  hitInfo->Hit_cluster_closestSimHit_local_z.clear();
+}
+
+std::vector<unsigned int> RecHitTree::getSimTrackId(
+    const edm::Handle<edm::DetSetVector<PixelDigiSimLink> >& pixelSimLinks, const DetId& detId, unsigned int channel) {
+  std::vector<unsigned int> retvec;
+  edm::DetSetVector<PixelDigiSimLink>::const_iterator DSViter(pixelSimLinks->find(detId));
+  if (DSViter == pixelSimLinks->end())
+    return retvec;
+  for (edm::DetSet<PixelDigiSimLink>::const_iterator it = DSViter->data.begin(); it != DSViter->data.end(); ++it) {
+    if (channel == it->channel()) {
+      retvec.push_back(it->SimTrackId());
+    }
+  }
+  return retvec;
 }
 
 DEFINE_FWK_MODULE(RecHitTree);

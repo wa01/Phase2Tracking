@@ -27,7 +27,7 @@ process.source = cms.Source('PoolSource',
 
 # Output
 process.TFileService = cms.Service('TFileService',
-    fileName = cms.string('file:rechits_validation.root')
+    fileName = cms.string('file:rechits_tree.root')
 )
 
 process.load('RecoLocalTracker.SiPhase2Clusterizer.phase2TrackerClusterizer_cfi')
@@ -42,12 +42,12 @@ process.load('RecoLocalTracker.Phase2TrackerRecHits.Phase2TrackerRecHits_cfi')
 process.analysis = cms.EDAnalyzer('RecHitTree',
     rechits = cms.InputTag("siPhase2RecHits"),
     clusters = cms.InputTag("siPhase2Clusters"),
-    #links = cms.InputTag("simSiPixelDigis", "Tracker"),
-    #simhitsbarrel = cms.InputTag("g4SimHits", "TrackerHitsPixelBarrelLowTof"),
-    #simhitsendcap = cms.InputTag("g4SimHits", "TrackerHitsPixelEndcapLowTof"),
-    #simtracks = cms.InputTag("g4SimHits"),
+    links = cms.InputTag("simSiPixelDigis", "Tracker"),
+    simhitsbarrel = cms.InputTag("g4SimHits", "TrackerHitsPixelBarrelLowTof"),
+    simhitsendcap = cms.InputTag("g4SimHits", "TrackerHitsPixelEndcapLowTof"),
+    simtracks = cms.InputTag("g4SimHits"),
     #ECasRings = cms.bool(True),
-    #SimTrackMinPt = cms.double(2.),
+    SimTrackMinPt = cms.double(0.5),
     #MakeEtaPlots = cms.bool(False),
     #MinEta = cms.double(0.),
     #MaxEta = cms.double(10.)
@@ -56,6 +56,6 @@ process.analysis = cms.EDAnalyzer('RecHitTree',
 # Processes to run
 #process.rechits_step = cms.Path(process.siPhase2Clusters + process.siPhase2RecHits)
 process.rechits_step = cms.Path(process.siPhase2RecHits)
-process.validation_step = cms.Path(process.analysis)
+process.analyze_step = cms.Path(process.analysis)
 
-process.schedule = cms.Schedule(process.rechits_step, process.validation_step)
+process.schedule = cms.Schedule(process.rechits_step, process.analyze_step)
