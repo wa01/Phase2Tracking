@@ -22,12 +22,16 @@ process.maxEvents = cms.untracked.PSet(
 
 # Input file
 process.source = cms.Source('PoolSource',
-    fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/l/lian/public/Phase2Tracker/CMSSW_15_0_0_pre3/src/29617.0_SingleMuPt1Extended+Run4D110/step3.root')
+    fileNames = cms.untracked.vstring(
+        #'/store/relval/CMSSW_15_0_0/RelValSingleMuPt10/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/0b0d313e-56e1-4e64-aa58-8a2e61767bf5.root',
+        #'root://eoscms.cern.ch//eos/cms/store/relval/CMSSW_15_0_0/RelValSingleMuPt10/GEN-SIM-RECO/PU_141X_mcRun4_realistic_v3_STD_Run4D110_PU-v2/2580000/012df10b-6e3c-4497-94be-c382898f2416.root',
+        '/store/relval/CMSSW_15_0_0_pre3/RelValTTbar_14TeV/GEN-SIM-RECO/PU_141X_mcRun4_realistic_v3_STD_Run4D110_PU-v2/2580000/008977ec-54ed-42c7-a69f-7df26681d0c6.root',
+    )
 )
 
 # Output
 process.TFileService = cms.Service('TFileService',
-    fileName = cms.string('file:rechits_tree.root')
+    fileName = cms.string('rechits_tree.root')
 )
 
 process.load('RecoLocalTracker.SiPhase2Clusterizer.phase2TrackerClusterizer_cfi')
@@ -46,6 +50,7 @@ process.analysis = cms.EDAnalyzer('RecHitTree',
     simhitsbarrel = cms.InputTag("g4SimHits", "TrackerHitsPixelBarrelLowTof"),
     simhitsendcap = cms.InputTag("g4SimHits", "TrackerHitsPixelEndcapLowTof"),
     simtracks = cms.InputTag("g4SimHits"),
+    genparticles = cms.InputTag("genParticles"),
     #ECasRings = cms.bool(True),
     SimTrackMinPt = cms.double(0.5),
     #MakeEtaPlots = cms.bool(False),
