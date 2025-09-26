@@ -61,6 +61,34 @@ struct HitInfo
   std::vector<unsigned short> Hit_cluster_threshold;
 };
 
+struct SimHitInfo
+{
+  std::vector<float> local_x;
+  std::vector<float> local_y;
+  std::vector<float> local_z;
+  std::vector<float> global_x;
+  std::vector<float> global_y;
+  std::vector<float> global_z;
+  std::vector<float> local_dx;
+  std::vector<float> local_dy;
+  std::vector<float> local_dz;
+  std::vector<float> global_dx;
+  std::vector<float> global_dy;
+  std::vector<float> global_dz;
+  std::vector<float> theta;
+  std::vector<float> phi;
+  std::vector<float> pabs;
+  std::vector<float> tof;
+  std::vector<float> energyLoss;
+  std::vector<unsigned short> processType;
+  std::vector<int>   particleType;
+  //std::vector<unsigned int> detUnitId;
+  std::vector<unsigned short> layer;
+  std::vector<unsigned short> moduleType;
+  std::vector<unsigned int> trackId;
+  std::vector<unsigned int> originalTrackId;
+};
+
 struct SimTrackInfo
 {
   std::vector<float> SimTrack_xTk;
@@ -101,6 +129,8 @@ class RecHitTreeWA : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 
     TTree* hitTree;
     HitInfo* hitInfo;
+    TTree* simHitTree;
+    SimHitInfo* simHitInfo;
     TTree* simTrackTree;
     SimTrackInfo* simTrackInfo;
 };
@@ -117,6 +147,7 @@ RecHitTreeWA::RecHitTreeWA(const edm::ParameterSet& cfg)
     simtrackminpt_(cfg.getParameter<double>("SimTrackMinPt"))
 {
   hitInfo = new HitInfo;
+  simHitInfo = new SimHitInfo;
   simTrackInfo = new SimTrackInfo;
 }
 
@@ -130,7 +161,7 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
   // Get the RecHits
   edm::Handle<Phase2TrackerRecHit1DCollectionNew> rechits;
   event.getByToken(tokenRecHits_, rechits);
-  std::cout << "Phase2TrackerRecHit1DCollectionNew: " << rechits->size() << std::endl;
+  //std::cout << "Phase2TrackerRecHit1DCollectionNew: " << rechits->size() << std::endl;
   
   // Get the Clusters
   edm::Handle<Phase2TrackerCluster1DCollectionNew> clusters;
@@ -174,6 +205,51 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
     simTrackInfo->SimTrack_trackInfo.push_back(simTrackIt->getTrackInfo());
   }
   simTrackTree->Fill();
+
+  for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
+    for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
+	 simhitIt != simHitsRaw[simhitidx]->end(); ++simhitIt) {
+          // Get the detector unit's id
+      DetId detId(simhitIt->detUnitId());
+      unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
+      layer += tTopo->layer(detId);    
+      hitInfo->Hit_ModuleType.push_back((unsigned short)(tkGeom->getDetectorType(detId)));
+      // Get the geomdet
+      const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
+      if (!geomDetUnit) {
+	std::cout << "*** did not find geomDetUnit ***" << std::endl;
+	continue;
+      }
+      GlobalPoint globalPosition(geomDetUnit->toGlobal(simhitIt->localPosition()));
+      GlobalVector globalDirection(geomDetUnit->toGlobal(simhitIt->localDirection()));
+
+      simHitInfo->local_x.push_back(simhitIt->localPosition().x());
+      simHitInfo->local_y.push_back(simhitIt->localPosition().y());
+      simHitInfo->local_z.push_back(simhitIt->localPosition().z());
+      simHitInfo->global_x.push_back(globalPosition.x());
+      simHitInfo->global_y.push_back(globalPosition.y());
+      simHitInfo->global_z.push_back(globalPosition.z());
+      simHitInfo->local_dx.push_back(simhitIt->localDirection().x());
+      simHitInfo->local_dy.push_back(simhitIt->localDirection().y());
+      simHitInfo->local_dz.push_back(simhitIt->localDirection().z());
+      simHitInfo->global_dx.push_back(globalDirection.x());
+      simHitInfo->global_dy.push_back(globalDirection.y());
+      simHitInfo->global_dz.push_back(globalDirection.z());
+      simHitInfo->theta.push_back(simhitIt->thetaAtEntry());
+      simHitInfo->phi.push_back(simhitIt->phiAtEntry());
+      simHitInfo->pabs.push_back(simhitIt->pabs());
+      simHitInfo->tof.push_back(simhitIt->timeOfFlight());
+      simHitInfo->energyLoss.push_back(simhitIt->energyLoss());
+      simHitInfo->processType.push_back(simhitIt->processType());
+      simHitInfo->particleType.push_back(simhitIt->particleType());
+      //simHitInfo->detUnitId.push_back(simhitIt->detUnitId());
+      simHitInfo->layer.push_back(layer);
+      simHitInfo->moduleType.push_back((unsigned short)(tkGeom->getDetectorType(detId)));
+      simHitInfo->trackId.push_back(simhitIt->trackId());
+      simHitInfo->originalTrackId.push_back(simhitIt->originalTrackId());
+    }
+  }
+  simHitTree->Fill();
 
   for (Phase2TrackerRecHit1DCollectionNew::const_iterator DSViter = rechits->begin(); DSViter != rechits->end(); ++DSViter) {
     // Get the detector unit's id
@@ -321,7 +397,33 @@ void RecHitTreeWA::beginJob()
   hitTree->Branch("Hit_cluster_edge",                       &hitInfo->Hit_cluster_edge);
   hitTree->Branch("Hit_cluster_threshold",                  &hitInfo->Hit_cluster_threshold);
 
+  simHitTree = fs->make<TTree>( "SimHitTree", "SimHitTree" );
+  simHitTree->Branch("local_x",	&simHitInfo->local_x);
+  simHitTree->Branch("local_y",	&simHitInfo->local_y);
+  simHitTree->Branch("local_z",	&simHitInfo->local_z);
+  simHitTree->Branch("global_x",	&simHitInfo->global_x);
+  simHitTree->Branch("global_y",	&simHitInfo->global_y);
+  simHitTree->Branch("global_z",	&simHitInfo->global_z);
+  simHitTree->Branch("local_dx",	&simHitInfo->local_dx);
+  simHitTree->Branch("local_dy",	&simHitInfo->local_dy);
+  simHitTree->Branch("local_dz",	&simHitInfo->local_dz);
+  simHitTree->Branch("global_dx",	&simHitInfo->global_dx);
+  simHitTree->Branch("global_dy",	&simHitInfo->global_dy);
+  simHitTree->Branch("global_dz",	&simHitInfo->global_dz);
+  simHitTree->Branch("theta",	&simHitInfo->theta);
+  simHitTree->Branch("phi",	&simHitInfo->phi);
+  simHitTree->Branch("pabs",	&simHitInfo->pabs);
+  simHitTree->Branch("tof",	&simHitInfo->tof);
+  simHitTree->Branch("energyLoss",	&simHitInfo->energyLoss);
+  simHitTree->Branch("processType",	&simHitInfo->processType);
+  simHitTree->Branch("particleType",	&simHitInfo->particleType);
+  //simHitTree->Branch("detUnitId",	&simHitInfo->detUnitId);
+  simHitTree->Branch("layer",   &simHitInfo->layer);
+  simHitTree->Branch("moduleType",      &simHitInfo->moduleType);
+  simHitTree->Branch("trackId",	&simHitInfo->trackId);
+  simHitTree->Branch("originalTrackId",	&simHitInfo->originalTrackId);
 
+  
   simTrackTree = fs->make<TTree>( "SimTrackTree", "SimTrackTree" );
   simTrackTree->Branch("SimTrack_xTk",         &simTrackInfo->SimTrack_xTk);
   simTrackTree->Branch("SimTrack_yTk",         &simTrackInfo->SimTrack_yTk);
@@ -364,6 +466,30 @@ void RecHitTreeWA::initEventStructure()
   hitInfo->Hit_cluster_edge.clear();
   hitInfo->Hit_cluster_threshold.clear();
 
+  simHitInfo->local_x.clear();
+  simHitInfo->local_y.clear();
+  simHitInfo->local_z.clear();
+  simHitInfo->global_x.clear();
+  simHitInfo->global_y.clear();
+  simHitInfo->global_z.clear();
+  simHitInfo->local_dx.clear();
+  simHitInfo->local_dy.clear();
+  simHitInfo->local_dz.clear();
+  simHitInfo->global_dx.clear();
+  simHitInfo->global_dy.clear();
+  simHitInfo->global_dz.clear();
+  simHitInfo->theta.clear();
+  simHitInfo->phi.clear();
+  simHitInfo->pabs.clear();
+  simHitInfo->tof.clear();
+  simHitInfo->energyLoss.clear();
+  simHitInfo->processType.clear();
+  simHitInfo->particleType.clear();
+  // simHitInfo->detUnitId.clear();
+  simHitInfo->layer.clear();
+  simHitInfo->moduleType.clear();
+  simHitInfo->trackId.clear();
+  simHitInfo->originalTrackId.clear();
 
   simTrackInfo->SimTrack_xTk.clear();
   simTrackInfo->SimTrack_yTk.clear();
