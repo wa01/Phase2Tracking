@@ -85,8 +85,12 @@ struct SimHitInfo
   //std::vector<unsigned int> detUnitId;
   std::vector<unsigned short> layer;
   std::vector<unsigned short> moduleType;
+  std::vector<float> detNormal_x;
+  std::vector<float> detNormal_y;
+  std::vector<float> detNormal_z;
   std::vector<unsigned int> trackId;
   std::vector<unsigned int> originalTrackId;
+  std::vector<ROOT::Math::XYZVectorF> localPos;
 };
 
 struct SimTrackInfo
@@ -213,7 +217,13 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
       DetId detId(simhitIt->detUnitId());
       unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
       layer += tTopo->layer(detId);    
-      hitInfo->Hit_ModuleType.push_back((unsigned short)(tkGeom->getDetectorType(detId)));
+      //hitInfo->Hit_ModuleType.push_back((unsigned short)(tkGeom->getDetectorType(detId)));
+      TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
+      // Restrict to Phase2 OT
+      if ( mType!=TrackerGeometry::ModuleType::Ph2PSP && 
+	   mType!=TrackerGeometry::ModuleType::Ph2PSS &&
+	   mType!=TrackerGeometry::ModuleType::Ph2SS )  continue;
+
       // Get the geomdet
       const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
       if (!geomDetUnit) {
@@ -222,7 +232,10 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
       }
       GlobalPoint globalPosition(geomDetUnit->toGlobal(simhitIt->localPosition()));
       GlobalVector globalDirection(geomDetUnit->toGlobal(simhitIt->localDirection()));
+      GlobalVector detNormal(geomDetUnit->toGlobal(LocalVector(0.,0.,1.)));
+      ROOT::Math::XYZVectorF testVector(simhitIt->localPosition().x(),simhitIt->localPosition().y(),simhitIt->localPosition().z());
 
+      
       simHitInfo->local_x.push_back(simhitIt->localPosition().x());
       simHitInfo->local_y.push_back(simhitIt->localPosition().y());
       simHitInfo->local_z.push_back(simhitIt->localPosition().z());
@@ -244,9 +257,13 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
       simHitInfo->particleType.push_back(simhitIt->particleType());
       //simHitInfo->detUnitId.push_back(simhitIt->detUnitId());
       simHitInfo->layer.push_back(layer);
-      simHitInfo->moduleType.push_back((unsigned short)(tkGeom->getDetectorType(detId)));
+      simHitInfo->moduleType.push_back((unsigned short)mType);
+      simHitInfo->detNormal_x.push_back(detNormal.x());
+      simHitInfo->detNormal_y.push_back(detNormal.y());
+      simHitInfo->detNormal_z.push_back(detNormal.z());
       simHitInfo->trackId.push_back(simhitIt->trackId());
       simHitInfo->originalTrackId.push_back(simhitIt->originalTrackId());
+      simHitInfo->localPos.push_back(testVector);
     }
   }
   simHitTree->Fill();
@@ -420,8 +437,12 @@ void RecHitTreeWA::beginJob()
   //simHitTree->Branch("detUnitId",	&simHitInfo->detUnitId);
   simHitTree->Branch("layer",   &simHitInfo->layer);
   simHitTree->Branch("moduleType",      &simHitInfo->moduleType);
+  simHitTree->Branch("detNorm_x",       &simHitInfo->detNormal_x);
+  simHitTree->Branch("detNorm_y",       &simHitInfo->detNormal_y);
+  simHitTree->Branch("detNorm_z",       &simHitInfo->detNormal_z);
   simHitTree->Branch("trackId",	&simHitInfo->trackId);
   simHitTree->Branch("originalTrackId",	&simHitInfo->originalTrackId);
+  simHitTree->Branch("localPos",        &simHitInfo->localPos);
 
   
   simTrackTree = fs->make<TTree>( "SimTrackTree", "SimTrackTree" );
@@ -488,8 +509,12 @@ void RecHitTreeWA::initEventStructure()
   // simHitInfo->detUnitId.clear();
   simHitInfo->layer.clear();
   simHitInfo->moduleType.clear();
+  simHitInfo->detNormal_x.clear();
+  simHitInfo->detNormal_y.clear();
+  simHitInfo->detNormal_z.clear();
   simHitInfo->trackId.clear();
   simHitInfo->originalTrackId.clear();
+  simHitInfo->localPos.clear();
 
   simTrackInfo->SimTrack_xTk.clear();
   simTrackInfo->SimTrack_yTk.clear();
