@@ -67,21 +67,10 @@ struct HitInfo
 struct SimHitInfo
 {
   std::vector<ROOT::Math::XYZPointF> localPos;
-  //std::vector<float> local_x;
-  //std::vector<float> local_y;
-  //std::vector<float> local_z;
   std::vector<ROOT::Math::XYZPointF> globalPos;
-  //std::vector<float> global_x;
-  //std::vector<float> global_y;
-  //std::vector<float> global_z;
   std::vector<ROOT::Math::XYZVectorF> localDir;
-  //std::vector<float> local_dx;
-  //std::vector<float> local_dy;
-  //std::vector<float> local_dz;
   std::vector<ROOT::Math::XYZVectorF> globalDir;
-  //std::vector<float> global_dx;
-  //std::vector<float> global_dy;
-  //std::vector<float> global_dz;
+  std::vector<ROOT::Math::XYZVectorF> path;
   std::vector<float> theta;
   std::vector<float> phi;
   std::vector<float> pabs;
@@ -89,13 +78,9 @@ struct SimHitInfo
   std::vector<float> energyLoss;
   std::vector<unsigned short> processType;
   std::vector<int>   particleType;
-  //std::vector<unsigned int> detUnitId;
   std::vector<unsigned short> layer;
   std::vector<unsigned short> moduleType;
   std::vector<ROOT::Math::XYZVectorF> detNormal;
-  //std::vector<float> detNormal_x;
-  //std::vector<float> detNormal_y;
-  //std::vector<float> detNormal_z;
   std::vector<unsigned int> trackId;
   std::vector<unsigned int> originalTrackId;
 };
@@ -241,27 +226,19 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
       ROOT::Math::XYZPointF localPos(simhitIt->localPosition().x(),simhitIt->localPosition().y(),
 				     simhitIt->localPosition().z());
       simHitInfo->localPos.push_back(localPos);
-      //simHitInfo->local_x.push_back(simhitIt->localPosition().x());
-      //simHitInfo->local_y.push_back(simhitIt->localPosition().y());
-      //simHitInfo->local_z.push_back(simhitIt->localPosition().z());
       GlobalPoint globalPosition(geomDetUnit->toGlobal(simhitIt->localPosition()));
       ROOT::Math::XYZPointF globalPos(globalPosition.x(),globalPosition.y(),globalPosition.z());
       simHitInfo->globalPos.push_back(globalPos);
-      //simHitInfo->global_x.push_back(globalPosition.x());
-      //simHitInfo->global_y.push_back(globalPosition.y());
-      //simHitInfo->global_z.push_back(globalPosition.z());
       ROOT::Math::XYZVectorF localDir(simhitIt->localDirection().x(),simhitIt->localDirection().y(),
 				      simhitIt->localDirection().z());
       simHitInfo->localDir.push_back(localDir);
-      //simHitInfo->local_dx.push_back(simhitIt->localDirection().x());
-      //simHitInfo->local_dy.push_back(simhitIt->localDirection().y());
-      //simHitInfo->local_dz.push_back(simhitIt->localDirection().z());
       GlobalVector globalDirection(geomDetUnit->toGlobal(simhitIt->localDirection()));
       ROOT::Math::XYZVectorF globalDir(globalDirection.x(),globalDirection.y(),globalDirection.z());
       simHitInfo->globalDir.push_back(globalDir);
-      //simHitInfo->global_dx.push_back(globalDirection.x());
-      //simHitInfo->global_dy.push_back(globalDirection.y());
-      //simHitInfo->global_dz.push_back(globalDirection.z());
+      ROOT::Math::XYZVectorF path(simhitIt->exitPoint().x()-simhitIt->entryPoint().x(),
+				  simhitIt->exitPoint().y()-simhitIt->entryPoint().y(),
+				  simhitIt->exitPoint().z()-simhitIt->entryPoint().z());
+      simHitInfo->path.push_back(path);
       simHitInfo->theta.push_back(simhitIt->thetaAtEntry());
       simHitInfo->phi.push_back(simhitIt->phiAtEntry());
       simHitInfo->pabs.push_back(simhitIt->pabs());
@@ -269,15 +246,11 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
       simHitInfo->energyLoss.push_back(simhitIt->energyLoss());
       simHitInfo->processType.push_back(simhitIt->processType());
       simHitInfo->particleType.push_back(simhitIt->particleType());
-      //simHitInfo->detUnitId.push_back(simhitIt->detUnitId());
       simHitInfo->layer.push_back(layer);
       simHitInfo->moduleType.push_back((unsigned short)mType);
       GlobalVector detNormalGlobal(geomDetUnit->toGlobal(LocalVector(0.,0.,1.)));
       ROOT::Math::XYZVectorF detNormal(detNormalGlobal.x(),detNormalGlobal.y(),detNormalGlobal.z());
       simHitInfo->detNormal.push_back(detNormal);
-      //simHitInfo->detNormal_x.push_back(detNormal.x());
-      //simHitInfo->detNormal_y.push_back(detNormal.y());
-      //simHitInfo->detNormal_z.push_back(detNormal.z());
       simHitInfo->trackId.push_back(simhitIt->trackId());
       simHitInfo->originalTrackId.push_back(simhitIt->originalTrackId());
     }
@@ -432,21 +405,10 @@ void RecHitTreeWA::beginJob()
 
   simHitTree = fs->make<TTree>( "SimHitTree", "SimHitTree" );
   simHitTree->Branch("localPos",	&simHitInfo->localPos);
-  //simHitTree->Branch("local_x",	&simHitInfo->local_x);
-  //simHitTree->Branch("local_y",	&simHitInfo->local_y);
-  //simHitTree->Branch("local_z",	&simHitInfo->local_z);
   simHitTree->Branch("globalPos",	&simHitInfo->globalPos);
-  //simHitTree->Branch("global_x",	&simHitInfo->global_x);
-  //simHitTree->Branch("global_y",	&simHitInfo->global_y);
-  //simHitTree->Branch("global_z",	&simHitInfo->global_z);
   simHitTree->Branch("localDir",	&simHitInfo->localDir);
-  //simHitTree->Branch("local_dx",	&simHitInfo->local_dx);
-  //simHitTree->Branch("local_dy",	&simHitInfo->local_dy);
-  //simHitTree->Branch("local_dz",	&simHitInfo->local_dz);
   simHitTree->Branch("globalDir",	&simHitInfo->globalDir);
-  //simHitTree->Branch("global_dx",	&simHitInfo->global_dx);
-  //simHitTree->Branch("global_dy",	&simHitInfo->global_dy);
-  //simHitTree->Branch("global_dz",	&simHitInfo->global_dz);
+  simHitTree->Branch("path",	&simHitInfo->path);
   simHitTree->Branch("theta",	&simHitInfo->theta);
   simHitTree->Branch("phi",	&simHitInfo->phi);
   simHitTree->Branch("pabs",	&simHitInfo->pabs);
@@ -454,13 +416,9 @@ void RecHitTreeWA::beginJob()
   simHitTree->Branch("energyLoss",	&simHitInfo->energyLoss);
   simHitTree->Branch("processType",	&simHitInfo->processType);
   simHitTree->Branch("particleType",	&simHitInfo->particleType);
-  //simHitTree->Branch("detUnitId",	&simHitInfo->detUnitId);
   simHitTree->Branch("layer",   &simHitInfo->layer);
   simHitTree->Branch("moduleType",      &simHitInfo->moduleType);
   simHitTree->Branch("detNormal",       &simHitInfo->detNormal);
-  //simHitTree->Branch("detNorm_x",       &simHitInfo->detNormal_x);
-  //simHitTree->Branch("detNorm_y",       &simHitInfo->detNormal_y);
-  //simHitTree->Branch("detNorm_z",       &simHitInfo->detNormal_z);
   simHitTree->Branch("trackId",	&simHitInfo->trackId);
   simHitTree->Branch("originalTrackId",	&simHitInfo->originalTrackId);
 
@@ -508,21 +466,10 @@ void RecHitTreeWA::initEventStructure()
   hitInfo->Hit_cluster_threshold.clear();
 
   simHitInfo->localPos.clear();
-  //simHitInfo->local_x.clear();
-  //simHitInfo->local_y.clear();
-  //simHitInfo->local_z.clear();
   simHitInfo->globalPos.clear();
-  //simHitInfo->global_x.clear();
-  //simHitInfo->global_y.clear();
-  //simHitInfo->global_z.clear();
   simHitInfo->localDir.clear();
-  //simHitInfo->local_dx.clear();
-  //simHitInfo->local_dy.clear();
-  //simHitInfo->local_dz.clear();
   simHitInfo->globalDir.clear();
-  //simHitInfo->global_dx.clear();
-  //simHitInfo->global_dy.clear();
-  //simHitInfo->global_dz.clear();
+  simHitInfo->path.clear();
   simHitInfo->theta.clear();
   simHitInfo->phi.clear();
   simHitInfo->pabs.clear();
@@ -530,13 +477,9 @@ void RecHitTreeWA::initEventStructure()
   simHitInfo->energyLoss.clear();
   simHitInfo->processType.clear();
   simHitInfo->particleType.clear();
-  // simHitInfo->detUnitId.clear();
   simHitInfo->layer.clear();
   simHitInfo->moduleType.clear();
   simHitInfo->detNormal.clear();
-  //simHitInfo->detNormal_x.clear();
-  //simHitInfo->detNormal_y.clear();
-  //simHitInfo->detNormal_z.clear();
   simHitInfo->trackId.clear();
   simHitInfo->originalTrackId.clear();
   simHitInfo->localPos.clear();
