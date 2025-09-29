@@ -90,7 +90,7 @@ struct SimHitInfo
   std::vector<float> detNormal_z;
   std::vector<unsigned int> trackId;
   std::vector<unsigned int> originalTrackId;
-  std::vector<ROOT::Math::XYZVectorF> localPos;
+  std::vector<ROOT::Math::XYZPointF> localPos;
 };
 
 struct SimTrackInfo
@@ -233,7 +233,7 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
       GlobalPoint globalPosition(geomDetUnit->toGlobal(simhitIt->localPosition()));
       GlobalVector globalDirection(geomDetUnit->toGlobal(simhitIt->localDirection()));
       GlobalVector detNormal(geomDetUnit->toGlobal(LocalVector(0.,0.,1.)));
-      ROOT::Math::XYZVectorF testVector(simhitIt->localPosition().x(),simhitIt->localPosition().y(),simhitIt->localPosition().z());
+      ROOT::Math::XYZPointF testVector(simhitIt->localPosition().x(),simhitIt->localPosition().y(),simhitIt->localPosition().z());
 
       
       simHitInfo->local_x.push_back(simhitIt->localPosition().x());
