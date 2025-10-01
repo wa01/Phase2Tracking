@@ -89,51 +89,51 @@ public:
     tree.Branch("trackId",&cSimHitInfo.trackId);
   };
   
-  void fillSimHitInfo(const PSimHit& simHit, const TrackerTopology* tTopo,
-		      const TrackerGeometry* tkGeom, bool extended) {
-  //
-  // Get the detector unit's id
-  //
-  DetId detId(simHit.detUnitId());
-  unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
-  layer += tTopo->layer(detId);
-  TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
-  // Get the geomdet
-  const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
-  if (!geomDetUnit) {
-	std::cout << "*** did not find geomDetUnit ***" << std::endl;
-	return;
-  }
-  ROOT::Math::XYZPointF localPos(simHit.localPosition().x(),simHit.localPosition().y(),
-				 simHit.localPosition().z());
-  cSimHitInfo.localPos.push_back(localPos);
-  GlobalPoint globalPosition(geomDetUnit->toGlobal(simHit.localPosition()));
-  ROOT::Math::XYZPointF globalPos(globalPosition.x(),globalPosition.y(),globalPosition.z());
-  cSimHitInfo.globalPos.push_back(globalPos);
-  ROOT::Math::XYZVectorF localDir(simHit.localDirection().x(),simHit.localDirection().y(),
-				  simHit.localDirection().z());
-  cSimHitInfo.localDir.push_back(localDir);
-  GlobalVector globalDirection(geomDetUnit->toGlobal(simHit.localDirection()));
-  ROOT::Math::XYZVectorF globalDir(globalDirection.x(),globalDirection.y(),globalDirection.z());
-  cSimHitInfo.globalDir.push_back(globalDir);
-  ROOT::Math::XYZVectorF path(simHit.exitPoint().x()-simHit.entryPoint().x(),
-			      simHit.exitPoint().y()-simHit.entryPoint().y(),
-			      simHit.exitPoint().z()-simHit.entryPoint().z());
-  cSimHitInfo.path.push_back(path);
-  cSimHitInfo.theta.push_back(simHit.thetaAtEntry());
-  cSimHitInfo.phi.push_back(simHit.phiAtEntry());
-  cSimHitInfo.pabs.push_back(simHit.pabs());
-  cSimHitInfo.tof.push_back(simHit.timeOfFlight());
-  cSimHitInfo.energyLoss.push_back(simHit.energyLoss());
-  cSimHitInfo.processType.push_back(simHit.processType());
-  cSimHitInfo.particleType.push_back(simHit.particleType());
-  cSimHitInfo.layer.push_back(layer);
-  cSimHitInfo.moduleType.push_back((unsigned short)mType);
-  GlobalVector detNormalGlobal(geomDetUnit->toGlobal(LocalVector(0.,0.,1.)));
-  ROOT::Math::XYZVectorF detNormal(detNormalGlobal.x(),detNormalGlobal.y(),detNormalGlobal.z());
-  cSimHitInfo.detNormal.push_back(detNormal);
-  cSimHitInfo.trackId.push_back(simHit.trackId());
-};
+  void fillSimHitInfo(const PSimHit& simHit) {
+    //
+    // Get the detector unit's id
+    //
+    DetId detId(simHit.detUnitId());
+    unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
+    layer += tTopo->layer(detId);
+    TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
+    // Get the geomdet
+    const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
+    if (!geomDetUnit) {
+      std::cout << "*** did not find geomDetUnit ***" << std::endl;
+      return;
+    }
+    ROOT::Math::XYZPointF localPos(simHit.localPosition().x(),simHit.localPosition().y(),
+				   simHit.localPosition().z());
+    cSimHitInfo.localPos.push_back(localPos);
+    GlobalPoint globalPosition(geomDetUnit->toGlobal(simHit.localPosition()));
+    ROOT::Math::XYZPointF globalPos(globalPosition.x(),globalPosition.y(),globalPosition.z());
+    cSimHitInfo.globalPos.push_back(globalPos);
+    ROOT::Math::XYZVectorF localDir(simHit.localDirection().x(),simHit.localDirection().y(),
+				    simHit.localDirection().z());
+    cSimHitInfo.localDir.push_back(localDir);
+    GlobalVector globalDirection(geomDetUnit->toGlobal(simHit.localDirection()));
+    ROOT::Math::XYZVectorF globalDir(globalDirection.x(),globalDirection.y(),globalDirection.z());
+    cSimHitInfo.globalDir.push_back(globalDir);
+    ROOT::Math::XYZVectorF path(simHit.exitPoint().x()-simHit.entryPoint().x(),
+				simHit.exitPoint().y()-simHit.entryPoint().y(),
+				simHit.exitPoint().z()-simHit.entryPoint().z());
+    cSimHitInfo.path.push_back(path);
+    cSimHitInfo.theta.push_back(simHit.thetaAtEntry());
+    cSimHitInfo.phi.push_back(simHit.phiAtEntry());
+    cSimHitInfo.pabs.push_back(simHit.pabs());
+    cSimHitInfo.tof.push_back(simHit.timeOfFlight());
+    cSimHitInfo.energyLoss.push_back(simHit.energyLoss());
+    cSimHitInfo.processType.push_back(simHit.processType());
+    cSimHitInfo.particleType.push_back(simHit.particleType());
+    cSimHitInfo.layer.push_back(layer);
+    cSimHitInfo.moduleType.push_back((unsigned short)mType);
+    GlobalVector detNormalGlobal(geomDetUnit->toGlobal(LocalVector(0.,0.,1.)));
+    ROOT::Math::XYZVectorF detNormal(detNormalGlobal.x(),detNormalGlobal.y(),detNormalGlobal.z());
+    cSimHitInfo.detNormal.push_back(detNormal);
+    cSimHitInfo.trackId.push_back(simHit.trackId());
+  };
+  
   void clear() {
     cSimHitInfo.localPos.clear();
     cSimHitInfo.globalPos.clear();
@@ -313,12 +313,15 @@ class RecHitTreeWA : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 
     const double simtrackminpt_;
 
+    ClassSimHitInfo classSimHitInfo_;
+  
     TTree* hitTree;
     HitInfo* hitInfo;
     TTree* simHitTree;
     SimHitInfo* simHitInfo;
     TTree* simTrackTree;
     SimTrackInfo* simTrackInfo;
+    TTree* cSimHitTree;
 };
 
 RecHitTreeWA::RecHitTreeWA(const edm::ParameterSet& cfg)
@@ -412,6 +415,10 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
 	std::cout << "*** did not find geomDetUnit ***" << std::endl;
 	continue;
       }
+
+      classSimHitInfo_.setTopology(tTopo);
+      classSimHitInfo_.setGeometry(tkGeom);
+      classSimHitInfo_.fillSimHitInfo(*simhitIt);
       
       fillSimHitInfo<SimHitInfo>(*simHitInfo,*simhitIt,tTopo,tkGeom,true);
       // ROOT::Math::XYZPointF localPos(simhitIt->localPosition().x(),simhitIt->localPosition().y(),
@@ -445,6 +452,7 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
       // simHitInfo->trackId.push_back(simhitIt->trackId());
     }
   }
+  cSimHitTree->Fill();
   simHitTree->Fill();
 
   for (Phase2TrackerRecHit1DCollectionNew::const_iterator DSViter = rechits->begin(); DSViter != rechits->end(); ++DSViter) {
@@ -676,6 +684,8 @@ void RecHitTreeWA::beginJob()
   simHitTree->Branch("detNormal",       &simHitInfo->detNormal);
   simHitTree->Branch("trackId",	&simHitInfo->trackId);
 
+  cSimHitTree = fs->make<TTree>( "cSimHitTree", "cSimHitTree" );
+  classSimHitInfo_.setBranches(*cSimHitTree);
   
   simTrackTree = fs->make<TTree>( "SimTrackTree", "SimTrackTree" );
   simTrackTree->Branch("SimTrack_xTk",         &simTrackInfo->SimTrack_xTk);
@@ -735,6 +745,7 @@ void RecHitTreeWA::initEventStructure()
   hitInfo->detNormal.clear();
   hitInfo->trackId.clear();
 
+  classSimHitInfo_.clear();
   simHitInfo->localPos.clear();
   simHitInfo->globalPos.clear();
   simHitInfo->localDir.clear();
