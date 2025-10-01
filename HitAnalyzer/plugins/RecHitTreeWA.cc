@@ -62,7 +62,6 @@ struct HitInfo
   std::vector<unsigned short> Hit_cluster_column;
   std::vector<unsigned short> Hit_cluster_edge;
   std::vector<unsigned short> Hit_cluster_threshold;
-  std::vector<unsigned short> Hit_cluster_size;
   std::vector<ROOT::Math::XYZPointF> localPos;
   std::vector<ROOT::Math::XYZPointF> globalPos;
   std::vector<ROOT::Math::XYZVectorF> localDir;
@@ -79,7 +78,6 @@ struct HitInfo
   std::vector<unsigned short> moduleType;
   std::vector<ROOT::Math::XYZVectorF> detNormal;
   std::vector<unsigned int> trackId;
-  std::vector<unsigned int> originalTrackId;
 };
 
 struct SimHitInfo
@@ -117,6 +115,55 @@ struct SimTrackInfo
   std::vector<int> SimTrack_type;
   std::vector<int> SimTrack_charge;
   std::vector<int> SimTrack_trackInfo;
+};
+
+template <class S>
+void fillSimHitInfo(S& hitstruct, const PSimHit& simHit, const TrackerTopology* tTopo,
+		    const TrackerGeometry* tkGeom, bool extended) {
+  //
+  // Get the detector unit's id
+  //
+  DetId detId(simHit.detUnitId());
+  unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
+  layer += tTopo->layer(detId);
+  TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
+  // Get the geomdet
+  const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
+  if (!geomDetUnit) {
+	std::cout << "*** did not find geomDetUnit ***" << std::endl;
+	return;
+  }
+  ROOT::Math::XYZPointF localPos(simHit.localPosition().x(),simHit.localPosition().y(),
+				 simHit.localPosition().z());
+  hitstruct.localPos.push_back(localPos);
+  GlobalPoint globalPosition(geomDetUnit->toGlobal(simHit.localPosition()));
+  ROOT::Math::XYZPointF globalPos(globalPosition.x(),globalPosition.y(),globalPosition.z());
+  hitstruct.globalPos.push_back(globalPos);
+  ROOT::Math::XYZVectorF localDir(simHit.localDirection().x(),simHit.localDirection().y(),
+				  simHit.localDirection().z());
+  hitstruct.localDir.push_back(localDir);
+  GlobalVector globalDirection(geomDetUnit->toGlobal(simHit.localDirection()));
+  ROOT::Math::XYZVectorF globalDir(globalDirection.x(),globalDirection.y(),globalDirection.z());
+  hitstruct.globalDir.push_back(globalDir);
+  ROOT::Math::XYZVectorF path(simHit.exitPoint().x()-simHit.entryPoint().x(),
+			      simHit.exitPoint().y()-simHit.entryPoint().y(),
+			      simHit.exitPoint().z()-simHit.entryPoint().z());
+  hitstruct.path.push_back(path);
+  hitstruct.theta.push_back(simHit.thetaAtEntry());
+  hitstruct.phi.push_back(simHit.phiAtEntry());
+  hitstruct.pabs.push_back(simHit.pabs());
+  hitstruct.tof.push_back(simHit.timeOfFlight());
+  hitstruct.energyLoss.push_back(simHit.energyLoss());
+  hitstruct.processType.push_back(simHit.processType());
+  hitstruct.particleType.push_back(simHit.particleType());
+  hitstruct.layer.push_back(layer);
+  hitstruct.moduleType.push_back((unsigned short)mType);
+  GlobalVector detNormalGlobal(geomDetUnit->toGlobal(LocalVector(0.,0.,1.)));
+  ROOT::Math::XYZVectorF detNormal(detNormalGlobal.x(),detNormalGlobal.y(),detNormalGlobal.z());
+  hitstruct.detNormal.push_back(detNormal);
+  hitstruct.trackId.push_back(simHit.trackId());
+  if ( extended )
+    hitstruct.originalTrackId.push_back(simHit.originalTrackId());
 };
 
 class RecHitTreeWA : public edm::one::EDAnalyzer<edm::one::SharedResources> {
@@ -241,36 +288,37 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
 	continue;
       }
       
-      ROOT::Math::XYZPointF localPos(simhitIt->localPosition().x(),simhitIt->localPosition().y(),
-				     simhitIt->localPosition().z());
-      simHitInfo->localPos.push_back(localPos);
-      GlobalPoint globalPosition(geomDetUnit->toGlobal(simhitIt->localPosition()));
-      ROOT::Math::XYZPointF globalPos(globalPosition.x(),globalPosition.y(),globalPosition.z());
-      simHitInfo->globalPos.push_back(globalPos);
-      ROOT::Math::XYZVectorF localDir(simhitIt->localDirection().x(),simhitIt->localDirection().y(),
-				      simhitIt->localDirection().z());
-      simHitInfo->localDir.push_back(localDir);
-      GlobalVector globalDirection(geomDetUnit->toGlobal(simhitIt->localDirection()));
-      ROOT::Math::XYZVectorF globalDir(globalDirection.x(),globalDirection.y(),globalDirection.z());
-      simHitInfo->globalDir.push_back(globalDir);
-      ROOT::Math::XYZVectorF path(simhitIt->exitPoint().x()-simhitIt->entryPoint().x(),
-				  simhitIt->exitPoint().y()-simhitIt->entryPoint().y(),
-				  simhitIt->exitPoint().z()-simhitIt->entryPoint().z());
-      simHitInfo->path.push_back(path);
-      simHitInfo->theta.push_back(simhitIt->thetaAtEntry());
-      simHitInfo->phi.push_back(simhitIt->phiAtEntry());
-      simHitInfo->pabs.push_back(simhitIt->pabs());
-      simHitInfo->tof.push_back(simhitIt->timeOfFlight());
-      simHitInfo->energyLoss.push_back(simhitIt->energyLoss());
-      simHitInfo->processType.push_back(simhitIt->processType());
-      simHitInfo->particleType.push_back(simhitIt->particleType());
-      simHitInfo->layer.push_back(layer);
-      simHitInfo->moduleType.push_back((unsigned short)mType);
-      GlobalVector detNormalGlobal(geomDetUnit->toGlobal(LocalVector(0.,0.,1.)));
-      ROOT::Math::XYZVectorF detNormal(detNormalGlobal.x(),detNormalGlobal.y(),detNormalGlobal.z());
-      simHitInfo->detNormal.push_back(detNormal);
-      simHitInfo->trackId.push_back(simhitIt->trackId());
-      simHitInfo->originalTrackId.push_back(simhitIt->originalTrackId());
+      fillSimHitInfo<SimHitInfo>(*simHitInfo,*simhitIt,tTopo,tkGeom,true);
+      // ROOT::Math::XYZPointF localPos(simhitIt->localPosition().x(),simhitIt->localPosition().y(),
+      // 				     simhitIt->localPosition().z());
+      // simHitInfo->localPos.push_back(localPos);
+      // GlobalPoint globalPosition(geomDetUnit->toGlobal(simhitIt->localPosition()));
+      // ROOT::Math::XYZPointF globalPos(globalPosition.x(),globalPosition.y(),globalPosition.z());
+      // simHitInfo->globalPos.push_back(globalPos);
+      // ROOT::Math::XYZVectorF localDir(simhitIt->localDirection().x(),simhitIt->localDirection().y(),
+      // 				      simhitIt->localDirection().z());
+      // simHitInfo->localDir.push_back(localDir);
+      // GlobalVector globalDirection(geomDetUnit->toGlobal(simhitIt->localDirection()));
+      // ROOT::Math::XYZVectorF globalDir(globalDirection.x(),globalDirection.y(),globalDirection.z());
+      // simHitInfo->globalDir.push_back(globalDir);
+      // ROOT::Math::XYZVectorF path(simhitIt->exitPoint().x()-simhitIt->entryPoint().x(),
+      // 				  simhitIt->exitPoint().y()-simhitIt->entryPoint().y(),
+      // 				  simhitIt->exitPoint().z()-simhitIt->entryPoint().z());
+      // simHitInfo->path.push_back(path);
+      // simHitInfo->theta.push_back(simhitIt->thetaAtEntry());
+      // simHitInfo->phi.push_back(simhitIt->phiAtEntry());
+      // simHitInfo->pabs.push_back(simhitIt->pabs());
+      // simHitInfo->tof.push_back(simhitIt->timeOfFlight());
+      // simHitInfo->energyLoss.push_back(simhitIt->energyLoss());
+      // simHitInfo->processType.push_back(simhitIt->processType());
+      // simHitInfo->particleType.push_back(simhitIt->particleType());
+      // simHitInfo->layer.push_back(layer);
+      // simHitInfo->moduleType.push_back((unsigned short)mType);
+      // GlobalVector detNormalGlobal(geomDetUnit->toGlobal(LocalVector(0.,0.,1.)));
+      // ROOT::Math::XYZVectorF detNormal(detNormalGlobal.x(),detNormalGlobal.y(),detNormalGlobal.z());
+      // simHitInfo->detNormal.push_back(detNormal);
+      // simHitInfo->trackId.push_back(simhitIt->trackId());
+      // simHitInfo->originalTrackId.push_back(simhitIt->originalTrackId());
     }
   }
   simHitTree->Fill();
@@ -403,36 +451,37 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
         hitInfo->Hit_cluster_closestSimHit_local_x.push_back(simhit->localPosition().x());
         hitInfo->Hit_cluster_closestSimHit_local_y.push_back(simhit->localPosition().y());
         hitInfo->Hit_cluster_closestSimHit_local_z.push_back(simhit->localPosition().z());
-	ROOT::Math::XYZPointF localPos(simhit->localPosition().x(),simhit->localPosition().y(),
-				       simhit->localPosition().z());
-	hitInfo->localPos.push_back(localPos);
-	GlobalPoint globalPosition(geomDetUnit->toGlobal(simhit->localPosition()));
-	ROOT::Math::XYZPointF globalPos(globalPosition.x(),globalPosition.y(),globalPosition.z());
-	hitInfo->globalPos.push_back(globalPos);
-	ROOT::Math::XYZVectorF localDir(simhit->localDirection().x(),simhit->localDirection().y(),
-					simhit->localDirection().z());
-	hitInfo->localDir.push_back(localDir);
-	GlobalVector globalDirection(geomDetUnit->toGlobal(simhit->localDirection()));
-	ROOT::Math::XYZVectorF globalDir(globalDirection.x(),globalDirection.y(),globalDirection.z());
-	hitInfo->globalDir.push_back(globalDir);
-	ROOT::Math::XYZVectorF path(simhit->exitPoint().x()-simhit->entryPoint().x(),
-				    simhit->exitPoint().y()-simhit->entryPoint().y(),
-				    simhit->exitPoint().z()-simhit->entryPoint().z());
-	hitInfo->path.push_back(path);
-	hitInfo->theta.push_back(simhit->thetaAtEntry());
-	hitInfo->phi.push_back(simhit->phiAtEntry());
-	hitInfo->pabs.push_back(simhit->pabs());
-	hitInfo->tof.push_back(simhit->timeOfFlight());
-	hitInfo->energyLoss.push_back(simhit->energyLoss());
-	hitInfo->processType.push_back(simhit->processType());
-	hitInfo->particleType.push_back(simhit->particleType());
-	hitInfo->layer.push_back(layer);
-	hitInfo->moduleType.push_back((unsigned short)mType);
-	GlobalVector detNormalGlobal(geomDetUnit->toGlobal(LocalVector(0.,0.,1.)));
-	ROOT::Math::XYZVectorF detNormal(detNormalGlobal.x(),detNormalGlobal.y(),detNormalGlobal.z());
-	hitInfo->detNormal.push_back(detNormal);
-	hitInfo->trackId.push_back(simhit->trackId());
-	hitInfo->originalTrackId.push_back(simhit->originalTrackId());
+	fillSimHitInfo<HitInfo>(*simHitInfo,*simhit,tTopo,tkGeom,false);
+	// ROOT::Math::XYZPointF localPos(simhit->localPosition().x(),simhit->localPosition().y(),
+	// 			       simhit->localPosition().z());
+	// hitInfo->localPos.push_back(localPos);
+	// GlobalPoint globalPosition(geomDetUnit->toGlobal(simhit->localPosition()));
+	// ROOT::Math::XYZPointF globalPos(globalPosition.x(),globalPosition.y(),globalPosition.z());
+	// hitInfo->globalPos.push_back(globalPos);
+	// ROOT::Math::XYZVectorF localDir(simhit->localDirection().x(),simhit->localDirection().y(),
+	// 				simhit->localDirection().z());
+	// hitInfo->localDir.push_back(localDir);
+	// GlobalVector globalDirection(geomDetUnit->toGlobal(simhit->localDirection()));
+	// ROOT::Math::XYZVectorF globalDir(globalDirection.x(),globalDirection.y(),globalDirection.z());
+	// hitInfo->globalDir.push_back(globalDir);
+	// ROOT::Math::XYZVectorF path(simhit->exitPoint().x()-simhit->entryPoint().x(),
+	// 			    simhit->exitPoint().y()-simhit->entryPoint().y(),
+	// 			    simhit->exitPoint().z()-simhit->entryPoint().z());
+	// hitInfo->path.push_back(path);
+	// hitInfo->theta.push_back(simhit->thetaAtEntry());
+	// hitInfo->phi.push_back(simhit->phiAtEntry());
+	// hitInfo->pabs.push_back(simhit->pabs());
+	// hitInfo->tof.push_back(simhit->timeOfFlight());
+	// hitInfo->energyLoss.push_back(simhit->energyLoss());
+	// hitInfo->processType.push_back(simhit->processType());
+	// hitInfo->particleType.push_back(simhit->particleType());
+	// hitInfo->layer.push_back(layer);
+	// hitInfo->moduleType.push_back((unsigned short)mType);
+	// GlobalVector detNormalGlobal(geomDetUnit->toGlobal(LocalVector(0.,0.,1.)));
+	// ROOT::Math::XYZVectorF detNormal(detNormalGlobal.x(),detNormalGlobal.y(),detNormalGlobal.z());
+	// hitInfo->detNormal.push_back(detNormal);
+	// hitInfo->trackId.push_back(simhit->trackId());
+	// hitInfo->originalTrackId.push_back(simhit->originalTrackId());
       }
       hitInfo->Hit_det_rawid.push_back(rawid);
       hitInfo->Hit_cluster_firstStrip.push_back(clustIt->firstStrip());
@@ -440,7 +489,6 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
       hitInfo->Hit_cluster_column.push_back(clustIt->column());
       hitInfo->Hit_cluster_edge.push_back(clustIt->edge());
       hitInfo->Hit_cluster_threshold.push_back(clustIt->threshold());
-      hitInfo->Hit_cluster_size.push_back(clustIt->size());
     }
   }
   hitTree->Fill();
@@ -471,7 +519,6 @@ void RecHitTreeWA::beginJob()
   hitTree->Branch("Hit_cluster_column",                     &hitInfo->Hit_cluster_column);
   hitTree->Branch("Hit_cluster_edge",                       &hitInfo->Hit_cluster_edge);
   hitTree->Branch("Hit_cluster_threshold",                  &hitInfo->Hit_cluster_threshold);
-  hitTree->Branch("Hit_cluster_size",                  &hitInfo->Hit_cluster_size);
   hitTree->Branch("localPos",	&hitInfo->localPos);
   hitTree->Branch("globalPos",	&hitInfo->globalPos);
   hitTree->Branch("localDir",	&hitInfo->localDir);
@@ -550,7 +597,6 @@ void RecHitTreeWA::initEventStructure()
   hitInfo->Hit_cluster_column.clear();
   hitInfo->Hit_cluster_edge.clear();
   hitInfo->Hit_cluster_threshold.clear();
-  hitInfo->Hit_cluster_size.clear();
   hitInfo->localPos.clear();
   hitInfo->globalPos.clear();
   hitInfo->localDir.clear();
