@@ -291,7 +291,7 @@ class RecHitTreeWA : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 
     const double simtrackminpt_;
 
-    SimHitInfo* simHitInfo_;
+    SimHitInfo simHitInfo_;
   
     TTree* hitTree;
     RecHitInfo* hitInfo;
@@ -313,7 +313,7 @@ RecHitTreeWA::RecHitTreeWA(const edm::ParameterSet& cfg)
 {
   hitInfo = new RecHitInfo;
   simTrackInfo = new SimTrackInfo;
-  simHitInfo_ = new SimHitInfo();
+  //simHitInfo_ = new SimHitInfo();
 }
 
 void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& eventSetup) {
@@ -392,9 +392,9 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
 	continue;
       }
 
-      simHitInfo_->setTopology(tTopo);
-      simHitInfo_->setGeometry(tkGeom);
-      simHitInfo_->fillSimHitInfo(*simhitIt);
+      simHitInfo_.setTopology(tTopo);
+      simHitInfo_.setGeometry(tkGeom);
+      simHitInfo_.fillSimHitInfo(*simhitIt);
       
     }
   }
@@ -612,7 +612,7 @@ void RecHitTreeWA::beginJob()
   hitTree->Branch("trackId",	&hitInfo->trackId);
 
   cSimHitTree = fs->make<TTree>( "cSimHitTree", "cSimHitTree" );
-  simHitInfo_->setBranches(*cSimHitTree);
+  simHitInfo_.setBranches(*cSimHitTree);
   
   simTrackTree = fs->make<TTree>( "SimTrackTree", "SimTrackTree" );
   simTrackTree->Branch("SimTrack_xTk",         &simTrackInfo->SimTrack_xTk);
@@ -672,7 +672,7 @@ void RecHitTreeWA::initEventStructure()
   hitInfo->detNormal.clear();
   hitInfo->trackId.clear();
 
-  simHitInfo_->clear();
+  simHitInfo_.clear();
 
   simTrackInfo->SimTrack_xTk.clear();
   simTrackInfo->SimTrack_yTk.clear();
