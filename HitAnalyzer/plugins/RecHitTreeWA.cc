@@ -38,27 +38,28 @@
 #include "DataFormats/Math/interface/Point3D.h"
 #include "DataFormats/Math/interface/Vector3D.h"
 
+#include "UserAnalysis/HitAnalyzer/interface/SimTrackInfo.h"
 #include "UserAnalysis/HitAnalyzer/interface/SimHitInfo.h"
 #include "UserAnalysis/HitAnalyzer/interface/RecHitInfo.h"
 
 #include "TTree.h"
 
 
-struct SimTrackInfo
-{
-  std::vector<float> SimTrack_xTk;
-  std::vector<float> SimTrack_yTk;
-  std::vector<float> SimTrack_zTk;
-  std::vector<float> SimTrack_ptTk;
-  std::vector<float> SimTrack_etaTk;
-  std::vector<float> SimTrack_phiTk;
-  std::vector<float> SimTrack_pt;
-  std::vector<float> SimTrack_eta;
-  std::vector<float> SimTrack_phi;
-  std::vector<int> SimTrack_type;
-  std::vector<int> SimTrack_charge;
-  std::vector<int> SimTrack_trackInfo;
-};
+// struct SimTrackInfo
+// {
+//   std::vector<float> SimTrack_xTk;
+//   std::vector<float> SimTrack_yTk;
+//   std::vector<float> SimTrack_zTk;
+//   std::vector<float> SimTrack_ptTk;
+//   std::vector<float> SimTrack_etaTk;
+//   std::vector<float> SimTrack_phiTk;
+//   std::vector<float> SimTrack_pt;
+//   std::vector<float> SimTrack_eta;
+//   std::vector<float> SimTrack_phi;
+//   std::vector<int> SimTrack_type;
+//   std::vector<int> SimTrack_charge;
+//   std::vector<int> SimTrack_trackInfo;
+// };
 
 // template <class S>
 // void fillSimHitInfo(S& hitstruct, const PSimHit& simHit, const TrackerTopology* tTopo,
@@ -132,11 +133,11 @@ class RecHitTreeWA : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 
     SimHitInfo simHitInfo_;
     RecHitInfo recHitInfo_;
+    SimTrackInfo simTrackInfo_;
   
-    TTree* hitTree;
+    TTree* recHitTree;
     TTree* simTrackTree;
-    SimTrackInfo* simTrackInfo;
-    TTree* cSimHitTree;
+    TTree* simHitTree;
 };
 
 RecHitTreeWA::RecHitTreeWA(const edm::ParameterSet& cfg)
@@ -151,7 +152,7 @@ RecHitTreeWA::RecHitTreeWA(const edm::ParameterSet& cfg)
     simtrackminpt_(cfg.getParameter<double>("SimTrackMinPt"))
 {
   //recHitInfo_ = new RecHitInfo;
-  simTrackInfo = new SimTrackInfo;
+  //simTrackInfo = new SimTrackInfo;
   //simHitInfo_ = new SimHitInfo();
 }
 
@@ -195,18 +196,19 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
     if (simTrackIt->momentum().pt() > simtrackminpt_) {
       simTracks.insert(std::pair<unsigned int, SimTrack>(simTrackIt->trackId(), *simTrackIt));
     }
-    simTrackInfo->SimTrack_xTk.push_back(simTrackIt->trackerSurfacePosition().x());
-    simTrackInfo->SimTrack_yTk.push_back(simTrackIt->trackerSurfacePosition().y());
-    simTrackInfo->SimTrack_zTk.push_back(simTrackIt->trackerSurfacePosition().z());
-    simTrackInfo->SimTrack_ptTk.push_back(simTrackIt->trackerSurfaceMomentum().pt());
-    simTrackInfo->SimTrack_etaTk.push_back(simTrackIt->trackerSurfaceMomentum().eta());
-    simTrackInfo->SimTrack_phiTk.push_back(simTrackIt->trackerSurfaceMomentum().phi());
-    simTrackInfo->SimTrack_pt.push_back(simTrackIt->momentum().pt());
-    simTrackInfo->SimTrack_eta.push_back(simTrackIt->momentum().eta());
-    simTrackInfo->SimTrack_phi.push_back(simTrackIt->momentum().phi());
-    simTrackInfo->SimTrack_type.push_back(simTrackIt->type());
-    simTrackInfo->SimTrack_charge.push_back(simTrackIt->charge());
-    simTrackInfo->SimTrack_trackInfo.push_back(simTrackIt->getTrackInfo());
+    simTrackInfo_.fillSimTrackInfo(*simTrackIt);
+    // simTrackInfo->SimTrack_xTk.push_back(simTrackIt->trackerSurfacePosition().x());
+    // simTrackInfo->SimTrack_yTk.push_back(simTrackIt->trackerSurfacePosition().y());
+    // simTrackInfo->SimTrack_zTk.push_back(simTrackIt->trackerSurfacePosition().z());
+    // simTrackInfo->SimTrack_ptTk.push_back(simTrackIt->trackerSurfaceMomentum().pt());
+    // simTrackInfo->SimTrack_etaTk.push_back(simTrackIt->trackerSurfaceMomentum().eta());
+    // simTrackInfo->SimTrack_phiTk.push_back(simTrackIt->trackerSurfaceMomentum().phi());
+    // simTrackInfo->SimTrack_pt.push_back(simTrackIt->momentum().pt());
+    // simTrackInfo->SimTrack_eta.push_back(simTrackIt->momentum().eta());
+    // simTrackInfo->SimTrack_phi.push_back(simTrackIt->momentum().phi());
+    // simTrackInfo->SimTrack_type.push_back(simTrackIt->type());
+    // simTrackInfo->SimTrack_charge.push_back(simTrackIt->charge());
+    // simTrackInfo->SimTrack_trackInfo.push_back(simTrackIt->getTrackInfo());
   }
   simTrackTree->Fill();
 
@@ -237,7 +239,7 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
       
     }
   }
-  cSimHitTree->Fill();
+  simHitTree->Fill();
 
   for (Phase2TrackerRecHit1DCollectionNew::const_iterator DSViter = rechits->begin();
        DSViter != rechits->end(); ++DSViter) {
@@ -278,31 +280,32 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
       recHitInfo_.fillRecHitInfo(*rechitIt,rawid,geomDetUnit,&pixelSimLinks,simTracks,simHitsRaw);
     }
   }
-  hitTree->Fill();
+  recHitTree->Fill();
 }
 
 void RecHitTreeWA::beginJob()
 {
   edm::Service<TFileService> fs;
-  hitTree = fs->make<TTree>( "HitTree", "HitTree" );
-  recHitInfo_.setBranches(*hitTree);
+  recHitTree = fs->make<TTree>( "RecHitTree", "RecHitTree" );
+  recHitInfo_.setBranches(*recHitTree);
 
-  cSimHitTree = fs->make<TTree>( "cSimHitTree", "cSimHitTree" );
-  simHitInfo_.setBranches(*cSimHitTree);
+  simHitTree = fs->make<TTree>( "SimHitTree", "SimHitTree" );
+  simHitInfo_.setBranches(*simHitTree);
   
   simTrackTree = fs->make<TTree>( "SimTrackTree", "SimTrackTree" );
-  simTrackTree->Branch("SimTrack_xTk",         &simTrackInfo->SimTrack_xTk);
-  simTrackTree->Branch("SimTrack_yTk",         &simTrackInfo->SimTrack_yTk);
-  simTrackTree->Branch("SimTrack_zTk",         &simTrackInfo->SimTrack_zTk);
-  simTrackTree->Branch("SimTrack_ptTk",        &simTrackInfo->SimTrack_ptTk);
-  simTrackTree->Branch("SimTrack_etaTk",       &simTrackInfo->SimTrack_etaTk);
-  simTrackTree->Branch("SimTrack_phiTk",       &simTrackInfo->SimTrack_phiTk);
-  simTrackTree->Branch("SimTrack_pt",        &simTrackInfo->SimTrack_pt);
-  simTrackTree->Branch("SimTrack_eta",       &simTrackInfo->SimTrack_eta);
-  simTrackTree->Branch("SimTrack_phi",       &simTrackInfo->SimTrack_phi);
-  simTrackTree->Branch("SimTrack_type",      &simTrackInfo->SimTrack_type);
-  simTrackTree->Branch("SimTrack_charge",    &simTrackInfo->SimTrack_charge);
-  simTrackTree->Branch("SimTrack_trackInfo", &simTrackInfo->SimTrack_trackInfo);
+  simTrackInfo_.setBranches(*simTrackTree);
+  // simTrackTree->Branch("SimTrack_xTk",         &simTrackInfo->SimTrack_xTk);
+  // simTrackTree->Branch("SimTrack_yTk",         &simTrackInfo->SimTrack_yTk);
+  // simTrackTree->Branch("SimTrack_zTk",         &simTrackInfo->SimTrack_zTk);
+  // simTrackTree->Branch("SimTrack_ptTk",        &simTrackInfo->SimTrack_ptTk);
+  // simTrackTree->Branch("SimTrack_etaTk",       &simTrackInfo->SimTrack_etaTk);
+  // simTrackTree->Branch("SimTrack_phiTk",       &simTrackInfo->SimTrack_phiTk);
+  // simTrackTree->Branch("SimTrack_pt",        &simTrackInfo->SimTrack_pt);
+  // simTrackTree->Branch("SimTrack_eta",       &simTrackInfo->SimTrack_eta);
+  // simTrackTree->Branch("SimTrack_phi",       &simTrackInfo->SimTrack_phi);
+  // simTrackTree->Branch("SimTrack_type",      &simTrackInfo->SimTrack_type);
+  // simTrackTree->Branch("SimTrack_charge",    &simTrackInfo->SimTrack_charge);
+  // simTrackTree->Branch("SimTrack_trackInfo", &simTrackInfo->SimTrack_trackInfo);
 
 }
 
@@ -315,18 +318,19 @@ void RecHitTreeWA::initEventStructure()
 
   simHitInfo_.clear();
 
-  simTrackInfo->SimTrack_xTk.clear();
-  simTrackInfo->SimTrack_yTk.clear();
-  simTrackInfo->SimTrack_zTk.clear();
-  simTrackInfo->SimTrack_ptTk.clear();
-  simTrackInfo->SimTrack_etaTk.clear();
-  simTrackInfo->SimTrack_phiTk.clear();
-  simTrackInfo->SimTrack_pt.clear();
-  simTrackInfo->SimTrack_eta.clear();
-  simTrackInfo->SimTrack_phi.clear();
-  simTrackInfo->SimTrack_type.clear();
-  simTrackInfo->SimTrack_charge.clear();
-  simTrackInfo->SimTrack_trackInfo.clear();
+  simTrackInfo_.clear();
+  // simTrackInfo->SimTrack_xTk.clear();
+  // simTrackInfo->SimTrack_yTk.clear();
+  // simTrackInfo->SimTrack_zTk.clear();
+  // simTrackInfo->SimTrack_ptTk.clear();
+  // simTrackInfo->SimTrack_etaTk.clear();
+  // simTrackInfo->SimTrack_phiTk.clear();
+  // simTrackInfo->SimTrack_pt.clear();
+  // simTrackInfo->SimTrack_eta.clear();
+  // simTrackInfo->SimTrack_phi.clear();
+  // simTrackInfo->SimTrack_type.clear();
+  // simTrackInfo->SimTrack_charge.clear();
+  // simTrackInfo->SimTrack_trackInfo.clear();
 
 }
 

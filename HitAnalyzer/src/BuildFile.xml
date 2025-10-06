@@ -6,6 +6,7 @@
 <use name="Geometry/CommonDetUnit"/>
 <use name="Geometry/TrackerGeometryBuilder"/>
 <use name="SimDataFormats/TrackingHit"/>
+<use name="SimDataFormats/Track"/>
 <use name="root"/>
 <export>
    <lib name="1"/>
