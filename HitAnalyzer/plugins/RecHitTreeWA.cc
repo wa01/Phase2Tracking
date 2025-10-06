@@ -39,174 +39,50 @@
 #include "DataFormats/Math/interface/Vector3D.h"
 
 #include "UserAnalysis/HitAnalyzer/interface/SimHitInfo.h"
+#include "UserAnalysis/HitAnalyzer/interface/RecHitInfo.h"
 
 #include "TTree.h"
 
-// class SimHitInfo {
 
-// public:
-//   struct SimHitData {
-//     std::vector<ROOT::Math::XYZPointF> localPos;
-//     std::vector<ROOT::Math::XYZPointF> globalPos;
-//     std::vector<ROOT::Math::XYZVectorF> localDir;
-//     std::vector<ROOT::Math::XYZVectorF> globalDir;
-//     std::vector<ROOT::Math::XYZVectorF> path;
-//     std::vector<float> theta;
-//     std::vector<float> phi;
-//     std::vector<float> pabs;
-//     std::vector<float> tof;
-//     std::vector<float> energyLoss;
-//     std::vector<unsigned short> processType;
-//     std::vector<int>   particleType;
-//     std::vector<unsigned short> layer;
-//     std::vector<unsigned short> moduleType;
-//     std::vector<ROOT::Math::XYZVectorF> detNormal;
-//     std::vector<unsigned int> trackId;
-//   };
-//   SimHitData simHitData;
-
-//   SimHitInfo() {
-//     tTopo = 0;
-//     tkGeom = 0;
-//   };
-
-//   ~SimHitInfo() {}
-
-//   void setBranches(TTree& tree) {
-//     tree.Branch("localPos",&simHitData.localPos);
-//     tree.Branch("globalPos",&simHitData.globalPos);
-//     tree.Branch("localDir",&simHitData.localDir);
-//     tree.Branch("globalDir",&simHitData.globalDir);
-//     tree.Branch("path",&simHitData.path);
-//     tree.Branch("theta",&simHitData.theta);
-//     tree.Branch("phi",&simHitData.phi);
-//     tree.Branch("pabs",&simHitData.pabs);
-//     tree.Branch("tof",&simHitData.tof);
-//     tree.Branch("energyLoss",&simHitData.energyLoss);
-//     tree.Branch("processType",&simHitData.processType);
-//     tree.Branch("particleType",&simHitData.particleType);
-//     tree.Branch("layer",&simHitData.layer);
-//     tree.Branch("moduleType",&simHitData.moduleType);
-//     tree.Branch("detNormal",&simHitData.detNormal);
-//     tree.Branch("trackId",&simHitData.trackId);
-//   };
-  
-//   void fillSimHitInfo(const PSimHit& simHit) {
-//     //
-//     // Get the detector unit's id
-//     //
-//     DetId detId(simHit.detUnitId());
-//     unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
-//     layer += tTopo->layer(detId);
-//     TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
-//     // Get the geomdet
-//     const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
-//     if (!geomDetUnit) {
-//       std::cout << "*** did not find geomDetUnit ***" << std::endl;
-//       return;
-//     }
-//     ROOT::Math::XYZPointF localPos(simHit.localPosition().x(),simHit.localPosition().y(),
-// 				   simHit.localPosition().z());
-//     simHitData.localPos.push_back(localPos);
-//     GlobalPoint globalPosition(geomDetUnit->toGlobal(simHit.localPosition()));
-//     ROOT::Math::XYZPointF globalPos(globalPosition.x(),globalPosition.y(),globalPosition.z());
-//     simHitData.globalPos.push_back(globalPos);
-//     ROOT::Math::XYZVectorF localDir(simHit.localDirection().x(),simHit.localDirection().y(),
-// 				    simHit.localDirection().z());
-//     simHitData.localDir.push_back(localDir);
-//     GlobalVector globalDirection(geomDetUnit->toGlobal(simHit.localDirection()));
-//     ROOT::Math::XYZVectorF globalDir(globalDirection.x(),globalDirection.y(),globalDirection.z());
-//     simHitData.globalDir.push_back(globalDir);
-//     ROOT::Math::XYZVectorF path(simHit.exitPoint().x()-simHit.entryPoint().x(),
-// 				simHit.exitPoint().y()-simHit.entryPoint().y(),
-// 				simHit.exitPoint().z()-simHit.entryPoint().z());
-//     simHitData.path.push_back(path);
-//     simHitData.theta.push_back(simHit.thetaAtEntry());
-//     simHitData.phi.push_back(simHit.phiAtEntry());
-//     simHitData.pabs.push_back(simHit.pabs());
-//     simHitData.tof.push_back(simHit.timeOfFlight());
-//     simHitData.energyLoss.push_back(simHit.energyLoss());
-//     simHitData.processType.push_back(simHit.processType());
-//     simHitData.particleType.push_back(simHit.particleType());
-//     simHitData.layer.push_back(layer);
-//     simHitData.moduleType.push_back((unsigned short)mType);
-//     GlobalVector detNormalGlobal(geomDetUnit->toGlobal(LocalVector(0.,0.,1.)));
-//     ROOT::Math::XYZVectorF detNormal(detNormalGlobal.x(),detNormalGlobal.y(),detNormalGlobal.z());
-//     simHitData.detNormal.push_back(detNormal);
-//     simHitData.trackId.push_back(simHit.trackId());
-//   };
-  
-//   void clear() {
-//     simHitData.localPos.clear();
-//     simHitData.globalPos.clear();
-//     simHitData.localDir.clear();
-//     simHitData.globalDir.clear();
-//     simHitData.path.clear();
-//     simHitData.theta.clear();
-//     simHitData.phi.clear();
-//     simHitData.pabs.clear();
-//     simHitData.tof.clear();
-//     simHitData.energyLoss.clear();
-//     simHitData.processType.clear();
-//     simHitData.particleType.clear();
-//     simHitData.layer.clear();
-//     simHitData.moduleType.clear();
-//     simHitData.detNormal.clear();
-//     simHitData.trackId.clear();
-//   };
-  
-//   void setTopology(const TrackerTopology* topo) {
-//     tTopo = topo;
-//   }
-
-//   void setGeometry(const TrackerGeometry* geom) {
-//     tkGeom = geom;
-//   }  
-  
-// private:
-//   const TrackerTopology* tTopo;
-//   const TrackerGeometry* tkGeom;
+// struct RecHitInfo
+// {
+//   std::vector<float> Hit_cluster_global_x;
+//   std::vector<float> Hit_cluster_global_y;
+//   std::vector<float> Hit_cluster_global_z;
+//   std::vector<unsigned short> Hit_layer;
+//   std::vector<unsigned short> Hit_ModuleType;
+//   std::vector<unsigned short> Hit_cluster_size;
+//   std::vector<int> Hit_cluster_SimTrack_size;
+//   std::vector<float> Hit_cluster_local_x;
+//   std::vector<float> Hit_cluster_local_y;
+//   std::vector<float> Hit_cluster_local_z;
+//   std::vector<bool> Hit_cluster_haveSimHit;
+//   std::vector<float> Hit_cluster_closestSimHit_local_x;
+//   std::vector<float> Hit_cluster_closestSimHit_local_y;
+//   std::vector<float> Hit_cluster_closestSimHit_local_z;
+//   std::vector<unsigned int> Hit_det_rawid;
+//   std::vector<unsigned short> Hit_cluster_firstStrip;
+//   std::vector<unsigned short> Hit_cluster_firstRow;
+//   std::vector<unsigned short> Hit_cluster_column;
+//   std::vector<unsigned short> Hit_cluster_edge;
+//   std::vector<unsigned short> Hit_cluster_threshold;
+//   std::vector<ROOT::Math::XYZPointF> localPos;
+//   std::vector<ROOT::Math::XYZPointF> globalPos;
+//   std::vector<ROOT::Math::XYZVectorF> localDir;
+//   std::vector<ROOT::Math::XYZVectorF> globalDir;
+//   std::vector<ROOT::Math::XYZVectorF> path;
+//   std::vector<float> theta;
+//   std::vector<float> phi;
+//   std::vector<float> pabs;
+//   std::vector<float> tof;
+//   std::vector<float> energyLoss;
+//   std::vector<unsigned short> processType;
+//   std::vector<int>   particleType;
+//   std::vector<unsigned short> layer;
+//   std::vector<unsigned short> moduleType;
+//   std::vector<ROOT::Math::XYZVectorF> detNormal;
+//   std::vector<unsigned int> trackId;
 // };
-
-struct RecHitInfo
-{
-  std::vector<float> Hit_cluster_global_x;
-  std::vector<float> Hit_cluster_global_y;
-  std::vector<float> Hit_cluster_global_z;
-  std::vector<unsigned short> Hit_layer;
-  std::vector<unsigned short> Hit_ModuleType;
-  std::vector<unsigned short> Hit_cluster_size;
-  std::vector<int> Hit_cluster_SimTrack_size;
-  std::vector<float> Hit_cluster_local_x;
-  std::vector<float> Hit_cluster_local_y;
-  std::vector<float> Hit_cluster_local_z;
-  std::vector<bool> Hit_cluster_haveSimHit;
-  std::vector<float> Hit_cluster_closestSimHit_local_x;
-  std::vector<float> Hit_cluster_closestSimHit_local_y;
-  std::vector<float> Hit_cluster_closestSimHit_local_z;
-  std::vector<unsigned int> Hit_det_rawid;
-  std::vector<unsigned short> Hit_cluster_firstStrip;
-  std::vector<unsigned short> Hit_cluster_firstRow;
-  std::vector<unsigned short> Hit_cluster_column;
-  std::vector<unsigned short> Hit_cluster_edge;
-  std::vector<unsigned short> Hit_cluster_threshold;
-  std::vector<ROOT::Math::XYZPointF> localPos;
-  std::vector<ROOT::Math::XYZPointF> globalPos;
-  std::vector<ROOT::Math::XYZVectorF> localDir;
-  std::vector<ROOT::Math::XYZVectorF> globalDir;
-  std::vector<ROOT::Math::XYZVectorF> path;
-  std::vector<float> theta;
-  std::vector<float> phi;
-  std::vector<float> pabs;
-  std::vector<float> tof;
-  std::vector<float> energyLoss;
-  std::vector<unsigned short> processType;
-  std::vector<int>   particleType;
-  std::vector<unsigned short> layer;
-  std::vector<unsigned short> moduleType;
-  std::vector<ROOT::Math::XYZVectorF> detNormal;
-  std::vector<unsigned int> trackId;
-};
 
 struct SimTrackInfo
 {
@@ -280,7 +156,8 @@ class RecHitTreeWA : public edm::one::EDAnalyzer<edm::one::SharedResources> {
     virtual void beginJob() override;
     virtual void endJob() override;
     void initEventStructure();
-    std::vector<unsigned int> getSimTrackId(const edm::Handle<edm::DetSetVector<PixelDigiSimLink> >&, const DetId&, unsigned int);
+    std::vector<unsigned int> getSimTrackId(edm::Handle<edm::DetSetVector<PixelDigiSimLink> >&,
+					    const DetId&, unsigned int);
 
     const edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> esTokenGeom_;
     const edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> esTokenTopo_;
@@ -294,9 +171,9 @@ class RecHitTreeWA : public edm::one::EDAnalyzer<edm::one::SharedResources> {
     const double simtrackminpt_;
 
     SimHitInfo simHitInfo_;
+    RecHitInfo recHitInfo_;
   
     TTree* hitTree;
-    RecHitInfo* hitInfo;
     TTree* simTrackTree;
     SimTrackInfo* simTrackInfo;
     TTree* cSimHitTree;
@@ -313,7 +190,7 @@ RecHitTreeWA::RecHitTreeWA(const edm::ParameterSet& cfg)
     tokenSimTracks_(consumes<edm::SimTrackContainer>(cfg.getParameter<edm::InputTag>("simtracks"))),
     simtrackminpt_(cfg.getParameter<double>("SimTrackMinPt"))
 {
-  hitInfo = new RecHitInfo;
+  //recHitInfo_ = new RecHitInfo;
   simTrackInfo = new SimTrackInfo;
   //simHitInfo_ = new SimHitInfo();
 }
@@ -402,7 +279,8 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
   }
   cSimHitTree->Fill();
 
-  for (Phase2TrackerRecHit1DCollectionNew::const_iterator DSViter = rechits->begin(); DSViter != rechits->end(); ++DSViter) {
+  for (Phase2TrackerRecHit1DCollectionNew::const_iterator DSViter = rechits->begin();
+       DSViter != rechits->end(); ++DSViter) {
     // Get the detector unit's id
     unsigned int rawid(DSViter->detId());
     DetId detId(rawid);
@@ -431,142 +309,147 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
     if (!geomDetUnit)
       continue;
 
+    recHitInfo_.setTopology(tTopo);
+    recHitInfo_.setGeometry(tkGeom);
+
     // Loop over the rechits in the detector unit
-    for (edmNew::DetSet<Phase2TrackerRecHit1D>::const_iterator rechitIt = DSViter->begin(); rechitIt != DSViter->end(); ++rechitIt) {
-      // determine the position
-      LocalPoint localPosClu = rechitIt->localPosition();
-      Global3DPoint globalPosClu = geomDetUnit->surface().toGlobal(localPosClu);
+    for (edmNew::DetSet<Phase2TrackerRecHit1D>::const_iterator rechitIt = DSViter->begin();
+	 rechitIt != DSViter->end(); ++rechitIt) {
+      recHitInfo_.fillRecHitInfo(*rechitIt,rawid,geomDetUnit,&pixelSimLinks,simTracks,simHitsRaw);
+      // // determine the position
+      // LocalPoint localPosClu = rechitIt->localPosition();
+      // Global3DPoint globalPosClu = geomDetUnit->surface().toGlobal(localPosClu);
 
-      // Get the cluster from the rechit
-      const Phase2TrackerCluster1D* clustIt = &*rechitIt->cluster();
-      //std::cout << "  cluster size " << clustIt->size() << " firstStrip " << clustIt->firstStrip() << " firstRow " << clustIt->firstRow() << " edge " << clustIt->edge()
-      //   << " column " << clustIt->column() << " threshold " << clustIt->threshold() << std::endl;
+      // // Get the cluster from the rechit
+      // const Phase2TrackerCluster1D* clustIt = &*rechitIt->cluster();
+      // //std::cout << "  cluster size " << clustIt->size() << " firstStrip " << clustIt->firstStrip() << " firstRow " << clustIt->firstRow() << " edge " << clustIt->edge()
+      // //   << " column " << clustIt->column() << " threshold " << clustIt->threshold() << std::endl;
 
-      // Get all the simTracks that form the cluster
-      std::vector<unsigned int> clusterSimTrackIds;
-      for (unsigned int i(0); i < clustIt->size(); ++i) {
-        unsigned int channel(Phase2TrackerDigi::pixelToChannel(clustIt->firstRow() + i, clustIt->column()));
-        std::vector<unsigned int> simTrackIds_unselected(getSimTrackId(pixelSimLinks, detId, channel));
-        std::vector<unsigned int> simTrackIds;
-        for (auto istId : simTrackIds_unselected) {
-          std::map<unsigned int, SimTrack>::const_iterator istfind(simTracks.find(istId));
-          if (istfind != simTracks.end())
-            simTrackIds.push_back(istId);
-        }
-        for (unsigned int i = 0; i < simTrackIds.size(); ++i) {
-          bool add = true;
-          for (unsigned int j = 0; j < clusterSimTrackIds.size(); ++j) {
-            // only save simtrackids that are not present yet
-            if (simTrackIds.at(i) == clusterSimTrackIds.at(j))
-              add = false;
-          }
-          if (add)
-            clusterSimTrackIds.push_back(simTrackIds.at(i));
-        }
-      }
+      // // Get all the simTracks that form the cluster
+      // std::vector<unsigned int> clusterSimTrackIds;
+      // for (unsigned int i(0); i < clustIt->size(); ++i) {
+      //   unsigned int channel(Phase2TrackerDigi::pixelToChannel(clustIt->firstRow() + i, clustIt->column()));
+      //   std::vector<unsigned int> simTrackIds_unselected(getSimTrackId(pixelSimLinks, detId, channel));
+      //   std::vector<unsigned int> simTrackIds;
+      //   for (auto istId : simTrackIds_unselected) {
+      //     std::map<unsigned int, SimTrack>::const_iterator istfind(simTracks.find(istId));
+      //     if (istfind != simTracks.end())
+      //       simTrackIds.push_back(istId);
+      //   }
+      //   for (unsigned int i = 0; i < simTrackIds.size(); ++i) {
+      //     bool add = true;
+      //     for (unsigned int j = 0; j < clusterSimTrackIds.size(); ++j) {
+      //       // only save simtrackids that are not present yet
+      //       if (simTrackIds.at(i) == clusterSimTrackIds.at(j))
+      //         add = false;
+      //     }
+      //     if (add)
+      //       clusterSimTrackIds.push_back(simTrackIds.at(i));
+      //   }
+      // }
 
-      // find the closest simhit
-      // this is needed because otherwise you get cases with simhits and clusters being swapped
-      // when there are more than 1 cluster with common simtrackids
-      const PSimHit* simhit = 0;  // bad naming to avoid changing code below. This is the closest simhit in x
-      float minx = 10000;
-      for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
-        for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
-             simhitIt != simHitsRaw[simhitidx]->end();
-             ++simhitIt) {
-          // check SimHit detId is the same with the RecHit
-          if (rawid == simhitIt->detUnitId()) {
-            //std::cout << "=== " << rawid << " " << &*simhitIt << " " << simhitIt->trackId() << " " << simhitIt->localPosition().x() << " " << simhitIt->localPosition().y() << std::endl;
-            auto it = std::lower_bound(clusterSimTrackIds.begin(), clusterSimTrackIds.end(), simhitIt->trackId());
-            // check SimHit track id is included in the cluster
-            if (it != clusterSimTrackIds.end() && *it == simhitIt->trackId()) {
-              if (!simhit || fabs(simhitIt->localPosition().x() - localPosClu.x()) < minx) {
-                minx = fabs(simhitIt->localPosition().x() - localPosClu.x());
-                simhit = &*simhitIt;
-              }
-            }
-          }
-        }
-      }
+      // // find the closest simhit
+      // // this is needed because otherwise you get cases with simhits and clusters being swapped
+      // // when there are more than 1 cluster with common simtrackids
+      // const PSimHit* simhit = 0;  // bad naming to avoid changing code below. This is the closest simhit in x
+      // float minx = 10000;
+      // for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
+      //   for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
+      //        simhitIt != simHitsRaw[simhitidx]->end();
+      //        ++simhitIt) {
+      //     // check SimHit detId is the same with the RecHit
+      //     if (rawid == simhitIt->detUnitId()) {
+      //       //std::cout << "=== " << rawid << " " << &*simhitIt << " " << simhitIt->trackId() << " " << simhitIt->localPosition().x() << " " << simhitIt->localPosition().y() << std::endl;
+      //       auto it = std::lower_bound(clusterSimTrackIds.begin(), clusterSimTrackIds.end(), simhitIt->trackId());
+      //       // check SimHit track id is included in the cluster
+      //       if (it != clusterSimTrackIds.end() && *it == simhitIt->trackId()) {
+      //         if (!simhit || fabs(simhitIt->localPosition().x() - localPosClu.x()) < minx) {
+      //           minx = fabs(simhitIt->localPosition().x() - localPosClu.x());
+      //           simhit = &*simhitIt;
+      //         }
+      //       }
+      //     }
+      //   }
+      // }
 
-      hitInfo->Hit_cluster_global_x.push_back(globalPosClu.x());
-      hitInfo->Hit_cluster_global_y.push_back(globalPosClu.y());
-      hitInfo->Hit_cluster_global_z.push_back(globalPosClu.z());
-      hitInfo->Hit_layer.push_back(layer);
-      hitInfo->Hit_ModuleType.push_back((unsigned short)(tkGeom->getDetectorType(detId)));
-      hitInfo->Hit_cluster_size.push_back(clustIt->size());
-      hitInfo->Hit_cluster_SimTrack_size.push_back(clusterSimTrackIds.size());
-      hitInfo->Hit_cluster_local_x.push_back(localPosClu.x());
-      hitInfo->Hit_cluster_local_y.push_back(localPosClu.y());
-      hitInfo->Hit_cluster_local_z.push_back(localPosClu.z());
+      // hitInfo->Hit_cluster_global_x.push_back(globalPosClu.x());
+      // hitInfo->Hit_cluster_global_y.push_back(globalPosClu.y());
+      // hitInfo->Hit_cluster_global_z.push_back(globalPosClu.z());
+      // hitInfo->Hit_layer.push_back(layer);
+      // hitInfo->Hit_ModuleType.push_back((unsigned short)(tkGeom->getDetectorType(detId)));
+      // hitInfo->Hit_cluster_size.push_back(clustIt->size());
+      // hitInfo->Hit_cluster_SimTrack_size.push_back(clusterSimTrackIds.size());
+      // hitInfo->Hit_cluster_local_x.push_back(localPosClu.x());
+      // hitInfo->Hit_cluster_local_y.push_back(localPosClu.y());
+      // hitInfo->Hit_cluster_local_z.push_back(localPosClu.z());
       
       
-      if (!simhit){
-        hitInfo->Hit_cluster_haveSimHit.push_back(false);
-        hitInfo->Hit_cluster_closestSimHit_local_x.push_back(999);
-        hitInfo->Hit_cluster_closestSimHit_local_y.push_back(999);
-        hitInfo->Hit_cluster_closestSimHit_local_z.push_back(999);
-	ROOT::Math::XYZPointF emptyPoint(0.,0.,0.);
-	ROOT::Math::XYZVectorF emptyVector(0.,0.,0.);
-	hitInfo->localPos.push_back(emptyPoint);
-	hitInfo->globalPos.push_back(emptyPoint);
-	hitInfo->localDir.push_back(emptyVector);
-	hitInfo->globalDir.push_back(emptyVector);
-	hitInfo->path.push_back(emptyVector);
-	hitInfo->theta.push_back(0.);
-	hitInfo->phi.push_back(0.);
-	hitInfo->pabs.push_back(0.);
-	hitInfo->tof.push_back(0.);
-	hitInfo->energyLoss.push_back(0.);
-	hitInfo->processType.push_back(0);
-	hitInfo->particleType.push_back(0);
-	hitInfo->layer.push_back(0);
-	hitInfo->moduleType.push_back(0);
-	hitInfo->detNormal.push_back(emptyVector);
-	hitInfo->trackId.push_back(0);
-      }
-      else {
-        hitInfo->Hit_cluster_haveSimHit.push_back(true);
-        hitInfo->Hit_cluster_closestSimHit_local_x.push_back(simhit->localPosition().x());
-        hitInfo->Hit_cluster_closestSimHit_local_y.push_back(simhit->localPosition().y());
-        hitInfo->Hit_cluster_closestSimHit_local_z.push_back(simhit->localPosition().z());
-	fillSimHitInfo<RecHitInfo>(*hitInfo,*simhit,tTopo,tkGeom,false);
-	// ROOT::Math::XYZPointF localPos(simhit->localPosition().x(),simhit->localPosition().y(),
-	// 			       simhit->localPosition().z());
-	// hitInfo->localPos.push_back(localPos);
-	// GlobalPoint globalPosition(geomDetUnit->toGlobal(simhit->localPosition()));
-	// ROOT::Math::XYZPointF globalPos(globalPosition.x(),globalPosition.y(),globalPosition.z());
-	// hitInfo->globalPos.push_back(globalPos);
-	// ROOT::Math::XYZVectorF localDir(simhit->localDirection().x(),simhit->localDirection().y(),
-	// 				simhit->localDirection().z());
-	// hitInfo->localDir.push_back(localDir);
-	// GlobalVector globalDirection(geomDetUnit->toGlobal(simhit->localDirection()));
-	// ROOT::Math::XYZVectorF globalDir(globalDirection.x(),globalDirection.y(),globalDirection.z());
-	// hitInfo->globalDir.push_back(globalDir);
-	// ROOT::Math::XYZVectorF path(simhit->exitPoint().x()-simhit->entryPoint().x(),
-	// 			    simhit->exitPoint().y()-simhit->entryPoint().y(),
-	// 			    simhit->exitPoint().z()-simhit->entryPoint().z());
-	// hitInfo->path.push_back(path);
-	// hitInfo->theta.push_back(simhit->thetaAtEntry());
-	// hitInfo->phi.push_back(simhit->phiAtEntry());
-	// hitInfo->pabs.push_back(simhit->pabs());
-	// hitInfo->tof.push_back(simhit->timeOfFlight());
-	// hitInfo->energyLoss.push_back(simhit->energyLoss());
-	// hitInfo->processType.push_back(simhit->processType());
-	// hitInfo->particleType.push_back(simhit->particleType());
-	// hitInfo->layer.push_back(layer);
-	// hitInfo->moduleType.push_back((unsigned short)mType);
-	// GlobalVector detNormalGlobal(geomDetUnit->toGlobal(LocalVector(0.,0.,1.)));
-	// ROOT::Math::XYZVectorF detNormal(detNormalGlobal.x(),detNormalGlobal.y(),detNormalGlobal.z());
-	// hitInfo->detNormal.push_back(detNormal);
-	// hitInfo->trackId.push_back(simhit->trackId());
-      }
-      hitInfo->Hit_det_rawid.push_back(rawid);
-      hitInfo->Hit_cluster_firstStrip.push_back(clustIt->firstStrip());
-      hitInfo->Hit_cluster_firstRow.push_back(clustIt->firstRow());
-      hitInfo->Hit_cluster_column.push_back(clustIt->column());
-      hitInfo->Hit_cluster_edge.push_back(clustIt->edge());
-      hitInfo->Hit_cluster_threshold.push_back(clustIt->threshold());
+      // if (!simhit){
+      //   hitInfo->Hit_cluster_haveSimHit.push_back(false);
+      //   hitInfo->Hit_cluster_closestSimHit_local_x.push_back(999);
+      //   hitInfo->Hit_cluster_closestSimHit_local_y.push_back(999);
+      //   hitInfo->Hit_cluster_closestSimHit_local_z.push_back(999);
+      // 	ROOT::Math::XYZPointF emptyPoint(0.,0.,0.);
+      // 	ROOT::Math::XYZVectorF emptyVector(0.,0.,0.);
+      // 	hitInfo->localPos.push_back(emptyPoint);
+      // 	hitInfo->globalPos.push_back(emptyPoint);
+      // 	hitInfo->localDir.push_back(emptyVector);
+      // 	hitInfo->globalDir.push_back(emptyVector);
+      // 	hitInfo->path.push_back(emptyVector);
+      // 	hitInfo->theta.push_back(0.);
+      // 	hitInfo->phi.push_back(0.);
+      // 	hitInfo->pabs.push_back(0.);
+      // 	hitInfo->tof.push_back(0.);
+      // 	hitInfo->energyLoss.push_back(0.);
+      // 	hitInfo->processType.push_back(0);
+      // 	hitInfo->particleType.push_back(0);
+      // 	hitInfo->layer.push_back(0);
+      // 	hitInfo->moduleType.push_back(0);
+      // 	hitInfo->detNormal.push_back(emptyVector);
+      // 	hitInfo->trackId.push_back(0);
+      // }
+      // else {
+      //   hitInfo->Hit_cluster_haveSimHit.push_back(true);
+      //   hitInfo->Hit_cluster_closestSimHit_local_x.push_back(simhit->localPosition().x());
+      //   hitInfo->Hit_cluster_closestSimHit_local_y.push_back(simhit->localPosition().y());
+      //   hitInfo->Hit_cluster_closestSimHit_local_z.push_back(simhit->localPosition().z());
+      // 	fillSimHitInfo<RecHitInfo>(*hitInfo,*simhit,tTopo,tkGeom,false);
+      // 	// ROOT::Math::XYZPointF localPos(simhit->localPosition().x(),simhit->localPosition().y(),
+      // 	// 			       simhit->localPosition().z());
+      // 	// hitInfo->localPos.push_back(localPos);
+      // 	// GlobalPoint globalPosition(geomDetUnit->toGlobal(simhit->localPosition()));
+      // 	// ROOT::Math::XYZPointF globalPos(globalPosition.x(),globalPosition.y(),globalPosition.z());
+      // 	// hitInfo->globalPos.push_back(globalPos);
+      // 	// ROOT::Math::XYZVectorF localDir(simhit->localDirection().x(),simhit->localDirection().y(),
+      // 	// 				simhit->localDirection().z());
+      // 	// hitInfo->localDir.push_back(localDir);
+      // 	// GlobalVector globalDirection(geomDetUnit->toGlobal(simhit->localDirection()));
+      // 	// ROOT::Math::XYZVectorF globalDir(globalDirection.x(),globalDirection.y(),globalDirection.z());
+      // 	// hitInfo->globalDir.push_back(globalDir);
+      // 	// ROOT::Math::XYZVectorF path(simhit->exitPoint().x()-simhit->entryPoint().x(),
+      // 	// 			    simhit->exitPoint().y()-simhit->entryPoint().y(),
+      // 	// 			    simhit->exitPoint().z()-simhit->entryPoint().z());
+      // 	// hitInfo->path.push_back(path);
+      // 	// hitInfo->theta.push_back(simhit->thetaAtEntry());
+      // 	// hitInfo->phi.push_back(simhit->phiAtEntry());
+      // 	// hitInfo->pabs.push_back(simhit->pabs());
+      // 	// hitInfo->tof.push_back(simhit->timeOfFlight());
+      // 	// hitInfo->energyLoss.push_back(simhit->energyLoss());
+      // 	// hitInfo->processType.push_back(simhit->processType());
+      // 	// hitInfo->particleType.push_back(simhit->particleType());
+      // 	// hitInfo->layer.push_back(layer);
+      // 	// hitInfo->moduleType.push_back((unsigned short)mType);
+      // 	// GlobalVector detNormalGlobal(geomDetUnit->toGlobal(LocalVector(0.,0.,1.)));
+      // 	// ROOT::Math::XYZVectorF detNormal(detNormalGlobal.x(),detNormalGlobal.y(),detNormalGlobal.z());
+      // 	// hitInfo->detNormal.push_back(detNormal);
+      // 	// hitInfo->trackId.push_back(simhit->trackId());
+      // }
+      // hitInfo->Hit_det_rawid.push_back(rawid);
+      // hitInfo->Hit_cluster_firstStrip.push_back(clustIt->firstStrip());
+      // hitInfo->Hit_cluster_firstRow.push_back(clustIt->firstRow());
+      // hitInfo->Hit_cluster_column.push_back(clustIt->column());
+      // hitInfo->Hit_cluster_edge.push_back(clustIt->edge());
+      // hitInfo->Hit_cluster_threshold.push_back(clustIt->threshold());
     }
   }
   hitTree->Fill();
@@ -576,42 +459,42 @@ void RecHitTreeWA::beginJob()
 {
   edm::Service<TFileService> fs;
   hitTree = fs->make<TTree>( "HitTree", "HitTree" );
-
-  hitTree->Branch("Hit_cluster_global_y",                   &hitInfo->Hit_cluster_global_y);
-  hitTree->Branch("Hit_cluster_global_z",                   &hitInfo->Hit_cluster_global_z);
-  hitTree->Branch("Hit_layer",                              &hitInfo->Hit_layer);
-  hitTree->Branch("Hit_ModuleType",                         &hitInfo->Hit_ModuleType);
-  hitTree->Branch("Hit_cluster_size",                       &hitInfo->Hit_cluster_size);
-  hitTree->Branch("Hit_cluster_SimTrack_size",              &hitInfo->Hit_cluster_SimTrack_size);
-  hitTree->Branch("Hit_cluster_local_x",                    &hitInfo->Hit_cluster_local_x);
-  hitTree->Branch("Hit_cluster_local_y",                    &hitInfo->Hit_cluster_local_y);
-  hitTree->Branch("Hit_cluster_local_z",                    &hitInfo->Hit_cluster_local_z);
-  hitTree->Branch("Hit_cluster_haveSimHit",                 &hitInfo->Hit_cluster_haveSimHit);
-  hitTree->Branch("Hit_cluster_closestSimHit_local_x",      &hitInfo->Hit_cluster_closestSimHit_local_x);
-  hitTree->Branch("Hit_cluster_closestSimHit_local_y",      &hitInfo->Hit_cluster_closestSimHit_local_y);
-  hitTree->Branch("Hit_cluster_closestSimHit_local_z",      &hitInfo->Hit_cluster_closestSimHit_local_z);
-  hitTree->Branch("Hit_det_rawid",                          &hitInfo->Hit_det_rawid);
-  hitTree->Branch("Hit_cluster_firstStrip",                 &hitInfo->Hit_cluster_firstStrip);
-  hitTree->Branch("Hit_cluster_firstRow",                   &hitInfo->Hit_cluster_firstRow);
-  hitTree->Branch("Hit_cluster_column",                     &hitInfo->Hit_cluster_column);
-  hitTree->Branch("Hit_cluster_edge",                       &hitInfo->Hit_cluster_edge);
-  hitTree->Branch("Hit_cluster_threshold",                  &hitInfo->Hit_cluster_threshold);
-  hitTree->Branch("localPos",	&hitInfo->localPos);
-  hitTree->Branch("globalPos",	&hitInfo->globalPos);
-  hitTree->Branch("localDir",	&hitInfo->localDir);
-  hitTree->Branch("globalDir",	&hitInfo->globalDir);
-  hitTree->Branch("path",	&hitInfo->path);
-  hitTree->Branch("theta",	&hitInfo->theta);
-  hitTree->Branch("phi",	&hitInfo->phi);
-  hitTree->Branch("pabs",	&hitInfo->pabs);
-  hitTree->Branch("tof",	&hitInfo->tof);
-  hitTree->Branch("energyLoss",	&hitInfo->energyLoss);
-  hitTree->Branch("processType",	&hitInfo->processType);
-  hitTree->Branch("particleType",	&hitInfo->particleType);
-  hitTree->Branch("layer",   &hitInfo->layer);
-  hitTree->Branch("moduleType",      &hitInfo->moduleType);
-  hitTree->Branch("detNormal",       &hitInfo->detNormal);
-  hitTree->Branch("trackId",	&hitInfo->trackId);
+  recHitInfo_.setBranches(*hitTree);
+  // hitTree->Branch("Hit_cluster_global_y",                   &hitInfo->Hit_cluster_global_y);
+  // hitTree->Branch("Hit_cluster_global_z",                   &hitInfo->Hit_cluster_global_z);
+  // hitTree->Branch("Hit_layer",                              &hitInfo->Hit_layer);
+  // hitTree->Branch("Hit_ModuleType",                         &hitInfo->Hit_ModuleType);
+  // hitTree->Branch("Hit_cluster_size",                       &hitInfo->Hit_cluster_size);
+  // hitTree->Branch("Hit_cluster_SimTrack_size",              &hitInfo->Hit_cluster_SimTrack_size);
+  // hitTree->Branch("Hit_cluster_local_x",                    &hitInfo->Hit_cluster_local_x);
+  // hitTree->Branch("Hit_cluster_local_y",                    &hitInfo->Hit_cluster_local_y);
+  // hitTree->Branch("Hit_cluster_local_z",                    &hitInfo->Hit_cluster_local_z);
+  // hitTree->Branch("Hit_cluster_haveSimHit",                 &hitInfo->Hit_cluster_haveSimHit);
+  // hitTree->Branch("Hit_cluster_closestSimHit_local_x",      &hitInfo->Hit_cluster_closestSimHit_local_x);
+  // hitTree->Branch("Hit_cluster_closestSimHit_local_y",      &hitInfo->Hit_cluster_closestSimHit_local_y);
+  // hitTree->Branch("Hit_cluster_closestSimHit_local_z",      &hitInfo->Hit_cluster_closestSimHit_local_z);
+  // hitTree->Branch("Hit_det_rawid",                          &hitInfo->Hit_det_rawid);
+  // hitTree->Branch("Hit_cluster_firstStrip",                 &hitInfo->Hit_cluster_firstStrip);
+  // hitTree->Branch("Hit_cluster_firstRow",                   &hitInfo->Hit_cluster_firstRow);
+  // hitTree->Branch("Hit_cluster_column",                     &hitInfo->Hit_cluster_column);
+  // hitTree->Branch("Hit_cluster_edge",                       &hitInfo->Hit_cluster_edge);
+  // hitTree->Branch("Hit_cluster_threshold",                  &hitInfo->Hit_cluster_threshold);
+  // hitTree->Branch("localPos",	&hitInfo->localPos);
+  // hitTree->Branch("globalPos",	&hitInfo->globalPos);
+  // hitTree->Branch("localDir",	&hitInfo->localDir);
+  // hitTree->Branch("globalDir",	&hitInfo->globalDir);
+  // hitTree->Branch("path",	&hitInfo->path);
+  // hitTree->Branch("theta",	&hitInfo->theta);
+  // hitTree->Branch("phi",	&hitInfo->phi);
+  // hitTree->Branch("pabs",	&hitInfo->pabs);
+  // hitTree->Branch("tof",	&hitInfo->tof);
+  // hitTree->Branch("energyLoss",	&hitInfo->energyLoss);
+  // hitTree->Branch("processType",	&hitInfo->processType);
+  // hitTree->Branch("particleType",	&hitInfo->particleType);
+  // hitTree->Branch("layer",   &hitInfo->layer);
+  // hitTree->Branch("moduleType",      &hitInfo->moduleType);
+  // hitTree->Branch("detNormal",       &hitInfo->detNormal);
+  // hitTree->Branch("trackId",	&hitInfo->trackId);
 
   cSimHitTree = fs->make<TTree>( "cSimHitTree", "cSimHitTree" );
   simHitInfo_.setBranches(*cSimHitTree);
@@ -637,42 +520,43 @@ void RecHitTreeWA::endJob()
 
 void RecHitTreeWA::initEventStructure()
 {
-  hitInfo->Hit_cluster_global_x.clear();
-  hitInfo->Hit_cluster_global_y.clear();
-  hitInfo->Hit_cluster_global_z.clear();
-  hitInfo->Hit_layer.clear();
-  hitInfo->Hit_ModuleType.clear();
-  hitInfo->Hit_cluster_size.clear();
-  hitInfo->Hit_cluster_SimTrack_size.clear();
-  hitInfo->Hit_cluster_local_x.clear();
-  hitInfo->Hit_cluster_local_y.clear();
-  hitInfo->Hit_cluster_local_z.clear();
-  hitInfo->Hit_cluster_haveSimHit.clear();
-  hitInfo->Hit_cluster_closestSimHit_local_x.clear();
-  hitInfo->Hit_cluster_closestSimHit_local_y.clear();
-  hitInfo->Hit_cluster_closestSimHit_local_z.clear();
-  hitInfo->Hit_det_rawid.clear();
-  hitInfo->Hit_cluster_firstStrip.clear();
-  hitInfo->Hit_cluster_firstRow.clear();
-  hitInfo->Hit_cluster_column.clear();
-  hitInfo->Hit_cluster_edge.clear();
-  hitInfo->Hit_cluster_threshold.clear();
-  hitInfo->localPos.clear();
-  hitInfo->globalPos.clear();
-  hitInfo->localDir.clear();
-  hitInfo->globalDir.clear();
-  hitInfo->path.clear();
-  hitInfo->theta.clear();
-  hitInfo->phi.clear();
-  hitInfo->pabs.clear();
-  hitInfo->tof.clear();
-  hitInfo->energyLoss.clear();
-  hitInfo->processType.clear();
-  hitInfo->particleType.clear();
-  hitInfo->layer.clear();
-  hitInfo->moduleType.clear();
-  hitInfo->detNormal.clear();
-  hitInfo->trackId.clear();
+  recHitInfo_.clear();
+  // hitInfo->Hit_cluster_global_x.clear();
+  // hitInfo->Hit_cluster_global_y.clear();
+  // hitInfo->Hit_cluster_global_z.clear();
+  // hitInfo->Hit_layer.clear();
+  // hitInfo->Hit_ModuleType.clear();
+  // hitInfo->Hit_cluster_size.clear();
+  // hitInfo->Hit_cluster_SimTrack_size.clear();
+  // hitInfo->Hit_cluster_local_x.clear();
+  // hitInfo->Hit_cluster_local_y.clear();
+  // hitInfo->Hit_cluster_local_z.clear();
+  // hitInfo->Hit_cluster_haveSimHit.clear();
+  // hitInfo->Hit_cluster_closestSimHit_local_x.clear();
+  // hitInfo->Hit_cluster_closestSimHit_local_y.clear();
+  // hitInfo->Hit_cluster_closestSimHit_local_z.clear();
+  // hitInfo->Hit_det_rawid.clear();
+  // hitInfo->Hit_cluster_firstStrip.clear();
+  // hitInfo->Hit_cluster_firstRow.clear();
+  // hitInfo->Hit_cluster_column.clear();
+  // hitInfo->Hit_cluster_edge.clear();
+  // hitInfo->Hit_cluster_threshold.clear();
+  // hitInfo->localPos.clear();
+  // hitInfo->globalPos.clear();
+  // hitInfo->localDir.clear();
+  // hitInfo->globalDir.clear();
+  // hitInfo->path.clear();
+  // hitInfo->theta.clear();
+  // hitInfo->phi.clear();
+  // hitInfo->pabs.clear();
+  // hitInfo->tof.clear();
+  // hitInfo->energyLoss.clear();
+  // hitInfo->processType.clear();
+  // hitInfo->particleType.clear();
+  // hitInfo->layer.clear();
+  // hitInfo->moduleType.clear();
+  // hitInfo->detNormal.clear();
+  // hitInfo->trackId.clear();
 
   simHitInfo_.clear();
 
@@ -691,18 +575,18 @@ void RecHitTreeWA::initEventStructure()
 
 }
 
-std::vector<unsigned int> RecHitTreeWA::getSimTrackId(
-    const edm::Handle<edm::DetSetVector<PixelDigiSimLink> >& pixelSimLinks, const DetId& detId, unsigned int channel) {
-  std::vector<unsigned int> retvec;
-  edm::DetSetVector<PixelDigiSimLink>::const_iterator DSViter(pixelSimLinks->find(detId));
-  if (DSViter == pixelSimLinks->end())
-    return retvec;
-  for (edm::DetSet<PixelDigiSimLink>::const_iterator it = DSViter->data.begin(); it != DSViter->data.end(); ++it) {
-    if (channel == it->channel()) {
-      retvec.push_back(it->SimTrackId());
-    }
-  }
-  return retvec;
-}
+// std::vector<unsigned int> RecHitTreeWA::getSimTrackId(
+//     const edm::Handle<edm::DetSetVector<PixelDigiSimLink> >& pixelSimLinks, const DetId& detId, unsigned int channel) {
+//   std::vector<unsigned int> retvec;
+//   edm::DetSetVector<PixelDigiSimLink>::const_iterator DSViter(pixelSimLinks->find(detId));
+//   if (DSViter == pixelSimLinks->end())
+//     return retvec;
+//   for (edm::DetSet<PixelDigiSimLink>::const_iterator it = DSViter->data.begin(); it != DSViter->data.end(); ++it) {
+//     if (channel == it->channel()) {
+//       retvec.push_back(it->SimTrackId());
+//     }
+//   }
+//   return retvec;
+// }
 
 DEFINE_FWK_MODULE(RecHitTreeWA);
