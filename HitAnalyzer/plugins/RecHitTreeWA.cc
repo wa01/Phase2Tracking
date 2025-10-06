@@ -188,11 +188,14 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
   // Get the SimTracks
   edm::Handle<edm::SimTrackContainer> simTracksRaw;
   event.getByToken(tokenSimTracks_, simTracksRaw);
+  // std::cout << "#simTracks " << simTracksRaw.product()->size() << std::endl;
 
   // Rearrange the simTracks for ease of use <simTrackID, simTrack>
   std::map<unsigned int, SimTrack> simTracks;
   for (edm::SimTrackContainer::const_iterator simTrackIt(simTracksRaw->begin()); simTrackIt != simTracksRaw->end();
        ++simTrackIt) {
+    // std::cout << simTrackIt->type() << "  " << simTrackIt->trackerSurfaceMomentum().pt() << " "
+    // 	      << simTrackIt->momentum().pt() << std::endl;
     if (simTrackIt->momentum().pt() > simtrackminpt_) {
       simTracks.insert(std::pair<unsigned int, SimTrack>(simTrackIt->trackId(), *simTrackIt));
     }
