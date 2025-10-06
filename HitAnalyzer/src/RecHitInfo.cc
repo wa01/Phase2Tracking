@@ -2,6 +2,9 @@
 #include "DataFormats/DetId/interface/DetId.h"
 #include "DataFormats/Phase2TrackerCluster/interface/Phase2TrackerCluster1D.h"
 #include "SimDataFormats/Track/interface/SimTrackContainer.h"
+#include "DataFormats/GeometrySurface/interface/LocalError.h"
+#include "DataFormats/GeometryVector/interface/LocalPoint.h"
+
 
 void RecHitInfo::setBranches(TTree& tree) {
   tree.Branch("Hit_cluster_global_y",                   &recHitData.Hit_cluster_global_y);

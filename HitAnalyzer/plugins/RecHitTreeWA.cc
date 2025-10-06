@@ -253,7 +253,7 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
     //}
     
     // determine the detector we are in
-    TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
+    // TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
     //unsigned int det = 0;
     //if (mType == TrackerGeometry::ModuleType::Ph2PSP) {
     //  det = 1;
