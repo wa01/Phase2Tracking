@@ -170,7 +170,13 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
     }
   }
   if ( trackSimHits.size()==0 || trackSimHits.size()>1 ) {
-    std::cout << "RecHit on rawid " << rawid << " at " << localPosClu.x() << " / " << localPosClu.y() << std::endl;
+    TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
+    std::cout << "RecHit on rawid " << rawid <<", layer " << layer
+              << ", mType "<< (unsigned int)mType << std::endl;
+    std::cout << "  localPos " << localPosClu.x() << " / " << localPosClu.y() << std::endl;
+    LocalError localPosErr(recHit.localPositionError());
+    std::cout << "  localErr " << sqrt(localPosErr.xx()) << " / " << sqrt(localPosErr.yy())
+	      << " / " << localPosErr.xy()/sqrt(localPosErr.xx()*localPosErr.yy()) << std::endl;
     std::cout << "  width " << bounds.width() << ", length " << bounds.length()
 	      << ", thickness " << bounds.thickness() << std::endl;
     std::cout << "  cluster size = " << recHit.cluster()->size() << std::endl;
