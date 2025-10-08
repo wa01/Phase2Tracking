@@ -1,4 +1,4 @@
-import sys
+import sys,os
 import re
 import ROOT
 import argparse
@@ -76,8 +76,14 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--allHits', '-a', help='show all hits on a module', action='store_true', default=False)
     parser.add_argument('--fullSize', '-f', help='do not zoom in on hits', action='store_true', default=False)
+    parser.add_argument('--output', '-o', help='directory for storing canvases', type=str, default=None)
+    parser.add_argument('--maxFrames', help='max. number of frames shown', type=int, default=None)
     parser.add_argument('file', help='input log file', type=str, nargs=1, default=None)
     args = parser.parse_args()
+    if args.output!=None:
+        assert args.maxFrames!=None and args.maxFrames>0
+        args.output = os.path.expanduser(args.output)
+        assert os.path.isdir(args.output)
     #
     # loop over input file and store information related to each RecHit
     #
@@ -165,6 +171,7 @@ shcLine.SetLineWidth(3)
 detId = None
 frame = None
 closestSHs = [ ]
+cnvIdx = 0
 for rh in recHits:
     #print("DetId",rh.detId)
     if detId==None or (not args.allHits ) or detId!=rh.detId:
@@ -180,7 +187,7 @@ for rh in recHits:
         #
         # if a frame has been displayed: expect input before continuing
         #
-        if detId!=None:
+        if detId!=None and args.output==None:
             try:
                 input("Next? ")
             except EOFError:
@@ -190,7 +197,17 @@ for rh in recHits:
         # delete existing frame
         #
         if frame!=None:
+            if args.output!=None:
+                fnout = "RecHit"
+                if args.allHits:
+                    fnout += "s"
+                fnout += "_{:04d}_l{:04d}_m{:02d}.png".format(cnvIdx+1,rh.layer,rh.mType)
+                cnv.SaveAs(os.path.join(args.output,fnout))
+            cnvIdx += 1
+            if args.maxFrames!=None and cnvIdx>=args.maxFrames:
+                break
             del frame
+            
         #
         # print RecHit info and draw frame with module dimensions
         #
@@ -198,6 +215,7 @@ for rh in recHits:
         width = rh.detDims[0]
         length = rh.detDims[1]
         frame = cnv.DrawFrame(-width/2.,-length/2.,width/2.,length/2.)
+        frame.SetTitle("Layer {:d} ModuleType {:d} DetId {:d}".format(rh.layer,rh.mType,rh.detId))
         frange = [ None, None, None, None ]
         closestSHs = [ ]
     elif args.allHits:
