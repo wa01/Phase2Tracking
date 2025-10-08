@@ -117,6 +117,7 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
   // determine the position
   LocalPoint localPosClu = recHit.localPosition();
   Global3DPoint globalPosClu = geomDetUnit->surface().toGlobal(localPosClu);
+  const Bounds& bounds = geomDetUnit->surface().bounds();
 
   // Get the cluster from the rechit
   const Phase2TrackerCluster1D* clustIt = &*recHit.cluster();
@@ -149,6 +150,7 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
   // when there are more than 1 cluster with common simtrackids
   const PSimHit* simhit = 0;  // bad naming to avoid changing code below. This is the closest simhit in x
   float minx = 10000;
+  std::vector<const PSimHit*> trackSimHits;
   for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
     for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
 	 simhitIt != simHitsRaw[simhitidx]->end();
@@ -158,9 +160,44 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
 	auto it = std::lower_bound(clusterSimTrackIds.begin(), clusterSimTrackIds.end(), simhitIt->trackId());
 	// check SimHit track id is included in the cluster
 	if (it != clusterSimTrackIds.end() && *it == simhitIt->trackId()) {
+	  trackSimHits.push_back(&*simhitIt);
 	  if (!simhit || fabs(simhitIt->localPosition().x() - localPosClu.x()) < minx) {
 	    minx = fabs(simhitIt->localPosition().x() - localPosClu.x());
 	    simhit = &*simhitIt;
+	  }
+	}
+      }
+    }
+  }
+  if ( trackSimHits.size()==0 || trackSimHits.size()>1 ) {
+    std::cout << "RecHit on rawid " << rawid << " at " << localPosClu.x() << " / " << localPosClu.y() << std::endl;
+    std::cout << "  width " << bounds.width() << ", length " << bounds.length()
+	      << ", thickness " << bounds.thickness() << std::endl;
+    std::cout << "  cluster size = " << recHit.cluster()->size() << std::endl;
+    std::cout << "  track ids:";
+    for ( auto itct=clusterSimTrackIds.begin(); itct!=clusterSimTrackIds.end(); ++itct )
+      std::cout << " " << *itct;
+    std::cout << std::endl;
+    for ( auto itsh=trackSimHits.begin(); itsh!=trackSimHits.end(); ++itsh ) {
+      std::cout << "  SimHit";
+      if ( (*itsh)==simhit )  std::cout << "*";
+      std::cout << ": track id " << (**itsh).trackId() << ", pabs = " << (**itsh).pabs()
+		<< " loss " << (**itsh).energyLoss() << ", pdgId " << (**itsh).particleType()
+		<< ", entry-exit (x) " << (**itsh).entryPoint().x() << " / " << (**itsh).exitPoint().x() << ", "
+		<< ", entry-exit (y) " << (**itsh).entryPoint().y() << " / " << (**itsh).exitPoint().y() << std::endl;
+    }
+    if ( trackSimHits.size()==0 ) {
+      for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
+	for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
+	     simhitIt != simHitsRaw[simhitidx]->end(); ++simhitIt) {
+	  // check SimHit detId is the same with the RecHit
+	  if (rawid == simhitIt->detUnitId()) {
+	    std::cout << " SimHit: pabs = " << simhitIt->pabs()
+		      << " loss " << simhitIt->energyLoss() << ", pdgId " << simhitIt->particleType()
+		      << ", entry-exit (x) " << simhitIt->entryPoint().x()
+		      << " / " << simhitIt->exitPoint().x() << ", "
+		      << ", entry-exit (y) " << simhitIt->entryPoint().y()
+		      << " / " << simhitIt->exitPoint().y() << std::endl;
 	  }
 	}
       }
