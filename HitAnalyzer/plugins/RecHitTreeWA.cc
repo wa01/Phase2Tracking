@@ -138,6 +138,8 @@ class RecHitTreeWA : public edm::one::EDAnalyzer<edm::one::SharedResources> {
     TTree* recHitTree;
     TTree* simTrackTree;
     TTree* simHitTree;
+
+    bool debugHitMatch_;
 };
 
 RecHitTreeWA::RecHitTreeWA(const edm::ParameterSet& cfg)
@@ -149,7 +151,8 @@ RecHitTreeWA::RecHitTreeWA(const edm::ParameterSet& cfg)
     tokenSimHitsB_(consumes<edm::PSimHitContainer>(cfg.getParameter<edm::InputTag>("simhitsbarrel"))),
     tokenSimHitsE_(consumes<edm::PSimHitContainer>(cfg.getParameter<edm::InputTag>("simhitsendcap"))),
     tokenSimTracks_(consumes<edm::SimTrackContainer>(cfg.getParameter<edm::InputTag>("simtracks"))),
-    simtrackminpt_(cfg.getParameter<double>("SimTrackMinPt"))
+    simtrackminpt_(cfg.getParameter<double>("SimTrackMinPt")),
+    debugHitMatch_(cfg.getParameter<bool>("debugHitMatch"))
 {
   //recHitInfo_ = new RecHitInfo;
   //simTrackInfo = new SimTrackInfo;
@@ -280,7 +283,7 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
     // Loop over the rechits in the detector unit
     for (edmNew::DetSet<Phase2TrackerRecHit1D>::const_iterator rechitIt = DSViter->begin();
 	 rechitIt != DSViter->end(); ++rechitIt) {
-      recHitInfo_.fillRecHitInfo(*rechitIt,rawid,geomDetUnit,&pixelSimLinks,simTracks,simHitsRaw);
+      recHitInfo_.fillRecHitInfo(*rechitIt,rawid,geomDetUnit,&pixelSimLinks,simTracks,simHitsRaw,debugHitMatch_);
     }
   }
   recHitTree->Fill();

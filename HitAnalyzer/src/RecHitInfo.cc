@@ -109,7 +109,8 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
 				const GeomDetUnit* geomDetUnit,
 				edm::Handle<edm::DetSetVector<PixelDigiSimLink> >* pixelSimLinks,
 				std::map<unsigned int, SimTrack>& simTracks,
-				edm::Handle<edm::PSimHitContainer>* simHitsRaw) {
+				edm::Handle<edm::PSimHitContainer>* simHitsRaw,
+				bool debugHitMatch) {
   // get DetUnit
   DetId detId(rawid);
   unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
@@ -169,41 +170,43 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
       }
     }
   }
-  if ( trackSimHits.size()==0 || trackSimHits.size()>1 ) {
-    TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
-    std::cout << "RecHit on rawid " << rawid <<", layer " << layer
-              << ", mType "<< (unsigned int)mType << std::endl;
-    std::cout << "  localPos " << localPosClu.x() << " / " << localPosClu.y() << std::endl;
-    LocalError localPosErr(recHit.localPositionError());
-    std::cout << "  localErr " << sqrt(localPosErr.xx()) << " / " << sqrt(localPosErr.yy())
-	      << " / " << localPosErr.xy()/sqrt(localPosErr.xx()*localPosErr.yy()) << std::endl;
-    std::cout << "  width " << bounds.width() << ", length " << bounds.length()
-	      << ", thickness " << bounds.thickness() << std::endl;
-    std::cout << "  cluster size = " << recHit.cluster()->size() << std::endl;
-    std::cout << "  track ids:";
-    for ( auto itct=clusterSimTrackIds.begin(); itct!=clusterSimTrackIds.end(); ++itct )
-      std::cout << " " << *itct;
-    std::cout << std::endl;
-    for ( auto itsh=trackSimHits.begin(); itsh!=trackSimHits.end(); ++itsh ) {
-      std::cout << "  SimHit";
-      if ( (*itsh)==simhit )  std::cout << "*";
-      std::cout << ": track id " << (**itsh).trackId() << ", pabs = " << (**itsh).pabs()
-		<< " loss " << (**itsh).energyLoss() << ", pdgId " << (**itsh).particleType()
-		<< ", entry-exit (x) " << (**itsh).entryPoint().x() << " / " << (**itsh).exitPoint().x() << ", "
-		<< ", entry-exit (y) " << (**itsh).entryPoint().y() << " / " << (**itsh).exitPoint().y() << std::endl;
-    }
-    if ( trackSimHits.size()==0 ) {
-      for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
-	for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
-	     simhitIt != simHitsRaw[simhitidx]->end(); ++simhitIt) {
-	  // check SimHit detId is the same with the RecHit
-	  if (rawid == simhitIt->detUnitId()) {
-	    std::cout << " SimHit: pabs = " << simhitIt->pabs()
-		      << " loss " << simhitIt->energyLoss() << ", pdgId " << simhitIt->particleType()
-		      << ", entry-exit (x) " << simhitIt->entryPoint().x()
-		      << " / " << simhitIt->exitPoint().x() << ", "
-		      << ", entry-exit (y) " << simhitIt->entryPoint().y()
-		      << " / " << simhitIt->exitPoint().y() << std::endl;
+  if ( debugHitMatch ) {
+    if ( trackSimHits.size()==0 || trackSimHits.size()>1 ) {
+      TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
+      std::cout << "RecHit on rawid " << rawid <<", layer " << layer
+		<< ", mType "<< (unsigned int)mType << std::endl;
+      std::cout << "  localPos " << localPosClu.x() << " / " << localPosClu.y() << std::endl;
+      LocalError localPosErr(recHit.localPositionError());
+      std::cout << "  localErr " << sqrt(localPosErr.xx()) << " / " << sqrt(localPosErr.yy())
+		<< " / " << localPosErr.xy()/sqrt(localPosErr.xx()*localPosErr.yy()) << std::endl;
+      std::cout << "  width " << bounds.width() << ", length " << bounds.length()
+		<< ", thickness " << bounds.thickness() << std::endl;
+      std::cout << "  cluster size = " << recHit.cluster()->size() << std::endl;
+      std::cout << "  track ids:";
+      for ( auto itct=clusterSimTrackIds.begin(); itct!=clusterSimTrackIds.end(); ++itct )
+	std::cout << " " << *itct;
+      std::cout << std::endl;
+      for ( auto itsh=trackSimHits.begin(); itsh!=trackSimHits.end(); ++itsh ) {
+	std::cout << "  SimHit";
+	if ( (*itsh)==simhit )  std::cout << "*";
+	std::cout << ": track id " << (**itsh).trackId() << ", pabs = " << (**itsh).pabs()
+		  << " loss " << (**itsh).energyLoss() << ", pdgId " << (**itsh).particleType()
+		  << ", entry-exit (x) " << (**itsh).entryPoint().x() << " / " << (**itsh).exitPoint().x() << ", "
+		  << ", entry-exit (y) " << (**itsh).entryPoint().y() << " / " << (**itsh).exitPoint().y() << std::endl;
+      }
+      if ( trackSimHits.size()==0 ) {
+	for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
+	  for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
+	       simhitIt != simHitsRaw[simhitidx]->end(); ++simhitIt) {
+	    // check SimHit detId is the same with the RecHit
+	    if (rawid == simhitIt->detUnitId()) {
+	      std::cout << " SimHit: pabs = " << simhitIt->pabs()
+			<< " loss " << simhitIt->energyLoss() << ", pdgId " << simhitIt->particleType()
+			<< ", entry-exit (x) " << simhitIt->entryPoint().x()
+			<< " / " << simhitIt->exitPoint().x() << ", "
+			<< ", entry-exit (y) " << simhitIt->entryPoint().y()
+			<< " / " << simhitIt->exitPoint().y() << std::endl;
+	    }
 	  }
 	}
       }

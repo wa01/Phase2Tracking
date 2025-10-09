@@ -80,7 +80,8 @@ public:
 
   void fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned int rawid, const GeomDetUnit* geomDetUnit,
 		      edm::Handle<edm::DetSetVector<PixelDigiSimLink> >* pixelSimLinks,
-		      std::map<unsigned int, SimTrack>& simTracks, edm::Handle<edm::PSimHitContainer>* simHitsRaw);
+		      std::map<unsigned int, SimTrack>& simTracks, edm::Handle<edm::PSimHitContainer>* simHitsRaw,
+		      bool debugHitMatch);
   
   void clear();
   

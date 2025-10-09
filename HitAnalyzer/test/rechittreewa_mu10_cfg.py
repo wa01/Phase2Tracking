@@ -53,6 +53,7 @@ process.analysis = cms.EDAnalyzer('RecHitTreeWA',
     #MakeEtaPlots = cms.bool(False),
     #MinEta = cms.double(0.),
     #MaxEta = cms.double(10.)
+    debugHitMatch = cms.bool(False)
 )
 
 # Processes to run
