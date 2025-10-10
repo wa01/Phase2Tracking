@@ -44,7 +44,10 @@
 
 #include "TTree.h"
 
-
+typedef std::map< unsigned int, std::vector<const PSimHit*> > DetSimHitsMap;
+typedef std::pair< unsigned int, std::vector<const PSimHit*> > DetSimHitsPair;
+typedef std::map< unsigned int, std::vector<const Phase2TrackerRecHit1D*> > DetRecHitsMap;
+typedef std::pair< unsigned int, std::vector<const Phase2TrackerRecHit1D*> > DetRecHitsPair;
 // struct SimTrackInfo
 // {
 //   std::vector<float> SimTrack_xTk;
@@ -120,6 +123,7 @@ class RecHitTreeWA : public edm::one::EDAnalyzer<edm::one::SharedResources> {
     std::vector<unsigned int> getSimTrackId(edm::Handle<edm::DetSetVector<PixelDigiSimLink> >&,
 					    const DetId&, unsigned int);
 
+
     const edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> esTokenGeom_;
     const edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> esTokenTopo_;
     const edm::EDGetTokenT<Phase2TrackerRecHit1DCollectionNew> tokenRecHits_;
@@ -141,6 +145,20 @@ class RecHitTreeWA : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 
     bool debugHitMatch_;
 };
+
+std::vector<unsigned int> RecHitTreeWA::getSimTrackId(edm::Handle<edm::DetSetVector<PixelDigiSimLink> >& pixelSimLinks,
+						      const DetId& detId, unsigned int channel) {
+  std::vector<unsigned int> retvec;
+  edm::DetSetVector<PixelDigiSimLink>::const_iterator DSViter(pixelSimLinks->find(detId));
+  if (DSViter == pixelSimLinks->end())  return retvec;
+  for (edm::DetSet<PixelDigiSimLink>::const_iterator it = DSViter->data.begin(); it != DSViter->data.end(); ++it) {
+    if (channel == it->channel()) {
+      retvec.push_back(it->SimTrackId());
+    }
+  }
+  return retvec;
+};
+
 
 RecHitTreeWA::RecHitTreeWA(const edm::ParameterSet& cfg)
   : esTokenGeom_(esConsumes()),
@@ -218,6 +236,7 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
   }
   simTrackTree->Fill();
 
+  simHitInfo_.setupEvent(tTopo,tkGeom,pixelSimLinks.product(),simHitsRaw,*rechits.product());
   for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
     for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
 	 simhitIt != simHitsRaw[simhitidx]->end(); ++simhitIt) {
@@ -239,9 +258,9 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
 	continue;
       }
 
-      simHitInfo_.setTopology(tTopo);
-      simHitInfo_.setGeometry(tkGeom);
-      simHitInfo_.fillSimHitInfo(*simhitIt);
+      // simHitInfo_.setTopology(tTopo);
+      // simHitInfo_.setGeometry(tkGeom);
+      // simHitInfo_.fillSimHitInfo(*simhitIt);
       
     }
   }
@@ -287,7 +306,136 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
     }
   }
   recHitTree->Fill();
+
+  std::cout << "Starting matching" << std::endl;
+  //
+  // create map of SimHits / detId
+  //
+  DetSimHitsMap simHitsPerDet;
+  for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
+    std::cout << simhitidx << " " << simHitsRaw[simhitidx]->size() << std::endl;
+    for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
+	 simhitIt != simHitsRaw[simhitidx]->end(); ++simhitIt) {
+      const PSimHit* simhit(&*simhitIt);
+      unsigned int rawid(simhit->detUnitId());
+      DetSimHitsMap::iterator idet(simHitsPerDet.find(rawid));
+      if ( idet!=simHitsPerDet.end() ) {
+	std::cout << "adding sim entry for det id " << rawid << std::endl;
+	idet->second.push_back(simhit);
+      }
+      else {
+	std::cout << "new sim entry for det id " << rawid << std::endl;
+	simHitsPerDet.insert(DetSimHitsPair(rawid,std::vector<const PSimHit*>{simhit}));
+      }
+    }
+  }
+  for (auto it(simHitsPerDet.begin()); it!=simHitsPerDet.end(); ++it ) {
+    std::cout << it->second.size() << " sim hits for det id "<< it->first << std::endl;
+  }
+  std::cout << std::endl;
+
+  //
+  // create map of RecHits
+  //
+  DetRecHitsMap recHitsPerDet;
+  for (Phase2TrackerRecHit1DCollectionNew::const_iterator DSViter = rechits->begin();
+       DSViter != rechits->end(); ++DSViter) {
+    // Get the detector unit's id
+    unsigned int rawid(DSViter->detId());
+    // only consider dets with SimHits
+    if ( simHitsPerDet.find(rawid)!=simHitsPerDet.end() ) {
+      // Loop over the rechits in the detector unit
+      for (edmNew::DetSet<Phase2TrackerRecHit1D>::const_iterator rechitIt = DSViter->begin();
+	   rechitIt != DSViter->end(); ++rechitIt) {
+	const Phase2TrackerRecHit1D* rechit(&*rechitIt);
+	DetRecHitsMap::iterator idet(recHitsPerDet.find(rawid));
+	if ( idet!=recHitsPerDet.end() ) {
+	  std::cout << "adding rec entry for det id " << rawid << std::endl;
+	  idet->second.push_back(rechit);
+	}
+	else {
+	  std::cout << "new rec entry for det id " << rawid << std::endl;
+	  recHitsPerDet.insert(DetRecHitsPair(rawid,std::vector<const Phase2TrackerRecHit1D*>{rechit}));
+	}
+      }
+      
+    }
+  }
+  for (auto it(recHitsPerDet.begin()); it!=recHitsPerDet.end(); ++it ) {
+    std::cout << it->second.size() << " rec hits for det id "<< it->first << std::endl;
+  }
+  std::cout << std::endl;
+  //
+  // match RecHits to SimHits
+  //
+  //
+  // loop over all DetUnits with SimHits
+  //
+  for ( DetSimHitsMap::const_iterator ishd=simHitsPerDet.begin(); ishd!=simHitsPerDet.end(); ++ishd ) {
+    // any RecHit for this DetUnit?
+    std::cout << "Checking det id " << ishd->first << std::endl;
+    DetRecHitsMap::const_iterator ivrh = recHitsPerDet.find(ishd->first);
+    if ( ivrh==recHitsPerDet.end() ) {
+      std::cout << "- Skipping det - no RecHits" << std::endl;
+      continue;
+    }
+    //
+    unsigned int rawid(ishd->first);
+    DetId detId(rawid);
+    //
+    // loop over all SimHits on DetUnit
+    //
+    for ( std::vector<const PSimHit*>::const_iterator ish=ishd->second.begin(); ish!=ishd->second.end(); ++ish ) {
+      //
+      // loop over RecHits
+      //
+      std::cout << "  Checking SimHit at " << *ish << std::endl;
+      const Phase2TrackerRecHit1D* rechit(0);
+      float dxmin(1.e30);
+      for ( std::vector<const Phase2TrackerRecHit1D*>::const_iterator irh=ivrh->second.begin();
+	    irh!=ivrh->second.end(); ++irh ) {
+	std::cout << "    Checking RecHit at " << *irh << std::endl;
+	bool matched(false);
+	// Get the cluster from the rechit and loop over channels
+	const Phase2TrackerCluster1D& cluster = *(**irh).cluster();
+	std::cout << "      cluster size " << cluster.size() << std::endl;
+	for (unsigned int i(0); i < cluster.size(); ++i) {
+	  std::cout << "        channel " << i << std::endl;
+	  // find SimTracks contributing to the channel
+	  unsigned int channel(Phase2TrackerDigi::pixelToChannel(cluster.firstRow() + i, cluster.column()));
+	  std::vector<unsigned int> simTrackIds = getSimTrackId(pixelSimLinks,detId,channel);
+	  std::cout << "          " << simTrackIds.size() << " simTracks" << std::endl;
+	  for ( std::vector<unsigned int>::const_iterator ist=simTrackIds.begin(); ist!=simTrackIds.end(); ++ist ) {
+	    std::cout << "        track id " << *ist << " (simhit track id " << (**ish).trackId() << " ) " << std::endl;
+	    // compare to track id of the SimHit
+	    if ( (*ist)==(**ish).trackId() ) {
+	      matched = true;
+	      break;
+	    }
+	  }
+	  // if match was found: consider RecHit
+	  std::cout << "        matched : " << matched << std::endl;
+	  if ( matched ) break;
+	}
+	//
+	// select closest RecHit
+	//
+	if ( matched ) {
+	  float dx = fabs((**irh).localPosition().x()-(**ish).localPosition().x());
+	  std::cout << "      dx, dxmin " << dx << " " << dxmin;
+	  if ( !rechit || dx<dxmin ) {
+	    dxmin = dx;
+	    rechit = &(**irh);
+	    std::cout << " ***";
+	  }
+	  std::cout << std::endl;
+	}
+      }
+    }
+  }
+
 }
+
 
 void RecHitTreeWA::beginJob()
 {
