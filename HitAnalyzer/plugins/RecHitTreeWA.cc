@@ -44,10 +44,10 @@
 
 #include "TTree.h"
 
-typedef std::map< unsigned int, std::vector<const PSimHit*> > DetSimHitsMap;
-typedef std::pair< unsigned int, std::vector<const PSimHit*> > DetSimHitsPair;
-typedef std::map< unsigned int, std::vector<const Phase2TrackerRecHit1D*> > DetRecHitsMap;
-typedef std::pair< unsigned int, std::vector<const Phase2TrackerRecHit1D*> > DetRecHitsPair;
+// typedef std::map< unsigned int, std::vector<const PSimHit*> > DetSimHitsMap;
+// typedef std::pair< unsigned int, std::vector<const PSimHit*> > DetSimHitsPair;
+// typedef std::map< unsigned int, std::vector<const Phase2TrackerRecHit1D*> > DetRecHitsMap;
+// typedef std::pair< unsigned int, std::vector<const Phase2TrackerRecHit1D*> > DetRecHitsPair;
 // struct SimTrackInfo
 // {
 //   std::vector<float> SimTrack_xTk;
