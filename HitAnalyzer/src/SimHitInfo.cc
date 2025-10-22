@@ -23,27 +23,29 @@ void SimHitInfo::setBranches(TTree& tree) {
   tree.Branch("detNormal",&simHitData.detNormal);
   tree.Branch("trackId",&simHitData.trackId);
   tree.Branch("hasRecHit",&simHitData.hasRecHit);
-  
-  tree.Branch("Hit_cluster_global_x",                   &simHitData.Hit_cluster_global_x);
-  tree.Branch("Hit_cluster_global_y",                   &simHitData.Hit_cluster_global_y);
-  tree.Branch("Hit_cluster_global_z",                   &simHitData.Hit_cluster_global_z);
+
+  tree.Branch("rhLocalPos",&simHitData.rhLocalPos);
+  tree.Branch("rhGlobalPos",&simHitData.rhGlobalPos);
+  // tree.Branch("Hit_cluster_global_x",                   &simHitData.Hit_cluster_global_x);
+  // tree.Branch("Hit_cluster_global_y",                   &simHitData.Hit_cluster_global_y);
+  // tree.Branch("Hit_cluster_global_z",                   &simHitData.Hit_cluster_global_z);
   // tree.Branch("Hit_layer",                              &simHitData.Hit_layer);
   // tree.Branch("Hit_ModuleType",                         &simHitData.Hit_ModuleType);
-  tree.Branch("Hit_cluster_size",                       &simHitData.Hit_cluster_size);
-  // tree.Branch("Hit_cluster_SimTrack_size",              &simHitData.Hit_cluster_SimTrack_size);
-  tree.Branch("Hit_cluster_local_x",                    &simHitData.Hit_cluster_local_x);
-  tree.Branch("Hit_cluster_local_y",                    &simHitData.Hit_cluster_local_y);
-  tree.Branch("Hit_cluster_local_z",                    &simHitData.Hit_cluster_local_z);
-  // tree.Branch("Hit_cluster_haveSimHit",                 &simHitData.Hit_cluster_haveSimHit);
-  // tree.Branch("Hit_cluster_closestSimHit_local_x",      &simHitData.Hit_cluster_closestSimHit_local_x);
-  // tree.Branch("Hit_cluster_closestSimHit_local_y",      &simHitData.Hit_cluster_closestSimHit_local_y);
-  // tree.Branch("Hit_cluster_closestSimHit_local_z",      &simHitData.Hit_cluster_closestSimHit_local_z);
-  tree.Branch("Hit_det_rawid",                          &simHitData.Hit_det_rawid);
-  tree.Branch("Hit_cluster_firstStrip",                 &simHitData.Hit_cluster_firstStrip);
-  tree.Branch("Hit_cluster_firstRow",                   &simHitData.Hit_cluster_firstRow);
-  tree.Branch("Hit_cluster_column",                     &simHitData.Hit_cluster_column);
-  tree.Branch("Hit_cluster_edge",                       &simHitData.Hit_cluster_edge);
-  tree.Branch("Hit_cluster_threshold",                  &simHitData.Hit_cluster_threshold);
+  tree.Branch("clusterSize",                       &simHitData.clusterSize);
+  // // tree.Branch("clusterNSimTracks",              &simHitData.clusterNSimTracks);
+  // // tree.Branch("Hit_cluster_local_x",                    &simHitData.Hit_cluster_local_x);
+  // // tree.Branch("Hit_cluster_local_y",                    &simHitData.Hit_cluster_local_y);
+  // // tree.Branch("Hit_cluster_local_z",                    &simHitData.Hit_cluster_local_z);
+  // // tree.Branch("Hit_cluster_haveSimHit",                 &simHitData.Hit_cluster_haveSimHit);
+  // // tree.Branch("Hit_cluster_closestSimHit_local_x",      &simHitData.Hit_cluster_closestSimHit_local_x);
+  // // tree.Branch("Hit_cluster_closestSimHit_local_y",      &simHitData.Hit_cluster_closestSimHit_local_y);
+  // // tree.Branch("Hit_cluster_closestSimHit_local_z",      &simHitData.Hit_cluster_closestSimHit_local_z);
+  tree.Branch("detRawId",                          &simHitData.detRawId);
+  tree.Branch("clusterFirstStrip",                 &simHitData.clusterFirstStrip);
+  tree.Branch("clusterFirstRow",                   &simHitData.clusterFirstRow);
+  tree.Branch("clusterColumn",                     &simHitData.clusterColumn);
+  tree.Branch("clusterEdge",                       &simHitData.clusterEdge);
+  tree.Branch("clusterThreshold",                  &simHitData.clusterThreshold);
 };
 
 std::vector<unsigned int> SimHitInfo::getSimTrackId(const DetId& detId, unsigned int channel) {
@@ -266,45 +268,52 @@ void SimHitInfo::fillSimHitInfo(const PSimHit& simHit) {
   }
   if ( rechit ) {
     simHitData.hasRecHit.push_back(true);
-    LocalPoint localPosClu = rechit->localPosition();
-    Global3DPoint globalPosClu = geomDetUnit->surface().toGlobal(localPosClu);
-    simHitData.Hit_cluster_global_x.push_back(globalPosClu.x());
-    simHitData.Hit_cluster_global_y.push_back(globalPosClu.y());
-    simHitData.Hit_cluster_global_z.push_back(globalPosClu.z());
-    simHitData.Hit_cluster_local_x.push_back(localPosClu.x());
-    simHitData.Hit_cluster_local_y.push_back(localPosClu.y());
-    simHitData.Hit_cluster_local_z.push_back(localPosClu.z());
-    simHitData.Hit_det_rawid.push_back(rawid);
+    ROOT::Math::XYZPointF localPos(rechit->localPosition().x(),rechit->localPosition().y(),
+				   rechit->localPosition().z());
+    simHitData.rhLocalPos.push_back(localPos);
+    ROOT::Math::XYZPointF globalPos(rechit->globalPosition().x(),rechit->globalPosition().y(),
+				    rechit->globalPosition().z());
+    simHitData.rhGlobalPos.push_back(globalPos);
+    // simHitData.Hit_cluster_global_x.push_back(globalPosClu.x());
+    // simHitData.Hit_cluster_global_y.push_back(globalPosClu.y());
+    // simHitData.Hit_cluster_global_z.push_back(globalPosClu.z());
+    // simHitData.Hit_cluster_local_x.push_back(localPosClu.x());
+    // simHitData.Hit_cluster_local_y.push_back(localPosClu.y());
+    // simHitData.Hit_cluster_local_z.push_back(localPosClu.z());
+    simHitData.detRawId.push_back(rawid);
 
     const Phase2TrackerCluster1D& clustIt = *(rechit->cluster());
-    simHitData.Hit_cluster_size.push_back(clustIt.size());
-    // simHitData.Hit_cluster_SimTrack_size.push_back(clusterSimTrackIds.size());
-    simHitData.Hit_cluster_firstStrip.push_back(clustIt.firstStrip());
-    simHitData.Hit_cluster_firstRow.push_back(clustIt.firstRow());
-    simHitData.Hit_cluster_column.push_back(clustIt.column());
-    simHitData.Hit_cluster_edge.push_back(clustIt.edge());
-    simHitData.Hit_cluster_threshold.push_back(clustIt.threshold());
+    simHitData.clusterSize.push_back(clustIt.size());
+    // simHitData.clusterNSimTracks.push_back(clusterSimTrackIds.size());
+    simHitData.clusterFirstStrip.push_back(clustIt.firstStrip());
+    simHitData.clusterFirstRow.push_back(clustIt.firstRow());
+    simHitData.clusterColumn.push_back(clustIt.column());
+    simHitData.clusterEdge.push_back(clustIt.edge());
+    simHitData.clusterThreshold.push_back(clustIt.threshold());
   }
   else {
     simHitData.hasRecHit.push_back(false);
-    simHitData.Hit_cluster_global_x.push_back(0);
-    simHitData.Hit_cluster_global_y.push_back(0);
-    simHitData.Hit_cluster_global_z.push_back(0);
-    simHitData.Hit_cluster_size.push_back(0);
-    // simHitData.Hit_cluster_SimTrack_size.push_back(0);
-    simHitData.Hit_cluster_local_x.push_back(0);
-    simHitData.Hit_cluster_local_y.push_back(0);
-    simHitData.Hit_cluster_local_z.push_back(0);
-    simHitData.Hit_det_rawid.push_back(0);
-    simHitData.Hit_cluster_firstStrip.push_back(0);
-    simHitData.Hit_cluster_firstRow.push_back(0);
-    simHitData.Hit_cluster_column.push_back(0);
-    simHitData.Hit_cluster_edge.push_back(0);
-    simHitData.Hit_cluster_threshold.push_back(0);
+    simHitData.rhLocalPos.push_back(ROOT::Math::XYZPointF(0.,0.,0.));
+    simHitData.rhGlobalPos.push_back(ROOT::Math::XYZPointF(0.,0.,0.));
+    // simHitData.Hit_cluster_global_x.push_back(0);
+    // simHitData.Hit_cluster_global_y.push_back(0);
+    // simHitData.Hit_cluster_global_z.push_back(0);
+    simHitData.clusterSize.push_back(0);
+    // simHitData.clusterNSimTracks.push_back(0);
+    // simHitData.Hit_cluster_local_x.push_back(0);
+    // simHitData.Hit_cluster_local_y.push_back(0);
+    // simHitData.Hit_cluster_local_z.push_back(0);
+    simHitData.detRawId.push_back(0);
+    simHitData.clusterFirstStrip.push_back(0);
+    simHitData.clusterFirstRow.push_back(0);
+    simHitData.clusterColumn.push_back(0);
+    simHitData.clusterEdge.push_back(0);
+    simHitData.clusterThreshold.push_back(0);
   }
 
 };
-  
+
+
 void SimHitInfo::clear() {
   simHitData.localPos.clear();
   simHitData.globalPos.clear();
@@ -324,24 +333,26 @@ void SimHitInfo::clear() {
   simHitData.trackId.clear();
   simHitData.hasRecHit.clear();
   
-  simHitData.Hit_cluster_global_x.clear();
-  simHitData.Hit_cluster_global_y.clear();
-  simHitData.Hit_cluster_global_z.clear();
+  simHitData.rhLocalPos.clear();
+  simHitData.rhGlobalPos.clear();
+  // simHitData.Hit_cluster_global_x.clear();
+  // simHitData.Hit_cluster_global_y.clear();
+  // simHitData.Hit_cluster_global_z.clear();
   // simHitData.Hit_layer.clear();
   // simHitData.Hit_ModuleType.clear();
-  simHitData.Hit_cluster_size.clear();
-  // simHitData.Hit_cluster_SimTrack_size.clear();
-  simHitData.Hit_cluster_local_x.clear();
-  simHitData.Hit_cluster_local_y.clear();
-  simHitData.Hit_cluster_local_z.clear();
+  simHitData.clusterSize.clear();
+  // simHitData.clusterNSimTracks.clear();
+  // simHitData.Hit_cluster_local_x.clear();
+  // simHitData.Hit_cluster_local_y.clear();
+  // simHitData.Hit_cluster_local_z.clear();
   // simHitData.Hit_cluster_haveSimHit.clear();
   // simHitData.Hit_cluster_closestSimHit_local_x.clear();
   // simHitData.Hit_cluster_closestSimHit_local_y.clear();
   // simHitData.Hit_cluster_closestSimHit_local_z.clear();
-  simHitData.Hit_det_rawid.clear();
-  simHitData.Hit_cluster_firstStrip.clear();
-  simHitData.Hit_cluster_firstRow.clear();
-  simHitData.Hit_cluster_column.clear();
-  simHitData.Hit_cluster_edge.clear();
-  simHitData.Hit_cluster_threshold.clear();
+  simHitData.detRawId.clear();
+  simHitData.clusterFirstStrip.clear();
+  simHitData.clusterFirstRow.clear();
+  simHitData.clusterColumn.clear();
+  simHitData.clusterEdge.clear();
+  simHitData.clusterThreshold.clear();
 };

@@ -42,27 +42,29 @@ class SimHitInfo {
     std::vector<ROOT::Math::XYZVectorF> detNormal;
     std::vector<unsigned int> trackId;
     std::vector<bool> hasRecHit;
-    
-    std::vector<float> Hit_cluster_global_x;
-    std::vector<float> Hit_cluster_global_y;
-    std::vector<float> Hit_cluster_global_z;
+
+    std::vector<ROOT::Math::XYZPointF> rhLocalPos;
+    std::vector<ROOT::Math::XYZPointF> rhGlobalPos;
+    // std::vector<float> Hit_cluster_global_x;
+    // std::vector<float> Hit_cluster_global_y;
+    // std::vector<float> Hit_cluster_global_z;
     /* std::vector<unsigned short> Hit_layer; */
     /* std::vector<unsigned short> Hit_ModuleType; */
-    std::vector<unsigned short> Hit_cluster_size;
-    std::vector<int> Hit_cluster_SimTrack_size;
-    std::vector<float> Hit_cluster_local_x;
-    std::vector<float> Hit_cluster_local_y;
-    std::vector<float> Hit_cluster_local_z;
+    std::vector<unsigned short> clusterSize;
+    std::vector<int> clusterNSimTracks;
+    // std::vector<float> Hit_cluster_local_x;
+    // std::vector<float> Hit_cluster_local_y;
+    // std::vector<float> Hit_cluster_local_z;
     /* std::vector<bool> Hit_cluster_haveSimHit; */
     /* std::vector<float> Hit_cluster_closestSimHit_local_x; */
     /* std::vector<float> Hit_cluster_closestSimHit_local_y; */
     /* std::vector<float> Hit_cluster_closestSimHit_local_z; */
-    std::vector<unsigned int> Hit_det_rawid;
-    std::vector<unsigned short> Hit_cluster_firstStrip;
-    std::vector<unsigned short> Hit_cluster_firstRow;
-    std::vector<unsigned short> Hit_cluster_column;
-    std::vector<unsigned short> Hit_cluster_edge;
-    std::vector<unsigned short> Hit_cluster_threshold;
+    std::vector<unsigned int> detRawId;
+    std::vector<unsigned short> clusterFirstStrip;
+    std::vector<unsigned short> clusterFirstRow;
+    std::vector<unsigned short> clusterColumn;
+    std::vector<unsigned short> clusterEdge;
+    std::vector<unsigned short> clusterThreshold;
   };
   SimHitData simHitData;
 
