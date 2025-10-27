@@ -151,7 +151,7 @@ for mType in range(23,26):
     cEff2D.cd(ic)
     simHitTree.Draw("localPos.y():localPos.x()>>hEff1"+str(mType)+"(60,-7.5,7.5,15,-7.5,7.5)", \
                         cutString(extraCuts,"moduleType=="+str(mType)))
-    hEffs[mType] = [ ROOT.gDirectory.Get("hEff1"+str(mType)), None ]
+    hEffs[mType] = [ ROOT.gDirectory.Get("hEff1"+str(mType)), None, None, None ]
     simHitTree.Draw("localPos.y():localPos.x()>>hEff2"+str(mType)+"(60,-7.5,7.5,15,-7.5,7.5)", \
                         cutString(extraCuts,"moduleType=="+str(mType), \
                         "hasRecHit>0",dxCut))
@@ -179,18 +179,26 @@ for mType in range(23,26):
     ROOT.gPad.SetGridy(1)
     simHitTree.Draw("localPos.x()>>hEffX1"+str(mType)+"(240,-7.5,7.5)", \
                         cutString(extraCuts,"moduleType=="+str(mType)))
-    hEffXs[mType] = [ ROOT.gDirectory.Get("hEffX1"+str(mType)), None ]
+    hEffXs[mType] = [ ROOT.gDirectory.Get("hEffX1"+str(mType)), None, None, None ]
     simHitTree.Draw("localPos.x()>>hEffX2"+str(mType)+"(240,-7.5,7.5)", \
                         cutString(extraCuts,"moduleType=="+str(mType), \
                             "hasRecHit>0",dxCut))
     hEffXs[mType][1] = ROOT.gDirectory.Get("hEffX2"+str(mType))
-    hEffXs[mType][1].Divide(hEffXs[mType][0])
-    hEffXs[mType][1].SetTitle("Efficiency 1D module type "+str(mType))
-    hEffXs[mType][1].GetXaxis().SetTitle("local x [cm]")
-    hEffXs[mType][1].GetYaxis().SetTitle("efficiency")
-    hEffXs[mType][1].SetMaximum(1.05)
-    hEffXs[mType][1].SetMinimum(0.5)
-    hEffXs[mType][1].Draw()
+    hEffXs[mType][2] = ROOT.gPad.DrawFrame(hEffXs[mType][0].GetXaxis().GetXmin(),0.5, \
+                                           hEffXs[mType][0].GetXaxis().GetXmax(),1.05)
+    hEffXs[mType][2].SetTitle("Efficiency 1D module type "+str(mType))
+    hEffXs[mType][2].GetXaxis().SetTitle("local x [cm]")
+    hEffXs[mType][2].GetYaxis().SetTitle("efficiency")
+    #hEffXs[mType][1].Divide(hEffXs[mType][0])
+    hEffXs[mType][3] = ROOT.TEfficiency(hEffXs[mType][1],hEffXs[mType][0])
+    hEffXs[mType][3].SetMarkerSize(0.3)
+    #hEffXs[mType][2].SetTitle("Efficiency 1D module type "+str(mType)+";local x [cm];efficiency")
+    #hEffXs[mType][2].SetTitle("Efficiency 1D module type "+str(mType))
+    #hEffXs[mType][2].GetXaxis().SetTitle("local x [cm]")
+    #hEffXs[mType][2].GetYaxis().SetTitle("efficiency")
+    #hEffXs[mType][2].SetMaximum(1.05)
+    #hEffXs[mType][2].SetMinimum(0.5)
+    hEffXs[mType][3].Draw("same Z")
     ROOT.gPad.Update()
 paves.append(drawCuts(cEffX,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
 
@@ -208,19 +216,26 @@ if args.effVar!=None:
         simHitTree.Draw(effVarName+">>hEffV1"+str(mType)+ \
                             "("+str(effVarAxis[0])+","+str(effVarAxis[1])+","+str(effVarAxis[2])+")", \
                             cutString(extraCuts,"moduleType=="+str(mType)))
-        hEffVs[mType] = [ ROOT.gDirectory.Get("hEffV1"+str(mType)), None ]
+        hEffVs[mType] = [ ROOT.gDirectory.Get("hEffV1"+str(mType)), None, None, None ]
         simHitTree.Draw(effVarName+">>hEffV2"+str(mType)+ \
                             "("+str(effVarAxis[0])+","+str(effVarAxis[1])+","+str(effVarAxis[2])+")", \
                             cutString(extraCuts,"moduleType=="+str(mType),"hasRecHit>0",dxCut))
         hEffVs[mType][1] = ROOT.gDirectory.Get("hEffV2"+str(mType))
-        hEffVs[mType][1].Divide(hEffVs[mType][0])
-        hEffVs[mType][1].SetTitle("Efficiency module type "+str(mType))
-        hEffVs[mType][1].GetXaxis().SetTitle(effVarName)
-        hEffVs[mType][1].GetYaxis().SetTitle("efficiency")
-        hEffVs[mType][1].SetMaximum(1.05)
-        hEffVs[mType][1].SetMinimum(0.)
-        hEffVs[mType][1].GetXaxis().SetTitle(effVarName)
-        hEffVs[mType][1].Draw()
+        hEffVs[mType][2] = ROOT.gPad.DrawFrame(hEffVs[mType][0].GetXaxis().GetXmin(),0.0, \
+                                               hEffVs[mType][0].GetXaxis().GetXmax(),1.05)
+        hEffVs[mType][2].SetTitle("Efficiency module type "+str(mType))
+        hEffVs[mType][2].GetXaxis().SetTitle(effVarName)
+        hEffVs[mType][2].GetYaxis().SetTitle("efficiency")
+        hEffVs[mType][3] = ROOT.TEfficiency(hEffVs[mType][1],hEffVs[mType][0])
+        hEffVs[mType][3].SetMarkerSize(0.3)
+        #hEffVs[mType][1].Divide(hEffVs[mType][0])
+        #hEffVs[mType][1].SetTitle("Efficiency module type "+str(mType))
+        #hEffVs[mType][1].GetXaxis().SetTitle(effVarName)
+        #hEffVs[mType][1].GetYaxis().SetTitle("efficiency")
+        #hEffVs[mType][1].SetMaximum(1.05)
+        #hEffVs[mType][1].SetMinimum(0.)
+        #hEffVs[mType][1].GetXaxis().SetTitle(effVarName)
+        hEffVs[mType][3].Draw("same Z")
         ROOT.gPad.Update()
     paves.append(drawCuts(cEffV,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
 
