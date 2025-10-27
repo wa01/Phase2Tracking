@@ -1,4 +1,4 @@
-import sys
+import sys,os
 import ROOT
 import argparse
 
@@ -86,8 +86,12 @@ parser.add_argument('--effVar', help='variable for extra efficiency plot (format
                         type=str, default=None)
 parser.add_argument('--dxMax', help='max. local dx for efficiency plots', type=float, default=0.0075)
 parser.add_argument('--cuts', '-c', help="basic cut string", type=str, default="")
+parser.add_argument('--output', '-o', help='output directory for graphic output', type=str, default=None)
+parser.add_argument('--sampleName', help='sample label for output', type=str, default=None)
 parser.add_argument('file', help='input file', type=str, nargs=1, default=None)
 args = parser.parse_args()
+if args.output!=None:
+    assert os.path.isdir(args.output)
 
 effVarName = None
 effVarAxis = None
@@ -118,9 +122,11 @@ ROOT.gStyle.SetOptTitle(1)
 tf = ROOT.TFile(args.file[0])
 simHitTree = simHitTree = tf.Get("analysis").Get("SimHitTree")
 
+canvases = [ ]
 histos = { }
 paves = [ ]
-cRes = ROOT.TCanvas("c","c",1000,1000)
+cRes = ROOT.TCanvas("cRes","cRes",1000,1000)
+canvases.append(cRes)
 cRes.Divide(2,2)
 ic = 0
 for mType in range(23,26):
@@ -135,13 +141,14 @@ for mType in range(23,26):
     
 
 dxCut = "abs(localPos.x()-rhLocalPos.x())<"+str(args.dxMax)
-cEff = ROOT.TCanvas("cEff2D","cEff2D",1000,1000)
-cEff.Divide(2,2)
+cEff2D = ROOT.TCanvas("cEff2D","cEff2D",1000,1000)
+canvases.append(cEff2D)
+cEff2D.Divide(2,2)
 ic = 0
 hEffs = { }
 for mType in range(23,26):
     ic += 1
-    cEff.cd(ic)
+    cEff2D.cd(ic)
     simHitTree.Draw("localPos.y():localPos.x()>>hEff1"+str(mType)+"(60,-7.5,7.5,15,-7.5,7.5)", \
                         cutString(extraCuts,"moduleType=="+str(mType)))
     hEffs[mType] = [ ROOT.gDirectory.Get("hEff1"+str(mType)), None ]
@@ -158,15 +165,18 @@ for mType in range(23,26):
     hEffs[mType][1].SetMinimum(0.75)
     hEffs[mType][1].Draw("zcol")
     ROOT.gPad.Update()
-paves.append(drawCuts(cEff,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
+paves.append(drawCuts(cEff2D,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
 
 cEffX = ROOT.TCanvas("cEffX","cEffX",1000,1000)
+canvases.append(cEffX)
 cEffX.Divide(2,2)
 ic = 0
 hEffXs = { }
 for mType in range(23,26):
     ic += 1
     cEffX.cd(ic)
+    ROOT.gPad.SetGridx(1)
+    ROOT.gPad.SetGridy(1)
     simHitTree.Draw("localPos.x()>>hEffX1"+str(mType)+"(240,-7.5,7.5)", \
                         cutString(extraCuts,"moduleType=="+str(mType)))
     hEffXs[mType] = [ ROOT.gDirectory.Get("hEffX1"+str(mType)), None ]
@@ -179,13 +189,14 @@ for mType in range(23,26):
     hEffXs[mType][1].GetXaxis().SetTitle("local x [cm]")
     hEffXs[mType][1].GetYaxis().SetTitle("efficiency")
     hEffXs[mType][1].SetMaximum(1.05)
-    hEffXs[mType][1].SetMinimum(0.)
+    hEffXs[mType][1].SetMinimum(0.5)
     hEffXs[mType][1].Draw()
     ROOT.gPad.Update()
 paves.append(drawCuts(cEffX,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
 
 if args.effVar!=None:
     cEffV = ROOT.TCanvas("cEffV","cEffV",1000,1000)
+    canvases.append(cEffV)
     cEffV.Divide(2,2)
     ic = 0
     hEffVs = { }
@@ -213,3 +224,10 @@ if args.effVar!=None:
         ROOT.gPad.Update()
     paves.append(drawCuts(cEffV,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
 
+if args.output!=None:
+    for c in canvases:
+        basename = os.path.join(args.output,c.GetName())
+        if args.sampleName!=None:
+            basename += "_" + args.sampleName
+        c.SaveAs(basename+".pdf")
+        c.SaveAs(basename+".png")
