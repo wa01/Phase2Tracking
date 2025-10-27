@@ -25,9 +25,61 @@ def fitHistogram(mType,h):
 
 
 def cutString(*cuts):
-    #print(cuts)
     #print("&&".join([ c for c in cuts if c.strip()!="" ]))
     return "&&".join([ c for c in cuts if c.strip()!="" ])
+
+def drawCuts(canvas,cuts,effcuts=None):
+    individualCuts = cuts.split("&&")
+    indEffCuts = None if effcuts==None else effcuts.split("&&")
+    canvas.cd(4)
+    hpave = 0.05+(len(individualCuts)+1)*0.04
+    if indEffCuts!=None:
+        hpave += 0.05+(len(indEffCuts)+2)*0.04
+        
+    pave = ROOT.TPaveText(0.05,1.0-hpave,0.95,1.0)
+    pave.SetBorderSize(0)
+    pave.SetFillStyle(0)
+    t = pave.AddText("Basic selection")
+    t.SetTextFont(42)
+    t.SetTextSize(0.05)
+    t.SetTextAlign(13)
+    t = pave.AddText("")
+    t.SetTextFont(42)
+    t.SetTextSize(0.04)
+    t.SetTextAlign(13)
+    for ic,c in enumerate(individualCuts):
+        l = "  " + c
+        if ic<(len(individualCuts)-1):
+            l += " &&"
+        t = pave.AddText(l)
+        t.SetTextFont(42)
+        t.SetTextSize(0.04)
+        t.SetTextAlign(13)
+    if indEffCuts!=None:
+        t = pave.AddText("")
+        t.SetTextFont(42)
+        t.SetTextSize(0.04)
+        t.SetTextAlign(13)
+        t = pave.AddText("Efficiency selection")
+        t.SetTextFont(42)
+        t.SetTextSize(0.05)
+        t.SetTextAlign(13)
+        t = pave.AddText("")
+        t.SetTextFont(42)
+        t.SetTextSize(0.04)
+        t.SetTextAlign(13)
+        for ic,c in enumerate(indEffCuts):
+            l = "  " + c
+            if ic<(len(individualCuts)-1):
+                l += " &&"
+            t = pave.AddText(l)
+            t.SetTextFont(42)
+            t.SetTextSize(0.04)
+            t.SetTextAlign(13)
+        
+    pave.Draw()
+    ROOT.gPad.Update()
+    return pave
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--effVar', help='variable for extra efficiency plot (format <name>,<nbins>,<min>,<max>)', \
@@ -40,20 +92,34 @@ args = parser.parse_args()
 effVarName = None
 effVarAxis = None
 if args.effVar!=None:
-    fields = args.effVar.split(",")
-    assert len(fields)==4
-    effVarName = fields[0]
-    effVarAxis = ( int(fields[1]), float(fields[2]), float(fields[3]) )
+    fields1 = args.effVar.split(";")
+    assert len(fields1)==2
+    effVarName = fields1[0]
+    fields2 = fields1[1].split(",")
+    assert len(fields2)==3
+    effVarAxis = ( int(fields2[0]), float(fields2[1]), float(fields2[2]) )
 
 extraCuts = "abs(particleType)==13"
 extraCuts = "tof<12.5"
 extraCuts = args.cuts
+
+ROOT.gROOT.ProcessLine(".L setTDRStyle.C")
+ROOT.setTDRStyle()
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetOptFit(1)
+ROOT.gStyle.SetTitleFont(42)
+ROOT.gStyle.SetTitleFontSize(0.04)
+ROOT.gStyle.SetTitleX(0.10)
+ROOT.gStyle.SetTitleY(1.00)
+ROOT.gStyle.SetTitleAlign(13)
+ROOT.gStyle.SetTitleBorderSize(0)
+#ROOT.gStyle.SetTitleFillColor(0)
+ROOT.gStyle.SetOptTitle(1)
 tf = ROOT.TFile(args.file[0])
 simHitTree = simHitTree = tf.Get("analysis").Get("SimHitTree")
 
 histos = { }
+paves = [ ]
 cRes = ROOT.TCanvas("c","c",1000,1000)
 cRes.Divide(2,2)
 ic = 0
@@ -63,6 +129,8 @@ for mType in range(23,26):
     simHitTree.Draw("(localPos.x()-rhLocalPos.x())>>hRes"+str(mType)+"(200,-0.1,0.1)", \
                         cutString(extraCuts,"hasRecHit>0","moduleType=="+str(mType)))
     histos[mType] = ROOT.gDirectory.Get("hRes"+str(mType))
+    histos[mType].SetTitle("Residuals module type "+str(mType))
+    histos[mType].GetXaxis().SetTitle("#Delta x [cm]")
     f = fitHistogram(mType,histos[mType])
     
 
@@ -82,10 +150,15 @@ for mType in range(23,26):
                         "hasRecHit>0",dxCut))
     hEffs[mType][1] = ROOT.gDirectory.Get("hEff2"+str(mType))
     hEffs[mType][1].Divide(hEffs[mType][0])
+    hEffs[mType][1].SetTitle("Efficiency 2D module type "+str(mType))
+    hEffs[mType][1].GetXaxis().SetTitle("local x [cm]")
+    hEffs[mType][1].GetYaxis().SetTitle("local y [cm]")
+    hEffs[mType][1].GetZaxis().SetTitle("efficiency")
     hEffs[mType][1].SetMaximum(1.)
     hEffs[mType][1].SetMinimum(0.75)
     hEffs[mType][1].Draw("zcol")
     ROOT.gPad.Update()
+paves.append(drawCuts(cEff,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
 
 cEffX = ROOT.TCanvas("cEffX","cEffX",1000,1000)
 cEffX.Divide(2,2)
@@ -102,10 +175,14 @@ for mType in range(23,26):
                             "hasRecHit>0",dxCut))
     hEffXs[mType][1] = ROOT.gDirectory.Get("hEffX2"+str(mType))
     hEffXs[mType][1].Divide(hEffXs[mType][0])
+    hEffXs[mType][1].SetTitle("Efficiency 1D module type "+str(mType))
+    hEffXs[mType][1].GetXaxis().SetTitle("local x [cm]")
+    hEffXs[mType][1].GetYaxis().SetTitle("efficiency")
     hEffXs[mType][1].SetMaximum(1.05)
     hEffXs[mType][1].SetMinimum(0.)
     hEffXs[mType][1].Draw()
     ROOT.gPad.Update()
+paves.append(drawCuts(cEffX,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
 
 if args.effVar!=None:
     cEffV = ROOT.TCanvas("cEffV","cEffV",1000,1000)
@@ -126,9 +203,13 @@ if args.effVar!=None:
                             cutString(extraCuts,"moduleType=="+str(mType),"hasRecHit>0",dxCut))
         hEffVs[mType][1] = ROOT.gDirectory.Get("hEffV2"+str(mType))
         hEffVs[mType][1].Divide(hEffVs[mType][0])
+        hEffVs[mType][1].SetTitle("Efficiency module type "+str(mType))
+        hEffVs[mType][1].GetXaxis().SetTitle(effVarName)
+        hEffVs[mType][1].GetYaxis().SetTitle("efficiency")
         hEffVs[mType][1].SetMaximum(1.05)
         hEffVs[mType][1].SetMinimum(0.)
         hEffVs[mType][1].GetXaxis().SetTitle(effVarName)
         hEffVs[mType][1].Draw()
         ROOT.gPad.Update()
+    paves.append(drawCuts(cEffV,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
 
