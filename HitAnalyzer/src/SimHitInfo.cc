@@ -26,20 +26,9 @@ void SimHitInfo::setBranches(TTree& tree) {
 
   tree.Branch("rhLocalPos",&simHitData.rhLocalPos);
   tree.Branch("rhGlobalPos",&simHitData.rhGlobalPos);
-  // tree.Branch("Hit_cluster_global_x",                   &simHitData.Hit_cluster_global_x);
-  // tree.Branch("Hit_cluster_global_y",                   &simHitData.Hit_cluster_global_y);
-  // tree.Branch("Hit_cluster_global_z",                   &simHitData.Hit_cluster_global_z);
   // tree.Branch("Hit_layer",                              &simHitData.Hit_layer);
   // tree.Branch("Hit_ModuleType",                         &simHitData.Hit_ModuleType);
   tree.Branch("clusterSize",                       &simHitData.clusterSize);
-  // // tree.Branch("clusterNSimTracks",              &simHitData.clusterNSimTracks);
-  // // tree.Branch("Hit_cluster_local_x",                    &simHitData.Hit_cluster_local_x);
-  // // tree.Branch("Hit_cluster_local_y",                    &simHitData.Hit_cluster_local_y);
-  // // tree.Branch("Hit_cluster_local_z",                    &simHitData.Hit_cluster_local_z);
-  // // tree.Branch("Hit_cluster_haveSimHit",                 &simHitData.Hit_cluster_haveSimHit);
-  // // tree.Branch("Hit_cluster_closestSimHit_local_x",      &simHitData.Hit_cluster_closestSimHit_local_x);
-  // // tree.Branch("Hit_cluster_closestSimHit_local_y",      &simHitData.Hit_cluster_closestSimHit_local_y);
-  // // tree.Branch("Hit_cluster_closestSimHit_local_z",      &simHitData.Hit_cluster_closestSimHit_local_z);
   tree.Branch("detRawId",                          &simHitData.detRawId);
   tree.Branch("clusterFirstStrip",                 &simHitData.clusterFirstStrip);
   tree.Branch("clusterFirstRow",                   &simHitData.clusterFirstRow);
@@ -226,36 +215,6 @@ void SimHitInfo::fillSimHitInfo(const PSimHit& simHit) {
   simHitData.trackId.push_back(simHit.trackId());
 
 
-  // std::cout << "SimHitInfoStarting matching" << std::endl;
-  //
-  // match RecHits to SimHits
-  //
-  //
-  // loop over all DetUnits with SimHits
-  //
-  // for ( DetSimHitsMap::const_iterator ishd=simHitsPerDet_.begin(); ishd!=simHitsPerDet_.end(); ++ishd ) {
-  //   // any RecHit for this DetUnit?
-  //   std::cout << "SimHitInfoChecking det id " << ishd->first << std::endl;
-  //   DetRecHitsMap::const_iterator ivrh = recHitsPerDet_.find(ishd->first);
-  //   if ( ivrh==recHitsPerDet_.end() ) {
-  //     std::cout << "SimHitInfo- Skipping det - no RecHits" << std::endl;
-  //     continue;
-  //   }
-  //   //
-  //   unsigned int rawid(ishd->first);
-  //   DetId detId(rawid);
-  //   //
-  //   // loop over all SimHits on DetUnit
-  //   //
-  //   std::cout << "Nr. of SimHits for det id " << ishd->first << " = " << ishd->second.size() << std::endl;
-  //   for ( std::vector<const PSimHit*>::const_iterator ish=ishd->second.begin(); ish!=ishd->second.end(); ++ish ) {
-      // std::cout << "SimHitInfo.. trying to match RecHit" << std::endl;
-      // const Phase2TrackerRecHit1D* rechit = matchRecHitOnDet(*ish,detId,ivrh->second);
-      // std::cout << "SimHitInfo.. matched RecHit at " << rechit << std::endl;
-    // }
-  // }
-  // std::cout << "SimHitInfo.. trying to match RecHi1t" << std::endl;
-  // std::cout << "SimHitInfoChecking det id " << rawid << std::endl;
   const Phase2TrackerRecHit1D* rechit(0);
   DetRecHitsMap::const_iterator ivrh = recHitsPerDet_.find(rawid);
   // if ( ivrh==recHitsPerDet_.end() ) {
@@ -274,12 +233,6 @@ void SimHitInfo::fillSimHitInfo(const PSimHit& simHit) {
     ROOT::Math::XYZPointF globalPos(rechit->globalPosition().x(),rechit->globalPosition().y(),
 				    rechit->globalPosition().z());
     simHitData.rhGlobalPos.push_back(globalPos);
-    // simHitData.Hit_cluster_global_x.push_back(globalPosClu.x());
-    // simHitData.Hit_cluster_global_y.push_back(globalPosClu.y());
-    // simHitData.Hit_cluster_global_z.push_back(globalPosClu.z());
-    // simHitData.Hit_cluster_local_x.push_back(localPosClu.x());
-    // simHitData.Hit_cluster_local_y.push_back(localPosClu.y());
-    // simHitData.Hit_cluster_local_z.push_back(localPosClu.z());
     simHitData.detRawId.push_back(rawid);
 
     const Phase2TrackerCluster1D& clustIt = *(rechit->cluster());
@@ -295,14 +248,8 @@ void SimHitInfo::fillSimHitInfo(const PSimHit& simHit) {
     simHitData.hasRecHit.push_back(false);
     simHitData.rhLocalPos.push_back(ROOT::Math::XYZPointF(0.,0.,0.));
     simHitData.rhGlobalPos.push_back(ROOT::Math::XYZPointF(0.,0.,0.));
-    // simHitData.Hit_cluster_global_x.push_back(0);
-    // simHitData.Hit_cluster_global_y.push_back(0);
-    // simHitData.Hit_cluster_global_z.push_back(0);
     simHitData.clusterSize.push_back(0);
     // simHitData.clusterNSimTracks.push_back(0);
-    // simHitData.Hit_cluster_local_x.push_back(0);
-    // simHitData.Hit_cluster_local_y.push_back(0);
-    // simHitData.Hit_cluster_local_z.push_back(0);
     simHitData.detRawId.push_back(0);
     simHitData.clusterFirstStrip.push_back(0);
     simHitData.clusterFirstRow.push_back(0);
@@ -335,20 +282,10 @@ void SimHitInfo::clear() {
   
   simHitData.rhLocalPos.clear();
   simHitData.rhGlobalPos.clear();
-  // simHitData.Hit_cluster_global_x.clear();
-  // simHitData.Hit_cluster_global_y.clear();
-  // simHitData.Hit_cluster_global_z.clear();
   // simHitData.Hit_layer.clear();
   // simHitData.Hit_ModuleType.clear();
   simHitData.clusterSize.clear();
   // simHitData.clusterNSimTracks.clear();
-  // simHitData.Hit_cluster_local_x.clear();
-  // simHitData.Hit_cluster_local_y.clear();
-  // simHitData.Hit_cluster_local_z.clear();
-  // simHitData.Hit_cluster_haveSimHit.clear();
-  // simHitData.Hit_cluster_closestSimHit_local_x.clear();
-  // simHitData.Hit_cluster_closestSimHit_local_y.clear();
-  // simHitData.Hit_cluster_closestSimHit_local_z.clear();
   simHitData.detRawId.clear();
   simHitData.clusterFirstStrip.clear();
   simHitData.clusterFirstRow.clear();

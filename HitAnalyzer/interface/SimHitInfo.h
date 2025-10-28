@@ -3,9 +3,6 @@
 
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
 
-// #include "DataFormats/GeometrySurface/interface/LocalError.h"
-// #include "DataFormats/GeometryVector/interface/LocalPoint.h"
-// #include "Geometry/CommonDetUnit/interface/GeomDet.h"
 #include "Geometry/TrackerGeometryBuilder/interface/TrackerGeometry.h"
 #include "SimDataFormats/TrackingHit/interface/PSimHitContainer.h"
 #include "SimDataFormats/TrackerDigiSimLink/interface/PixelDigiSimLink.h"
@@ -45,20 +42,10 @@ class SimHitInfo {
 
     std::vector<ROOT::Math::XYZPointF> rhLocalPos;
     std::vector<ROOT::Math::XYZPointF> rhGlobalPos;
-    // std::vector<float> Hit_cluster_global_x;
-    // std::vector<float> Hit_cluster_global_y;
-    // std::vector<float> Hit_cluster_global_z;
     /* std::vector<unsigned short> Hit_layer; */
     /* std::vector<unsigned short> Hit_ModuleType; */
     std::vector<unsigned short> clusterSize;
     std::vector<int> clusterNSimTracks;
-    // std::vector<float> Hit_cluster_local_x;
-    // std::vector<float> Hit_cluster_local_y;
-    // std::vector<float> Hit_cluster_local_z;
-    /* std::vector<bool> Hit_cluster_haveSimHit; */
-    /* std::vector<float> Hit_cluster_closestSimHit_local_x; */
-    /* std::vector<float> Hit_cluster_closestSimHit_local_y; */
-    /* std::vector<float> Hit_cluster_closestSimHit_local_z; */
     std::vector<unsigned int> detRawId;
     std::vector<unsigned short> clusterFirstStrip;
     std::vector<unsigned short> clusterFirstRow;

@@ -2,6 +2,51 @@ import sys,os
 import ROOT
 import argparse
 
+class HistogramDefinition:
+
+    requiredFields = [ 'canvasName', 'histogramName', 'histogramTitle', 'variable', 'baseCuts', 'effCuts', \
+                        'xNbins', 'xMin', 'xMax' ]
+    allFields = requiredFields + [ 'xTitle', 'yTitle', 'yMin', 'yMax' ]
+
+    def __init__(self,name,inputDict):
+        #
+        self.parameters = { x:None for x in HistogramDefinition.allFields }
+        for k,v in inputDict.items():
+            if k.startswith('__'):
+                continue
+            if k in HistogramDefinition.allFields:
+                self.parameters[k] = v
+            else:
+                print("Warning: key",k,"is not a standard field name - ignoring the entry")
+        #
+        for f in HistogramDefinition.requiredFields:
+            assert f in self.parameters
+
+    def __getitem__(self,field):
+        if field in self.parameters:
+            return self.parameters[field]
+        return None
+
+        
+
+class HistogramDefinitions:
+
+    def __init__(self):
+        self.allDefinitions = { }
+        self.allCanvases = set()
+
+    def add(self,hdef):
+        assert not hdef['histogramName'] in self.allDefinitions
+        assert not hdef['canvasName'] in self.allCanvases
+        self.allDefinitions[hdef['histogramName']] = hdef
+        self.allCanvases.add(hdef['canvasName'])
+        
+
+    def __getitem__(self,name):
+        if name in self.allDefinitions:
+            return self.allDefinitions[name]
+        return None
+        
 def fitHistogram(mType,h):
     f1name = "f1"+str(mType)
     f1 = ROOT.TF1(f1name,"gaus(0)")
@@ -25,63 +70,100 @@ def fitHistogram(mType,h):
 
 
 def cutString(*cuts):
-    #print("&&".join([ c for c in cuts if c.strip()!="" ]))
-    return "&&".join([ c for c in cuts if c.strip()!="" ])
+    #print("&&".join([ c for c in cuts if ( c!=None and c.strip()!="" ) ]))
+    return "&&".join([ c for c in cuts if ( c!=None and c.strip()!="" ) ])
 
-def drawCuts(canvas,cuts,effcuts=None):
-    individualCuts = cuts.split("&&")
+def drawCuts(pave,title,cuts):
+    t = pave.AddText(title)
+    t.SetTextFont(42)
+    t.SetTextSize(0.05)
+    t.SetTextAlign(13)
+    t = pave.AddText("")
+    for ic,c in enumerate(cuts):
+        l = "  " + c
+        if ic<(len(cuts)-1):
+            l += " &&"
+        t = pave.AddText(l)
+
+    
+def drawCutPave(canvas,cuts,effcuts=None):
+    indBaseCuts = cuts.split("&&")
     indEffCuts = None if effcuts==None else effcuts.split("&&")
+    #print(indBaseCuts)
+    #print(indEffCuts)
     canvas.cd(4)
-    hpave = 0.05+(len(individualCuts)+1)*0.04
+    hpave = 0.05+(len(indBaseCuts)+1)*0.04
     if indEffCuts!=None:
         hpave += 0.05+(len(indEffCuts)+2)*0.04
         
     pave = ROOT.TPaveText(0.05,1.0-hpave,0.95,1.0)
     pave.SetBorderSize(0)
     pave.SetFillStyle(0)
-    t = pave.AddText("Basic selection")
-    t.SetTextFont(42)
-    t.SetTextSize(0.05)
-    t.SetTextAlign(13)
-    t = pave.AddText("")
-    t.SetTextFont(42)
-    t.SetTextSize(0.04)
-    t.SetTextAlign(13)
-    for ic,c in enumerate(individualCuts):
-        l = "  " + c
-        if ic<(len(individualCuts)-1):
-            l += " &&"
-        t = pave.AddText(l)
-        t.SetTextFont(42)
-        t.SetTextSize(0.04)
-        t.SetTextAlign(13)
+    pave.SetTextFont(42)
+    pave.SetTextSize(0.04)
+    pave.SetTextAlign(13)
+    drawCuts(pave,"Basic selection",indBaseCuts)
     if indEffCuts!=None:
         t = pave.AddText("")
-        t.SetTextFont(42)
-        t.SetTextSize(0.04)
-        t.SetTextAlign(13)
-        t = pave.AddText("Efficiency selection")
-        t.SetTextFont(42)
-        t.SetTextSize(0.05)
-        t.SetTextAlign(13)
-        t = pave.AddText("")
-        t.SetTextFont(42)
-        t.SetTextSize(0.04)
-        t.SetTextAlign(13)
-        for ic,c in enumerate(indEffCuts):
-            l = "  " + c
-            if ic<(len(individualCuts)-1):
-                l += " &&"
-            t = pave.AddText(l)
-            t.SetTextFont(42)
-            t.SetTextSize(0.04)
-            t.SetTextAlign(13)
+        drawCuts(pave,"Efficiency selection",indEffCuts)
         
     pave.Draw()
     ROOT.gPad.Update()
     return pave
 
+def drawHistoByDef(tree,hDef,extraCuts):
+    result = { 'cnv' : None, 'histos' : { }, 'pave' : None }
+    histos = result['histos']
+
+    cnv = ROOT.TCanvas(hDef['canvasName'],hDef['canvasName'],1000,1000)
+    result['cnv'] = cnv
+    cnv.Divide(2,2)
+    
+    ic = 0
+    hEffVs = { }
+    for mType in range(23,26):
+        ic += 1
+        cnv.cd(ic)
+        ROOT.gPad.SetGridx(1)
+        ROOT.gPad.SetGridy(1)
+        hName = hDef['histogramName'] + str(mType)
+        hTitle = hDef['histogramTitle'] + " module type " +str(mType)
+        nbx = hDef['xNbins']
+        xmin = hDef['xMin']
+        xmax = hDef['xMax']
+        tree.Draw(hDef['variable']+">>"+hName+"_1("+str(nbx)+","+str(xmin)+","+str(xmax)+")",
+                      cutString(extraCuts,hDef['baseCuts'],"moduleType=="+str(mType)))
+        histos[mType] = [ ROOT.gDirectory.Get(hName+"_1"), None, None, None ]
+        tree.Draw(hDef['variable']+">>"+hName+"_2("+str(nbx)+","+str(xmin)+","+str(xmax)+")",
+                      cutString(extraCuts,hDef['baseCuts'],"moduleType=="+str(mType),hDef['effCuts']))
+        histos[mType][1] = ROOT.gDirectory.Get(hName+"_2")
+        ymin = hDef['yMin'] if hDef['yMin']!=None else 0.
+        ymax = hDef['yMax'] if hDef['yMax']!=None else 1.05
+        histos[mType][2] = ROOT.gPad.DrawFrame(xmin,ymin,xmax,ymax)
+        histos[mType][2].SetTitle(hTitle)
+        xtitle = hDef['xTitle'] if hDef['xTitle'] else hDef['variable']
+        ytitle = hDef['yTitle'] if hDef['yTitle'] else ""
+        histos[mType][2].GetXaxis().SetTitle(xtitle)
+        histos[mType][2].GetYaxis().SetTitle(ytitle)
+        histos[mType][3] = ROOT.TEfficiency(histos[mType][1],histos[mType][0])
+        histos[mType][3].SetMarkerSize(0.3)
+        #histos[mType][1].Divide(histos[mType][0])
+        #histos[mType][1].SetTitle("Efficiency module type "+str(mType))
+        #histos[mType][1].GetXaxis().SetTitle(effVarName)
+        #histos[mType][1].GetYaxis().SetTitle("efficiency")
+        #histos[mType][1].SetMaximum(1.05)
+        #histos[mType][1].SetMinimum(0.)
+        #histos[mType][1].GetXaxis().SetTitle(effVarName)
+        histos[mType][3].Draw("same Z")
+        ROOT.gPad.Update()
+    result['pave'] = drawCutPave(cnv,cutString(extraCuts,hDef['baseCuts']), \
+                                  cutString(hDef['effCuts']))
+    return result
+
+    
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument('--definitions', '-d', help='python module with dictionaries defining efficiency histograms', \
+                        type=str, default=None)
 parser.add_argument('--effVar', help='variable for extra efficiency plot (format <name>,<nbins>,<min>,<max>)', \
                         type=str, default=None)
 parser.add_argument('--dxMax', help='max. local dx for efficiency plots', type=float, default=0.0075)
@@ -92,6 +174,21 @@ parser.add_argument('file', help='input file', type=str, nargs=1, default=None)
 args = parser.parse_args()
 if args.output!=None:
     assert os.path.isdir(args.output)
+#
+# load histogram definitions
+#
+allHDefs = HistogramDefinitions()
+if args.definitions!=None:
+    module = __import__(args.definitions)
+    for n in dir(module):
+        if n.startswith('__'):
+            continue
+        hDict = getattr(module,n)
+        #print(n,type(hDict))
+        #sys.exit()
+        assert type(hDict)==dict
+        hDef = HistogramDefinition(n,hDict)
+        allHDefs.add(hDef)
 
 effVarName = None
 effVarAxis = None
@@ -139,7 +236,8 @@ for mType in range(23,26):
     histos[mType].GetXaxis().SetTitle("#Delta x [cm]")
     f = fitHistogram(mType,histos[mType])
     
-
+objects = drawHistoByDef(simHitTree,allHDefs['effX1'],extraCuts)
+    
 dxCut = "abs(localPos.x()-rhLocalPos.x())<"+str(args.dxMax)
 cEff2D = ROOT.TCanvas("cEff2D","cEff2D",1000,1000)
 canvases.append(cEff2D)
@@ -165,7 +263,7 @@ for mType in range(23,26):
     hEffs[mType][1].SetMinimum(0.75)
     hEffs[mType][1].Draw("zcol")
     ROOT.gPad.Update()
-paves.append(drawCuts(cEff2D,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
+paves.append(drawCutPave(cEff2D,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
 
 cEffX = ROOT.TCanvas("cEffX","cEffX",1000,1000)
 canvases.append(cEffX)
@@ -200,7 +298,7 @@ for mType in range(23,26):
     #hEffXs[mType][2].SetMinimum(0.5)
     hEffXs[mType][3].Draw("same Z")
     ROOT.gPad.Update()
-paves.append(drawCuts(cEffX,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
+paves.append(drawCutPave(cEffX,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
 
 if args.effVar!=None:
     cEffV = ROOT.TCanvas("cEffV","cEffV",1000,1000)
@@ -237,7 +335,7 @@ if args.effVar!=None:
         #hEffVs[mType][1].GetXaxis().SetTitle(effVarName)
         hEffVs[mType][3].Draw("same Z")
         ROOT.gPad.Update()
-    paves.append(drawCuts(cEffV,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
+    paves.append(drawCutPave(cEffV,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
 
 if args.output!=None:
     for c in canvases:
