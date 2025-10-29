@@ -6,7 +6,7 @@ class HistogramDefinition:
 
     requiredFields = [ 'canvasName', 'histogramName', 'histogramTitle', 'variable', 'baseCuts', 'effCuts', \
                         'xNbins', 'xMin', 'xMax' ]
-    allFields = requiredFields + [ 'xTitle', 'yTitle', 'yMin', 'yMax' ]
+    allFields = requiredFields + [ 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', 'zMin', 'zMax' ]
 
     def __init__(self,name,inputDict):
         #
@@ -118,6 +118,9 @@ def drawHistoByDef(tree,hDef,extraCuts):
     cnv = ROOT.TCanvas(hDef['canvasName'],hDef['canvasName'],1000,1000)
     result['cnv'] = cnv
     cnv.Divide(2,2)
+
+    is1D = hDef['yNbins']==None
+    print(hDef['canvasName'],'is',is1D)
     
     ic = 0
     hEffVs = { }
@@ -131,33 +134,45 @@ def drawHistoByDef(tree,hDef,extraCuts):
         nbx = hDef['xNbins']
         xmin = hDef['xMin']
         xmax = hDef['xMax']
-        tree.Draw(hDef['variable']+">>"+hName+"_1("+str(nbx)+","+str(xmin)+","+str(xmax)+")",
-                      cutString(extraCuts,hDef['baseCuts'],"moduleType=="+str(mType)))
+        if is1D:
+            tree.Draw(hDef['variable']+">>"+hName+"_1("+str(nbx)+","+str(xmin)+","+str(xmax)+")",
+                        cutString(extraCuts,hDef['baseCuts'],"moduleType=="+str(mType)))
+            tree.Draw(hDef['variable']+">>"+hName+"_2("+str(nbx)+","+str(xmin)+","+str(xmax)+")",
+                        cutString(extraCuts,hDef['baseCuts'],"moduleType=="+str(mType),hDef['effCuts']))
+        else:
+            nby = hDef['yNbins']
+            ymin = hDef['yMin']
+            ymax = hDef['yMax']
+            tree.Draw(hDef['variable']+">>"+hName+"_1("+str(nbx)+","+str(xmin)+","+str(xmax)+","+str(nby)+","+str(ymin)+","+str(ymax)+")",
+                          cutString(extraCuts,hDef['baseCuts'],"moduleType=="+str(mType)))
+            tree.Draw(hDef['variable']+">>"+hName+"_2("+str(nbx)+","+str(xmin)+","+str(xmax)+","+str(nby)+","+str(ymin)+","+str(ymax)+")",
+                          cutString(extraCuts,hDef['baseCuts'],"moduleType=="+str(mType),hDef['effCuts']))
         histos[mType] = [ ROOT.gDirectory.Get(hName+"_1"), None, None, None ]
-        tree.Draw(hDef['variable']+">>"+hName+"_2("+str(nbx)+","+str(xmin)+","+str(xmax)+")",
-                      cutString(extraCuts,hDef['baseCuts'],"moduleType=="+str(mType),hDef['effCuts']))
         histos[mType][1] = ROOT.gDirectory.Get(hName+"_2")
-        ymin = hDef['yMin'] if hDef['yMin']!=None else 0.
-        ymax = hDef['yMax'] if hDef['yMax']!=None else 1.05
-        histos[mType][2] = ROOT.gPad.DrawFrame(xmin,ymin,xmax,ymax)
-        histos[mType][2].SetTitle(hTitle)
         xtitle = hDef['xTitle'] if hDef['xTitle'] else hDef['variable']
         ytitle = hDef['yTitle'] if hDef['yTitle'] else ""
-        histos[mType][2].GetXaxis().SetTitle(xtitle)
-        histos[mType][2].GetYaxis().SetTitle(ytitle)
-        histos[mType][3] = ROOT.TEfficiency(histos[mType][1],histos[mType][0])
-        histos[mType][3].SetMarkerSize(0.3)
-        #histos[mType][1].Divide(histos[mType][0])
-        #histos[mType][1].SetTitle("Efficiency module type "+str(mType))
-        #histos[mType][1].GetXaxis().SetTitle(effVarName)
-        #histos[mType][1].GetYaxis().SetTitle("efficiency")
-        #histos[mType][1].SetMaximum(1.05)
-        #histos[mType][1].SetMinimum(0.)
-        #histos[mType][1].GetXaxis().SetTitle(effVarName)
-        histos[mType][3].Draw("same Z")
+        if is1D:
+            ymin = hDef['yMin'] if hDef['yMin']!=None else 0.
+            ymax = hDef['yMax'] if hDef['yMax']!=None else 1.05
+            histos[mType][2] = ROOT.gPad.DrawFrame(xmin,ymin,xmax,ymax)
+            histos[mType][2].SetTitle(hTitle)
+            histos[mType][2].GetXaxis().SetTitle(xtitle)
+            histos[mType][2].GetYaxis().SetTitle(ytitle)
+            histos[mType][3] = ROOT.TEfficiency(histos[mType][1],histos[mType][0])
+            histos[mType][3].SetMarkerSize(0.3)
+            histos[mType][3].Draw("same Z")
+        else:
+            histos[mType][1].Divide(histos[mType][0])
+            zmin = hDef['zMin'] if hDef['zMin']!=None else 0.
+            zmax = hDef['zMax'] if hDef['zMax']!=None else 1.05
+            histos[mType][1].SetTitle(hTitle)
+            histos[mType][1].GetXaxis().SetTitle(xtitle)
+            histos[mType][1].GetYaxis().SetTitle(ytitle)
+            histos[mType][1].SetMinimum(zmin)
+            histos[mType][1].SetMaximum(zmax)
+            histos[mType][1].Draw("ZCOL")
         ROOT.gPad.Update()
-    result['pave'] = drawCutPave(cnv,cutString(extraCuts,hDef['baseCuts']), \
-                                  cutString(hDef['effCuts']))
+    result['pave'] = drawCutPave(cnv,cutString(extraCuts,hDef['baseCuts']),cutString(hDef['effCuts']))
     return result
 
     
@@ -189,6 +204,7 @@ if args.definitions!=None:
         assert type(hDict)==dict
         hDef = HistogramDefinition(n,hDict)
         allHDefs.add(hDef)
+        print("Added",hDef['canvasName'])
 
 effVarName = None
 effVarAxis = None
@@ -235,9 +251,11 @@ for mType in range(23,26):
     histos[mType].SetTitle("Residuals module type "+str(mType))
     histos[mType].GetXaxis().SetTitle("#Delta x [cm]")
     f = fitHistogram(mType,histos[mType])
-    
-objects = drawHistoByDef(simHitTree,allHDefs['effX1'],extraCuts)
-    
+
+objects = [ ]
+objects.append(drawHistoByDef(simHitTree,allHDefs['effX1'],extraCuts))
+objects.append(drawHistoByDef(simHitTree,allHDefs['eff2D1'],extraCuts))
+sys.exit()
 dxCut = "abs(localPos.x()-rhLocalPos.x())<"+str(args.dxMax)
 cEff2D = ROOT.TCanvas("cEff2D","cEff2D",1000,1000)
 canvases.append(cEff2D)
