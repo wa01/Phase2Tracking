@@ -138,6 +138,8 @@ def drawHistoByDef(tree,hDef,extraCuts):
         cnv.cd(ic)
         ROOT.gPad.SetGridx(1)
         ROOT.gPad.SetGridy(1)
+        if not is1D:
+            ROOT.gPad.SetRightMargin(0.125)
         hName = hDef['histogramName'] + str(mType)
         hTitle = hDef['histogramTitle'] + " module type " +str(mType)
         nbx = hDef['xNbins']
@@ -152,9 +154,11 @@ def drawHistoByDef(tree,hDef,extraCuts):
             nby = hDef['yNbins']
             ymin = hDef['yMin']
             ymax = hDef['yMax']
-            tree.Draw(hDef['variable']+">>"+hName+"_1("+str(nbx)+","+str(xmin)+","+str(xmax)+","+str(nby)+","+str(ymin)+","+str(ymax)+")",
+            tree.Draw(hDef['variable']+">>"+hName+"_1("+str(nbx)+","+str(xmin)+","+str(xmax)+","+ \
+                          str(nby)+","+str(ymin)+","+str(ymax)+")",
                           cutString(extraCuts,hDef['baseCuts'],"moduleType=="+str(mType)))
-            tree.Draw(hDef['variable']+">>"+hName+"_2("+str(nbx)+","+str(xmin)+","+str(xmax)+","+str(nby)+","+str(ymin)+","+str(ymax)+")",
+            tree.Draw(hDef['variable']+">>"+hName+"_2("+str(nbx)+","+str(xmin)+","+str(xmax)+","+ \
+                          str(nby)+","+str(ymin)+","+str(ymax)+")",
                           cutString(extraCuts,hDef['baseCuts'],"moduleType=="+str(mType),hDef['effCuts']))
         histos[mType] = [ ROOT.gDirectory.Get(hName+"_1"), None, None, None ]
         histos[mType][1] = ROOT.gDirectory.Get(hName+"_2")
@@ -217,20 +221,33 @@ if args.definitions!=None:
 
 if args.effVar!=None:
     effVarDict = { }
+    # split into string defining the variable(s) and (1 or 2) axis definition(s)
     fields1 = args.effVar.split(";")
-    assert len(fields1)==2
+    assert len(fields1)<=3
     effVarDict['variable'] = fields1[0]
     #effVarDict['canvasName'] = "cEffArg"
     #effVarDict['histogramName'] = "hEffArg"
     effVarDict['histogramTitle'] = "hEffArg"
+    # x-axis
     fields2 = fields1[1].split(",")
     assert len(fields2)==3 
     effVarDict['xNbins'] = int(fields2[0])
     effVarDict['xMin'] = float(fields2[1])
     effVarDict['xMax'] = float(fields2[2])
-    effVarDict['yTitle'] = 'efficiency'
-    effVarDict['yMin'] = 0.
-    effVarDict['yMax'] = 1.05
+    # check for info on y axis (== presence of 2nd variable)
+    if len(fields1)==3:
+        assert ":" in effVarDict['variable']
+        fields3 = fields1[2].split(",")
+        effVarDict['yNbins'] = int(fields3[0])
+        effVarDict['yMin'] = float(fields3[1])
+        effVarDict['yMax'] = float(fields3[2])
+        effVarDict['xTitle'] = effVarDict['variable'].split(":")[1]
+        effVarDict['yTitle'] = effVarDict['variable'].split(":")[2]
+    else:
+        effVarDict['yMin'] = 0.
+        effVarDict['yMax'] = 1.05
+        effVarDict['xTitle'] = effVarDict['variable']
+        effVarDict['yTitle'] = 'efficiency'
     effVarDict['baseCuts'] = args.cuts
     effVarDict['effCuts'] = cutString("hasRecHit>0","abs(localPos.x()-rhLocalPos.x())<"+str(args.dxMax))
     #xxx = HistogramDefinition("effV",effVarDict)
@@ -241,15 +258,15 @@ if args.effVar!=None:
     #print(allHDefs.allCanvases)
     #print(allHDefs['hEffArg'])
         
-effVarName = None
-effVarAxis = None
-if args.effVar!=None:
-    fields1 = args.effVar.split(";")
-    assert len(fields1)==2
-    effVarName = fields1[0]
-    fields2 = fields1[1].split(",")
-    assert len(fields2)==3
-    effVarAxis = ( int(fields2[0]), float(fields2[1]), float(fields2[2]) )
+#effVarName = None
+#effVarAxis = None
+#if args.effVar!=None:
+#    fields1 = args.effVar.split(";")
+#    assert len(fields1)==2
+#    effVarName = fields1[0]
+#    fields2 = fields1[1].split(",")
+#    assert len(fields2)==3
+#    effVarAxis = ( int(fields2[0]), float(fields2[1]), float(fields2[2]) )
 
 #extraCuts = "abs(particleType)==13"
 #extraCuts = "tof<12.5"
