@@ -20,8 +20,13 @@ class HistogramDefinition:
             else:
                 print("Warning: key",k,"is not a standard field name - ignoring the entry")
         #
+        if self.parameters['canvasName']==None:
+            self.parameters['canvasName'] = "c" + self.name[0].upper() + self.name[1:]
+        if self.parameters['histogramName']==None:
+            self.parameters['histogramName'] = "h" + self.name[0].upper() + self.name[1:]
+        #
         for f in HistogramDefinition.requiredFields:
-            assert f in self.parameters
+            assert ( f in self.parameters ) and self.parameters[f]!=None
 
     def __getitem__(self,field):
         if field in self.parameters:
@@ -34,12 +39,15 @@ class HistogramDefinitions:
 
     def __init__(self):
         self.allDefinitions = { }
+        self.allHistoNames = set()
         self.allCanvases = set()
 
     def add(self,hdef):
-        assert not hdef['histogramName'] in self.allDefinitions
+        assert not hdef.name in self.allDefinitions
+        assert not hdef['histogramName'] in self.allHistoNames
         assert not hdef['canvasName'] in self.allCanvases
-        self.allDefinitions[hdef['histogramName']] = hdef
+        self.allDefinitions[hdef.name] = hdef
+        self.allHistoNames.add(hdef['histogramName'])
         self.allCanvases.add(hdef['canvasName'])
         
 
@@ -212,8 +220,8 @@ if args.effVar!=None:
     fields1 = args.effVar.split(";")
     assert len(fields1)==2
     effVarDict['variable'] = fields1[0]
-    effVarDict['canvasName'] = "cEffArg"
-    effVarDict['histogramName'] = "hEffArg"
+    #effVarDict['canvasName'] = "cEffArg"
+    #effVarDict['histogramName'] = "hEffArg"
     effVarDict['histogramTitle'] = "hEffArg"
     fields2 = fields1[1].split(",")
     assert len(fields2)==3 
