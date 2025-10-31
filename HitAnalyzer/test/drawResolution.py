@@ -215,10 +215,14 @@ parser.add_argument('--dxMax', help='max. local dx for efficiency plots', type=f
 parser.add_argument('--cuts', '-c', help="basic cut string", type=str, default="")
 parser.add_argument('--output', '-o', help='output directory for graphic output', type=str, default=None)
 parser.add_argument('--sampleName', help='sample label for output', type=str, default=None)
+parser.add_argument('--fitResiduals', '-f', \
+                        help='comma-separated list of names of histogram sets with residuals to be fit', \
+                        type=str, default=None)
 parser.add_argument('file', help='input file', type=str, nargs=1, default=None)
 args = parser.parse_args()
 if args.output!=None:
     assert os.path.isdir(args.output)
+fitResiduals = args.fitResiduals.split(",") if args.fitResiduals else [ ]
 #
 # load histogram definitions
 #
@@ -307,25 +311,42 @@ simHitTree = simHitTree = tf.Get("analysis").Get("SimHitTree")
 canvases = [ ]
 histos = { }
 paves = [ ]
-cRes = ROOT.TCanvas("cRes","cRes",1000,1000)
-canvases.append(cRes)
-cRes.Divide(2,2)
-ic = 0
-for mType in range(23,26):
-    ic += 1
-    cRes.cd(ic)
-    simHitTree.Draw("(localPos.x()-rhLocalPos.x())>>hRes"+str(mType)+"(200,-0.1,0.1)", \
-                        cutString(extraCuts,"hasRecHit>0","moduleType=="+str(mType)))
-    histos[mType] = ROOT.gDirectory.Get("hRes"+str(mType))
-    histos[mType].SetTitle("Residuals module type "+str(mType))
-    histos[mType].GetXaxis().SetTitle("#Delta x [cm]")
-    f = fitHistogram(mType,histos[mType])
 
-objects = [ ]
+
+#cRes = ROOT.TCanvas("cRes","cRes",1000,1000)
+#canvases.append(cRes)
+#cRes.Divide(2,2)
+#ic = 0
+#for mType in range(23,26):
+#    ic += 1
+#    cRes.cd(ic)
+#    simHitTree.Draw("(localPos.x()-rhLocalPos.x())>>hRes"+str(mType)+"(200,-0.1,0.1)", \
+#                        cutString(extraCuts,"hasRecHit>0","moduleType=="+str(mType)))
+#    histos[mType] = ROOT.gDirectory.Get("hRes"+str(mType))
+#    histos[mType].SetTitle("Residuals module type "+str(mType))
+#    histos[mType].GetXaxis().SetTitle("#Delta x [cm]")
+#    f = fitHistogram(mType,histos[mType])
+
+allObjects = [ ]
 for hdef in allHDefs.allDefinitions.values():
-    objects.append(drawHistoByDef(simHitTree,hdef,extraCuts))
-#objects.append(drawHistoByDef(simHitTree,allHDefs['effX1'],extraCuts))
-#objects.append(drawHistoByDef(simHitTree,allHDefs['eff2D1'],extraCuts))
+    #
+    # draw histograms according to definition
+    #
+    allObjects.append(drawHistoByDef(simHitTree,hdef,extraCuts))
+    #
+    # perform fit of resolution histogram
+    #
+    if hdef.name in fitResiduals:
+        objects = allObjects[-1]
+        cnv = objects['cnv']
+        # fit and redraw each panel
+        ic = 0
+        for mType in range(23,26):
+            ic += 1
+            cnv.cd(ic)
+            f = fitHistogram(mType,objects['histos'][mType][0])
+#allObjects.append(drawHistoByDef(simHitTree,allHDefs['effX1'],extraCuts))
+#allObjects.append(drawHistoByDef(simHitTree,allHDefs['eff2D1'],extraCuts))
 
 #!# dxCut = "abs(localPos.x()-rhLocalPos.x())<"+str(args.dxMax)
 #!# cEff2D = ROOT.TCanvas("cEff2D","cEff2D",1000,1000)
