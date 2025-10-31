@@ -17,6 +17,13 @@
 #    'yMax' : 0, \
 #}
 
+#
+# sensor dimensions:
+#
+# 2S: 2 modules with 1016 strips at 90 μm x 5 cm
+# PS: 2 x 960 strips at 100 μm x 2.5 cm
+# PSp: 32 x 960 pixel at 100 μm x 1.5 mm
+
 stdRes = {
     #'canvasName' : 'cEffX1', \
     #'histogramName' : 'effX1', \
