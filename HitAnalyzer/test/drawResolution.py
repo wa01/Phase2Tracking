@@ -4,9 +4,14 @@ import argparse
 
 class HistogramDefinition:
 
-    requiredFields = [ 'canvasName', 'histogramName', 'histogramTitle', 'variable', 'baseCuts', \
-                        'xNbins', 'xMin', 'xMax' ]
-    allFields = requiredFields + [ 'effCuts', 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', 'zMin', 'zMax' ]
+    reqGenFields = [ 'canvasName', 'histogramName', 'histogramTitle', 'variable', 'baseCuts' ]
+    reqHistFields = [ 'xNbins', 'xMin', 'xMax' ]
+    requiredFields = reqGenFields + reqHistFields
+    optGenFields =  [ 'effCuts' ]
+    optHistFields = ] 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', 'zMin', 'zMax' ]
+    optionalFields = optGenFields + optHistFields
+    allFields = requiredFields + optionalFields
+    allHistFields = reqHistFields + optHistFields
 
     def __init__(self,name,inputDict):
         #
@@ -16,7 +21,21 @@ class HistogramDefinition:
             if k.startswith('__'):
                 continue
             if k in HistogramDefinition.allFields:
+                #
+                # general variable
+                #
                 self.parameters[k] = v
+            elif k.startswith("mType"):
+                #
+                # mType-specific histogram parameters
+                #
+                assert type(v)==dict and ( not k in self.parameters ) and len(k)>5 and k[5:].isdigit()
+                self.parameters[k] = { x:None for x in HistogramDefinition.allHistFields ] }
+                for kh,vh in v.items():
+                    if kh in HistogramDefinition.allHistFields:
+                        self.parameters[k][kh] = vh
+                else:
+                    print("Warning: key",kh,"is not a standard histogram field name - ignoring the entry")
             else:
                 print("Warning: key",k,"is not a standard field name - ignoring the entry")
         #
@@ -218,6 +237,7 @@ parser.add_argument('--sampleName', help='sample label for output', type=str, de
 parser.add_argument('--fitResiduals', '-f', \
                         help='comma-separated list of names of histogram sets with residuals to be fit', \
                         type=str, default=None)
+parser.add_argument('--list', '-l', help='list typle contents', action='store_true', default=False)
 parser.add_argument('file', help='input file', type=str, nargs=1, default=None)
 args = parser.parse_args()
 if args.output!=None:
@@ -263,7 +283,7 @@ if args.effVar!=None:
         effVarDict['yMin'] = float(fields3[1])
         effVarDict['yMax'] = float(fields3[2])
         effVarDict['xTitle'] = effVarDict['variable'].split(":")[1]
-        effVarDict['yTitle'] = effVarDict['variable'].split(":")[2]
+        effVarDict['yTitle'] = effVarDict['variable'].split(":")[0]
     else:
         effVarDict['yMin'] = 0.
         effVarDict['yMax'] = 1.05
@@ -307,6 +327,9 @@ ROOT.gStyle.SetTitleBorderSize(0)
 ROOT.gStyle.SetOptTitle(1)
 tf = ROOT.TFile(args.file[0])
 simHitTree = simHitTree = tf.Get("analysis").Get("SimHitTree")
+if args.list:
+    simHitTree.Print()
+    sys.exit()
 
 canvases = [ ]
 histos = { }
