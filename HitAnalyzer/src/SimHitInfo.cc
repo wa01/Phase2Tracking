@@ -24,6 +24,7 @@ void SimHitInfo::setBranches(TTree& tree) {
   tree.Branch("trackId",&simHitData.trackId);
   tree.Branch("hasRecHit",&simHitData.hasRecHit);
 
+  tree.Branch("rhNMatched",&simHitData.rhNMatched);
   tree.Branch("rhLocalPos",&simHitData.rhLocalPos);
   tree.Branch("rhLocalErr",&simHitData.rhLocalErr);
   tree.Branch("rhGlobalPos",&simHitData.rhGlobalPos);
@@ -114,15 +115,21 @@ void SimHitInfo::fillRecHitsPerDet(const Phase2TrackerRecHit1DCollectionNew& rec
 
 };
 
-const Phase2TrackerRecHit1D* SimHitInfo::matchRecHitOnDet(const PSimHit* simHit, const DetId& detId,
-							  const std::vector<const Phase2TrackerRecHit1D*>& detRecHits) {
+//const Phase2TrackerRecHit1D* SimHitInfo::matchRecHitOnDet(const PSimHit* simHit, const DetId& detId,
+//							  const std::vector<const Phase2TrackerRecHit1D*>& detRecHits) {
+SimHitInfo::RecHitDistancePairs
+SimHitInfo::matchRecHitOnDet(const PSimHit* simHit, const DetId& detId,
+			     const std::vector<const Phase2TrackerRecHit1D*>& detRecHits) {
   //
   // loop over RecHits (assumes simHit and detRecHits are on the same DetUnit!!)
   //
   // std::cout << "SimHitInfo  Checking SimHit at " << simHit << " detid " << simHit->detUnitId() << " loc pos "
   // 		<< simHit->localPosition().x() << " / " << simHit->localPosition().y() << std::endl;
-  const Phase2TrackerRecHit1D* rechit(0);
-  float dxmin(1.e30);
+  //  const Phase2TrackerRecHit1D* rechit(0);
+  //  std::vector< const Phase2TrackerRecHit1D* rechit(0);
+  SimHitInfo::RecHitDistancePairs matchedRecHits;
+  
+  // float dxmin(1.e30);
   for ( std::vector<const Phase2TrackerRecHit1D*>::const_iterator irh=detRecHits.begin();
 	irh!=detRecHits.end(); ++irh ) {
     // std::cout << "SimHitInfo    Checking RecHit at " << *irh
@@ -158,16 +165,24 @@ const Phase2TrackerRecHit1D* SimHitInfo::matchRecHitOnDet(const PSimHit* simHit,
     //
     if ( matched ) {
       float dx = fabs((**irh).localPosition().x()-(*simHit).localPosition().x());
-      // std::cout << "SimHitInfo      dx, dxmin " << dx << " " << dxmin;
-      if ( !rechit || dx<dxmin ) {
-	dxmin = dx;
-	rechit = &(**irh);
-	// std::cout << " ***";
-      }
-      // std::cout << std::endl;
+      matchedRecHits.push_back(RecHitDistancePair(&(**irh),dx));
+      // // std::cout << "SimHitInfo      dx, dxmin " << dx << " " << dxmin;
+      // if ( !rechit || dx<dxmin ) {
+      // 	dxmin = dx;
+      // 	rechit = &(**irh);
+      // 	// std::cout << " ***";
+      // }
+      // // std::cout << std::endl;
     }
   }
-  return rechit;
+  //
+  // sort result
+  //
+  std::sort(matchedRecHits.begin(),matchedRecHits.end(),[](const RecHitDistancePair& a, const RecHitDistancePair& b)
+	    {
+	      return a.second<b.second;
+	    });
+  return matchedRecHits;
 };
 
 void SimHitInfo::fillSimHitInfo(const PSimHit& simHit) {
@@ -221,18 +236,27 @@ void SimHitInfo::fillSimHitInfo(const PSimHit& simHit) {
   // if ( ivrh==recHitsPerDet_.end() ) {
     // std::cout << "SimHitInfo- Skipping det - no RecHits" << std::endl;
   // }
-  // else {   
+  // else {
+  unsigned int nMatched(0);
   if ( ivrh!=recHitsPerDet_.end() ) {
-    rechit = matchRecHitOnDet(&simHit,detId,ivrh->second);
+    //
+    // find all rechits with contributions from the SimTrack related to simHit
+    //
+    RecHitDistancePairs matchedRecHits = matchRecHitOnDet(&simHit,detId,ivrh->second);
+    // store best match (if any)
+    nMatched = matchedRecHits.size();
+    if ( nMatched>0 )  rechit = matchedRecHits[0].first;
+    // rechit = matchRecHitOnDet(&simHit,detId,ivrh->second);
     // std::cout << "SimHitInfo.. matched RecHit at " << rechit << std::endl;
   }
+  simHitData.rhNMatched.push_back(nMatched);
   if ( rechit ) {
     simHitData.hasRecHit.push_back(true);
     ROOT::Math::XYZPointF localPos(rechit->localPosition().x(),rechit->localPosition().y(),
 				   rechit->localPosition().z());
     simHitData.rhLocalPos.push_back(localPos);
-    XYVectorF localErr(sqrt(rechit->localPositionError().xx()),
-		       sqrt(rechit->localPositionError().yy()));
+    ROOT::Math::XYZVectorF localErr(sqrt(rechit->localPositionError().xx()),
+				    sqrt(rechit->localPositionError().yy()),0.);
     simHitData.rhLocalErr.push_back(localErr);
     ROOT::Math::XYZPointF globalPos(rechit->globalPosition().x(),rechit->globalPosition().y(),
 				    rechit->globalPosition().z());
@@ -251,7 +275,7 @@ void SimHitInfo::fillSimHitInfo(const PSimHit& simHit) {
   else {
     simHitData.hasRecHit.push_back(false);
     simHitData.rhLocalPos.push_back(ROOT::Math::XYZPointF(0.,0.,0.));
-    simHitData.rhLocalErr.push_back(XYVectorF(0.,0.));
+    simHitData.rhLocalErr.push_back(ROOT::Math::XYZVectorF(0.,0.,0.));
     simHitData.rhGlobalPos.push_back(ROOT::Math::XYZPointF(0.,0.,0.));
     simHitData.clusterSize.push_back(0);
     // simHitData.clusterNSimTracks.push_back(0);
@@ -284,7 +308,8 @@ void SimHitInfo::clear() {
   simHitData.detNormal.clear();
   simHitData.trackId.clear();
   simHitData.hasRecHit.clear();
-  
+
+  simHitData.rhNMatched.clear();
   simHitData.rhLocalPos.clear();
   simHitData.rhLocalErr.clear();
   simHitData.rhGlobalPos.clear();
@@ -299,3 +324,4 @@ void SimHitInfo::clear() {
   simHitData.clusterEdge.clear();
   simHitData.clusterThreshold.clear();
 };
+

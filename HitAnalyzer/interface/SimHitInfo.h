@@ -23,6 +23,9 @@ class SimHitInfo {
   typedef std::pair< unsigned int, std::vector<const PSimHit*> > DetSimHitsPair;
   typedef std::map< unsigned int, std::vector<const Phase2TrackerRecHit1D*> > DetRecHitsMap;
   typedef std::pair< unsigned int, std::vector<const Phase2TrackerRecHit1D*> > DetRecHitsPair;
+
+  typedef std::pair<const Phase2TrackerRecHit1D*, float> RecHitDistancePair;
+  typedef std::vector<RecHitDistancePair> RecHitDistancePairs;
   
  public:
   struct SimHitData {
@@ -44,8 +47,9 @@ class SimHitInfo {
     std::vector<unsigned int> trackId;
     std::vector<bool> hasRecHit;
 
+    std::vector<unsigned int> rhNMatched;
     std::vector<ROOT::Math::XYZPointF> rhLocalPos;
-    std::vector<XYVectorF> rhLocalErr;
+    std::vector<ROOT::Math::XYZVectorF> rhLocalErr;
     std::vector<ROOT::Math::XYZPointF> rhGlobalPos;
     /* std::vector<unsigned short> Hit_layer; */
     /* std::vector<unsigned short> Hit_ModuleType; */
@@ -75,8 +79,10 @@ class SimHitInfo {
 
   void fillRecHitsPerDet(const Phase2TrackerRecHit1DCollectionNew& rechits);
 
-  const Phase2TrackerRecHit1D* matchRecHitOnDet(const PSimHit* simHit, const DetId& detId,
-  						const std::vector<const Phase2TrackerRecHit1D*>& detRecHits);
+  //  const Phase2TrackerRecHit1D* matchRecHitOnDet(const PSimHit* simHit, const DetId& detId,
+  //  						const std::vector<const Phase2TrackerRecHit1D*>& detRecHits);
+  RecHitDistancePairs matchRecHitOnDet(const PSimHit* simHit, const DetId& detId,
+				      const std::vector<const Phase2TrackerRecHit1D*>& detRecHits);
 
  
   void fillSimHitInfo(const PSimHit& simHit);
@@ -111,4 +117,3 @@ class SimHitInfo {
 };
 
 #endif
-

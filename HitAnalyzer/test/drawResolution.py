@@ -5,10 +5,10 @@ import argparse
 class HistogramDefinition:
 
     reqGenFields = [ 'canvasName', 'histogramName', 'histogramTitle', 'variable', 'baseCuts' ]
-    reqHistFields = [ 'xNbins', 'xMin', 'xMax' ]
+    reqHistFields = [ ]
     requiredFields = reqGenFields + reqHistFields
-    optGenFields =  [ 'effCuts' ]
-    optHistFields = ] 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', 'zMin', 'zMax' ]
+    optGenFields =  [ 'effCuts', 'logY' ]
+    optHistFields = [ 'xNbins', 'xMin', 'xMax', 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', 'zMin', 'zMax' ]
     optionalFields = optGenFields + optHistFields
     allFields = requiredFields + optionalFields
     allHistFields = reqHistFields + optHistFields
@@ -30,7 +30,7 @@ class HistogramDefinition:
                 # mType-specific histogram parameters
                 #
                 assert type(v)==dict and ( not k in self.parameters ) and len(k)>5 and k[5:].isdigit()
-                self.parameters[k] = { x:None for x in HistogramDefinition.allHistFields ] }
+                self.parameters[k] = { x:None for x in HistogramDefinition.allHistFields }
                 for kh,vh in v.items():
                     if kh in HistogramDefinition.allHistFields:
                         self.parameters[k][kh] = vh
@@ -47,11 +47,27 @@ class HistogramDefinition:
         for f in HistogramDefinition.requiredFields:
             assert ( f in self.parameters ) and self.parameters[f]!=None
 
-    def __getitem__(self,field):
-        if field in self.parameters:
-            return self.parameters[field]
-        return None
+    #def __getitem__(self,field):
+    #    if field in self.parameters:
+    #        return self.parameters[field]
+    #    return None
 
+    def getParameter(self,name,mType=None):
+        result = None
+        #
+        # give priority to parameter specific to a module type
+        #
+        mTName = "mType"+str(mType) if mType!=None else None
+        if ( mTName in self.parameters ) and ( name in self.parameters[mTName] ):
+          result = self.parameters[mTName][name]
+          if result!=None:
+            return self.parameters[mTName][name]
+        #
+        # not found: use general parameter
+        #
+        if name in self.parameters:
+            return self.parameters[name]
+        return None
         
 
 class HistogramDefinitions:
@@ -63,11 +79,11 @@ class HistogramDefinitions:
 
     def add(self,hdef):
         assert not hdef.name in self.allDefinitions
-        assert not hdef['histogramName'] in self.allHistoNames
-        assert not hdef['canvasName'] in self.allCanvases
+        assert not hdef.getParameter('histogramName') in self.allHistoNames
+        assert not hdef.getParameter('canvasName') in self.allCanvases
         self.allDefinitions[hdef.name] = hdef
-        self.allHistoNames.add(hdef['histogramName'])
-        self.allCanvases.add(hdef['canvasName'])
+        self.allHistoNames.add(hdef.getParameter('histogramName'))
+        self.allCanvases.add(hdef.getParameter('canvasName'))
         
 
     def __getitem__(self,name):
@@ -143,17 +159,17 @@ def drawHistoByDef(tree,hDef,extraCuts):
     result = { 'cnv' : None, 'histos' : { }, 'pave' : None }
     histos = result['histos']
 
-    cnv = ROOT.TCanvas(hDef['canvasName'],hDef['canvasName'],1000,1000)
+    cnv = ROOT.TCanvas(hDef.getParameter('canvasName'),hDef.getParameter('canvasName'),1000,1000)
     result['cnv'] = cnv
     cnv.Divide(2,2)
 
-    is1D = hDef['yNbins']==None
+    is1D = hDef.getParameter('yNbins')==None
     #print(hDef['canvasName'],'is',is1D)
     
     ic = 0
     hEffVs = { }
-    effCuts = hDef['effCuts']
-    variable = hDef['variable']
+    effCuts = hDef.getParameter('effCuts')
+    variable = hDef.getParameter('variable')
     for mType in range(23,26):
         ic += 1
         cnv.cd(ic)
@@ -161,36 +177,36 @@ def drawHistoByDef(tree,hDef,extraCuts):
         ROOT.gPad.SetGridy(1)
         if not is1D:
             ROOT.gPad.SetRightMargin(0.125)
-        hName = hDef['histogramName'] + str(mType)
-        hTitle = hDef['histogramTitle'] + " module type " +str(mType)
-        nbx = hDef['xNbins']
-        xmin = hDef['xMin']
-        xmax = hDef['xMax']
+        hName = hDef.getParameter('histogramName') + str(mType)
+        hTitle = hDef.getParameter('histogramTitle') + " module type " +str(mType)
+        nbx = hDef.getParameter('xNbins',mType)
+        xmin = hDef.getParameter('xMin',mType)
+        xmax = hDef.getParameter('xMax',mType)
         if is1D:
             tree.Draw("("+variable+")>>"+hName+"_1("+str(nbx)+","+str(xmin)+","+str(xmax)+")",
-                        cutString(extraCuts,hDef['baseCuts'],"moduleType=="+str(mType)))
+                        cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType)))
             if effCuts!=None:
                 tree.Draw("("+variable+")>>"+hName+"_2("+str(nbx)+","+str(xmin)+","+str(xmax)+")",
-                            cutString(extraCuts,hDef['baseCuts'],"moduleType=="+str(mType),effCuts))
+                            cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType),effCuts))
         else:
-            nby = hDef['yNbins']
-            ymin = hDef['yMin']
-            ymax = hDef['yMax']
+            nby = hDef.getParameter('yNbins',mType)
+            ymin = hDef.getParameter('yMin',mType)
+            ymax = hDef.getParameter('yMax',mType)
             tree.Draw(variable+">>"+hName+"_1("+str(nbx)+","+str(xmin)+","+str(xmax)+","+ \
                           str(nby)+","+str(ymin)+","+str(ymax)+")",
-                          cutString(extraCuts,hDef['baseCuts'],"moduleType=="+str(mType)))
+                          cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType)))
             if effCuts!=None:
                 tree.Draw(variable+">>"+hName+"_2("+str(nbx)+","+str(xmin)+","+str(xmax)+","+ \
                             str(nby)+","+str(ymin)+","+str(ymax)+")",
-                            cutString(extraCuts,hDef['baseCuts'],"moduleType=="+str(mType),effCuts))
+                            cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType),effCuts))
         histos[mType] = [ ROOT.gDirectory.Get(hName+"_1"), None, None, None ]
         if effCuts!=None:
             histos[mType][1] = ROOT.gDirectory.Get(hName+"_2")
-        xtitle = hDef['xTitle'] if hDef['xTitle'] else variable
-        ytitle = hDef['yTitle'] if hDef['yTitle'] else ""
+        xtitle = hDef.getParameter('xTitle',mType) if hDef.getParameter('xTitle',mType) else variable
+        ytitle = hDef.getParameter('yTitle',mType) if hDef.getParameter('yTitle',mType) else ""
         if is1D:
-            ymin = hDef['yMin'] if hDef['yMin']!=None else 0.
-            ymax = hDef['yMax'] if hDef['yMax']!=None else 1.05
+            ymin = hDef.getParameter('yMin',mType) if hDef.getParameter('yMin',mType)!=None else 0.
+            ymax = hDef.getParameter('yMax',mType) if hDef.getParameter('yMax',mType)!=None else 1.05
             if effCuts!=None:
                 histos[mType][2] = ROOT.gPad.DrawFrame(xmin,ymin,xmax,ymax)
                 histos[mType][2].SetTitle(hTitle)
@@ -205,8 +221,8 @@ def drawHistoByDef(tree,hDef,extraCuts):
                 histos[mType][0].GetYaxis().SetTitle(ytitle)
                 histos[mType][0].Draw()
         else:
-            zmin = hDef['zMin'] if hDef['zMin']!=None else 0.
-            zmax = hDef['zMax'] if hDef['zMax']!=None else 1.05
+            zmin = hDef.getParameter('zMin',mType) if hDef.getParameter('zMin',mType)!=None else 0.
+            zmax = hDef.getParameter('zMax',mType) if hDef.getParameter('zMax',mType)!=None else 1.05
             if effCuts!=None:
                 histos[mType][1].Divide(histos[mType][0])
                 histos[mType][1].SetTitle(hTitle)
@@ -220,8 +236,11 @@ def drawHistoByDef(tree,hDef,extraCuts):
                 histos[mType][0].GetXaxis().SetTitle(xtitle)
                 histos[mType][0].GetYaxis().SetTitle(ytitle)
                 histos[mType][0].Draw("ZCOL")
+        if hDef.getParameter('logY'):
+            ROOT.gPad.SetLogy(1)
         ROOT.gPad.Update()
-    result['pave'] = drawCutPave(cnv,cutString(extraCuts,hDef['baseCuts']),cutString(hDef['effCuts']))
+    result['pave'] = drawCutPave(cnv,cutString(extraCuts,hDef.getParameter('baseCuts')), \
+                                     cutString(hDef.getParameter('effCuts')))
     return result
 
     
@@ -258,7 +277,7 @@ if args.definitions!=None:
         assert type(hDict)==dict
         hDef = HistogramDefinition(n,hDict)
         allHDefs.add(hDef)
-        print("Added",hDef['canvasName'])
+        print("Added",hDef.getParameter('canvasName'))
 
 if args.effVar!=None:
     effVarDict = { }
