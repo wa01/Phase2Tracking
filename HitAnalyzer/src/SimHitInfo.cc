@@ -25,6 +25,7 @@ void SimHitInfo::setBranches(TTree& tree) {
   tree.Branch("hasRecHit",&simHitData.hasRecHit);
 
   tree.Branch("rhLocalPos",&simHitData.rhLocalPos);
+  tree.Branch("rhLocalErr",&simHitData.rhLocalErr);
   tree.Branch("rhGlobalPos",&simHitData.rhGlobalPos);
   // tree.Branch("Hit_layer",                              &simHitData.Hit_layer);
   // tree.Branch("Hit_ModuleType",                         &simHitData.Hit_ModuleType);
@@ -230,6 +231,9 @@ void SimHitInfo::fillSimHitInfo(const PSimHit& simHit) {
     ROOT::Math::XYZPointF localPos(rechit->localPosition().x(),rechit->localPosition().y(),
 				   rechit->localPosition().z());
     simHitData.rhLocalPos.push_back(localPos);
+    XYVectorF localErr(sqrt(rechit->localPositionError().xx()),
+		       sqrt(rechit->localPositionError().yy()));
+    simHitData.rhLocalErr.push_back(localErr);
     ROOT::Math::XYZPointF globalPos(rechit->globalPosition().x(),rechit->globalPosition().y(),
 				    rechit->globalPosition().z());
     simHitData.rhGlobalPos.push_back(globalPos);
@@ -247,6 +251,7 @@ void SimHitInfo::fillSimHitInfo(const PSimHit& simHit) {
   else {
     simHitData.hasRecHit.push_back(false);
     simHitData.rhLocalPos.push_back(ROOT::Math::XYZPointF(0.,0.,0.));
+    simHitData.rhLocalErr.push_back(XYVectorF(0.,0.));
     simHitData.rhGlobalPos.push_back(ROOT::Math::XYZPointF(0.,0.,0.));
     simHitData.clusterSize.push_back(0);
     // simHitData.clusterNSimTracks.push_back(0);
@@ -281,6 +286,7 @@ void SimHitInfo::clear() {
   simHitData.hasRecHit.clear();
   
   simHitData.rhLocalPos.clear();
+  simHitData.rhLocalErr.clear();
   simHitData.rhGlobalPos.clear();
   // simHitData.Hit_layer.clear();
   // simHitData.Hit_ModuleType.clear();

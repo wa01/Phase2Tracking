@@ -10,8 +10,12 @@
 
 #include "DataFormats/Math/interface/Point3D.h"
 #include "DataFormats/Math/interface/Vector3D.h"
+#include <Math/DisplacementVector2D.h>
 
 #include "TTree.h"
+
+/// spatial vector with cartesian internal representation
+typedef ROOT::Math::DisplacementVector2D<ROOT::Math::Cartesian2D<float> > XYVectorF;
 
 class SimHitInfo {
 
@@ -41,6 +45,7 @@ class SimHitInfo {
     std::vector<bool> hasRecHit;
 
     std::vector<ROOT::Math::XYZPointF> rhLocalPos;
+    std::vector<XYVectorF> rhLocalErr;
     std::vector<ROOT::Math::XYZPointF> rhGlobalPos;
     /* std::vector<unsigned short> Hit_layer; */
     /* std::vector<unsigned short> Hit_ModuleType; */
@@ -84,8 +89,7 @@ class SimHitInfo {
 		  const Phase2TrackerRecHit1DCollectionNew& rechits) {
     tTopo_ = topo;
     tkGeom_ = geom;
-    pixelSimLinks = links;
-    //
+    pixelSimLinks = links;    //
     // fill SimHit map
     //
     // simHitsPerDet_.clear();
