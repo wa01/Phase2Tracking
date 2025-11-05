@@ -82,7 +82,8 @@ class HistogramDefinition:
         name = 'display'
         mTName = "mType"+str(mType) if mType!=None else None
         if ( mTName in self.parameters ) and ( name in self.parameters[mTName] ):
-            return not self.parameters[mTName][name]
+            if self.parameters[mTName][name]!=None:
+                return not self.parameters[mTName][name]
         return False
 
 class HistogramDefinitions:
@@ -186,6 +187,7 @@ def drawHistoByDef(tree,hDef,extraCuts):
     effCuts = hDef.getParameter('effCuts')
     variable = hDef.getParameter('variable')
     for mType in range(23,26):
+        #print("Checking mType",mType,"for",hDef.name)
         ic += 1
         #
         # draw histogram?
