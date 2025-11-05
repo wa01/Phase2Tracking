@@ -34,10 +34,12 @@ class HistogramDefinition:
                 for kh,vh in v.items():
                     if kh in HistogramDefinition.allHistFields:
                         self.parameters[k][kh] = vh
-                else:
-                    print("Warning: key",kh,"is not a standard histogram field name - ignoring the entry")
+                    else:
+                        print("Warning: key",kh, \
+                                  "is not a standard histogram field name - ignoring the entry in", \
+                                  self.name)
             else:
-                print("Warning: key",k,"is not a standard field name - ignoring the entry")
+                print("Warning: key",k,"is not a standard field name - ignoring the entry in",self.name)
         #
         if self.parameters['canvasName']==None:
             self.parameters['canvasName'] = "c" + self.name[0].upper() + self.name[1:]
@@ -333,6 +335,7 @@ if args.effVar!=None:
 extraCuts = args.cuts
 
 ROOT.gROOT.ProcessLine(".L setTDRStyle.C")
+ROOT.gROOT.ProcessLine(".L floatMod.C+")
 ROOT.setTDRStyle()
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetOptFit(1)
