@@ -382,16 +382,6 @@ if args.effVar!=None:
     #print(allHDefs.allCanvases)
     #print(allHDefs['hEffArg'])
         
-#effVarName = None
-#effVarAxis = None
-#if args.effVar!=None:
-#    fields1 = args.effVar.split(";")
-#    assert len(fields1)==2
-#    effVarName = fields1[0]
-#    fields2 = fields1[1].split(",")
-#    assert len(fields2)==3
-#    effVarAxis = ( int(fields2[0]), float(fields2[1]), float(fields2[2]) )
-
 #extraCuts = "abs(particleType)==13"
 #extraCuts = "tof<12.5"
 extraCuts = args.cuts
