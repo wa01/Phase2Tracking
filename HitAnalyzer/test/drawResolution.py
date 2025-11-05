@@ -1,6 +1,7 @@
 import sys,os
 import ROOT
 import argparse
+from fnmatch import fnmatch
 
 class HistogramDefinition:
 
@@ -8,7 +9,8 @@ class HistogramDefinition:
     reqHistFields = [ ]
     requiredFields = reqGenFields + reqHistFields
     optGenFields =  [ 'effCuts', 'logY' ]
-    optHistFields = [ 'xNbins', 'xMin', 'xMax', 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', 'zMin', 'zMax' ]
+    optHistFields = [ 'xNbins', 'xMin', 'xMax', 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', \
+                          'zMin', 'zMax', 'display' ]
     optionalFields = optGenFields + optHistFields
     allFields = requiredFields + optionalFields
     allHistFields = reqHistFields + optHistFields
@@ -70,7 +72,18 @@ class HistogramDefinition:
         if name in self.parameters:
             return self.parameters[name]
         return None
-        
+
+    def vetoMType(self,mType):
+        ''' Check for an mType entry with display = False
+        '''
+        #
+        # try to get 'display' parameter
+        #
+        name = 'display'
+        mTName = "mType"+str(mType) if mType!=None else None
+        if ( mTName in self.parameters ) and ( name in self.parameters[mTName] ):
+            return not self.parameters[mTName][name]
+        return False
 
 class HistogramDefinitions:
 
@@ -174,6 +187,12 @@ def drawHistoByDef(tree,hDef,extraCuts):
     variable = hDef.getParameter('variable')
     for mType in range(23,26):
         ic += 1
+        #
+        # draw histogram?
+        #
+        if hDef.vetoMType(mType):
+            continue
+        #
         cnv.cd(ic)
         ROOT.gPad.SetGridx(1)
         ROOT.gPad.SetGridy(1)
@@ -258,12 +277,18 @@ parser.add_argument('--sampleName', help='sample label for output', type=str, de
 parser.add_argument('--fitResiduals', '-f', \
                         help='comma-separated list of names of histogram sets with residuals to be fit', \
                         type=str, default=None)
+parser.add_argument('--selectedHistograms', help='comma-separated names of histogram definitions to be used', \
+                        type=str, default='*')
+parser.add_argument('--vetoedHistograms', help='comma-separated names of histogram definitions not to be used',
+                        type=str, default='')
 parser.add_argument('--list', '-l', help='list typle contents', action='store_true', default=False)
 parser.add_argument('file', help='input file', type=str, nargs=1, default=None)
 args = parser.parse_args()
 if args.output!=None:
     assert os.path.isdir(args.output)
 fitResiduals = args.fitResiduals.split(",") if args.fitResiduals else [ ]
+selectedHistoNames = args.selectedHistograms.split(",")
+vetoedHistoNames = args.vetoedHistograms.split(",")
 #
 # load histogram definitions
 #
@@ -277,6 +302,29 @@ if args.definitions!=None:
         #print(n,type(hDict))
         #sys.exit()
         assert type(hDict)==dict
+        #
+        # check if in list of histograms to be displayed
+        #
+        selFlg = False
+        for p in selectedHistoNames:
+            if fnmatch(n,p):
+                selFlg = True
+                break
+        if not selFlg:
+            continue
+        #
+        # check if in list of histograms to be vetoed
+        #
+        selFlg = True
+        for p in vetoedHistoNames:
+            if fnmatch(n,p):
+                selFlg = False
+                break
+        if not selFlg:
+            continue
+        #
+        # add histogram
+        #
         hDef = HistogramDefinition(n,hDict)
         allHDefs.add(hDef)
         print("Added",hDef.getParameter('canvasName'))
