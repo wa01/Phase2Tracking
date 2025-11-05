@@ -133,6 +133,15 @@ def cutString(*cuts):
     #print("&&".join([ c for c in cuts if ( c!=None and c.strip()!="" ) ]))
     return "&&".join([ c for c in cuts if ( c!=None and c.strip()!="" ) ])
 
+def drawString(pave,title,s):
+    t = pave.AddText(title)
+    t.SetTextFont(42)
+    t.SetTextSize(0.05)
+    t.SetTextAlign(13)
+    t = pave.AddText("")
+    t = pave.AddText("  "+s)
+    t = pave.AddText("")
+
 def drawCuts(pave,title,cuts):
     t = pave.AddText(title)
     t.SetTextFont(42)
@@ -146,13 +155,13 @@ def drawCuts(pave,title,cuts):
         t = pave.AddText(l)
 
     
-def drawCutPave(canvas,cuts,effcuts=None):
+def drawCutPave(canvas,variable,cuts,effcuts=None):
     indBaseCuts = cuts.split("&&")
     indEffCuts = None if effcuts==None else effcuts.split("&&")
     #print(indBaseCuts)
     #print(indEffCuts)
     canvas.cd(4)
-    hpave = 0.05+(len(indBaseCuts)+1)*0.04
+    hpave = 0.05+2*0.04+0.05+(len(indBaseCuts)+1)*0.04
     if indEffCuts!=None:
         hpave += 0.05+(len(indEffCuts)+2)*0.04
         
@@ -162,6 +171,7 @@ def drawCutPave(canvas,cuts,effcuts=None):
     pave.SetTextFont(42)
     pave.SetTextSize(0.04)
     pave.SetTextAlign(13)
+    drawString(pave,"Variable(s)",variable)
     drawCuts(pave,"Basic selection",indBaseCuts)
     if indEffCuts!=None:
         t = pave.AddText("")
@@ -262,7 +272,8 @@ def drawHistoByDef(tree,hDef,extraCuts):
         if hDef.getParameter('logY'):
             ROOT.gPad.SetLogy(1)
         ROOT.gPad.Update()
-    result['pave'] = drawCutPave(cnv,cutString(extraCuts,hDef.getParameter('baseCuts')), \
+    result['pave'] = drawCutPave(cnv,hDef.getParameter('variable'), \
+                                     cutString(extraCuts,hDef.getParameter('baseCuts')), \
                                      cutString(hDef.getParameter('effCuts')))
     return result
 
@@ -288,6 +299,7 @@ parser.add_argument('file', help='input file', type=str, nargs=1, default=None)
 args = parser.parse_args()
 if args.output!=None:
     assert os.path.isdir(args.output)
+    print("***",args.output)
 fitResiduals = args.fitResiduals.split(",") if args.fitResiduals else [ ]
 selectedHistoNames = args.selectedHistograms.split(",")
 vetoedHistoNames = args.vetoedHistograms.split(",")
@@ -440,6 +452,7 @@ for hdef in allHDefs.allDefinitions.values():
             ic += 1
             cnv.cd(ic)
             f = fitHistogram(mType,objects['histos'][mType][0])
+
 #allObjects.append(drawHistoByDef(simHitTree,allHDefs['effX1'],extraCuts))
 #allObjects.append(drawHistoByDef(simHitTree,allHDefs['eff2D1'],extraCuts))
 
@@ -543,9 +556,10 @@ for hdef in allHDefs.allDefinitions.values():
 #!#     paves.append(drawCutPave(cEffV,cutString(extraCuts),cutString("hasRecHit>0",dxCut)))
 
 if args.output!=None:
-    for c in canvases:
+    for c in [ x['cnv'] for x in allObjects ]:
         basename = os.path.join(args.output,c.GetName())
         if args.sampleName!=None:
             basename += "_" + args.sampleName
+        print(basename)
         c.SaveAs(basename+".pdf")
         c.SaveAs(basename+".png")
