@@ -23,6 +23,7 @@ class HistogramDefinition:
               inputDict .. dictionary with values
         '''
         #
+        assert name.isalnum()
         self.name = name
         #
         # read parameters

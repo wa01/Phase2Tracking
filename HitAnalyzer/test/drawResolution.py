@@ -212,45 +212,45 @@ def drawHistoByDef(tree,hDef,extraCuts):
     return result
 
 def addHistogram(varString,cuts,effCuts=None):
-    varEffDict = { }
+    extraHDict = { }
     # split into string defining the variable(s) and (1 or 2) axis definition(s)
     fields1 = varString.split(";")
     assert len(fields1)<=3
-    varEffDict['variable'] = fields1[0]
-    #varEffDict['canvasName'] = "cEffArg"
-    #varEffDict['histogramName'] = "hEffArg"
-    varEffDict['histogramTitle'] = "hEffArg"
+    extraHDict['variable'] = fields1[0]
+    #extraHDict['canvasName'] = "cEffArg"
+    #extraHDict['histogramName'] = "hEffArg"
+    extraHDict['histogramTitle'] = "userHistogram"
     # x-axis
     fields2 = fields1[1].split(",")
     assert len(fields2)==3 
-    varEffDict['xNbins'] = int(fields2[0])
-    varEffDict['xMin'] = float(fields2[1])
-    varEffDict['xMax'] = float(fields2[2])
+    extraHDict['xNbins'] = int(fields2[0])
+    extraHDict['xMin'] = float(fields2[1])
+    extraHDict['xMax'] = float(fields2[2])
     # check for info on y axis (== presence of 2nd variable)
     if len(fields1)==3:
-        assert ":" in varEffDict['variable']
+        assert ":" in extraHDict['variable']
         fields3 = fields1[2].split(",")
-        varEffDict['yNbins'] = int(fields3[0])
-        varEffDict['yMin'] = float(fields3[1])
-        varEffDict['yMax'] = float(fields3[2])
-        varEffDict['xTitle'] = varEffDict['variable'].split(":")[1]
-        varEffDict['yTitle'] = varEffDict['variable'].split(":")[0]
+        extraHDict['yNbins'] = int(fields3[0])
+        extraHDict['yMin'] = float(fields3[1])
+        extraHDict['yMax'] = float(fields3[2])
+        extraHDict['xTitle'] = extraHDict['variable'].split(":")[1]
+        extraHDict['yTitle'] = extraHDict['variable'].split(":")[0]
     else:
-        varEffDict['yMin'] = 0.
-        varEffDict['yMax'] = 1.05
-        varEffDict['xTitle'] = varEffDict['variable']
-        varEffDict['yTitle'] = 'efficiency'
-    varEffDict['baseCuts'] = cuts
+        extraHDict['yMin'] = 0.
+        extraHDict['yMax'] = 1.05
+        extraHDict['xTitle'] = extraHDict['variable']
+        extraHDict['yTitle'] = 'efficiency'
+    extraHDict['baseCuts'] = cuts
     if effCuts!=None:
-        varEffDict['effCuts'] = effCuts
-    #xxx = HistogramDefinition("effV",varEffDict)
+        extraHDict['effCuts'] = effCuts
+    #xxx = HistogramDefinition("effV",extraHDict)
     #print("xxx",xxx)
     #print("xxx",xxx.parameters)
-    #allHDefs.add(HistogramDefinition("effV",varEffDict))
+    #allHDefs.add(HistogramDefinition("effV",extraHDict))
     #print(allHDefs.allDefinitions.keys())
     #print(allHDefs.allCanvases)
     #print(allHDefs['hEffArg'])
-    return HistogramDefinition("effV",varEffDict)
+    return HistogramDefinition("userHist",extraHDict)
 
 
     
