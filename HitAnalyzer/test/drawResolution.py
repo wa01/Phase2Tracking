@@ -218,7 +218,7 @@ def drawHistoByDef(tree,hDef,extraCuts):
         nbx = hDef.getParameter('xNbins',mType)
         xmin = hDef.getParameter('xMin',mType)
         xmax = hDef.getParameter('xMax',mType)
-        if is1D:
+        if is1D and ( not isProfile ):
             histos[mType] = [ ROOT.TH1F(hName+"_1",hName+"_1",nbx,xmin,xmax), None, None, None ]
             #tree.Draw("("+variable+")>>"+hName+"_1("+str(nbx)+","+str(xmin)+","+str(xmax)+")",
             #            cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType)))
@@ -262,7 +262,7 @@ def drawHistoByDef(tree,hDef,extraCuts):
         #    histos[mType][1] = ROOT.gDirectory.Get(hName+"_2")
         xtitle = hDef.getParameter('xTitle',mType) if hDef.getParameter('xTitle',mType) else variable
         ytitle = hDef.getParameter('yTitle',mType) if hDef.getParameter('yTitle',mType) else ""
-        if is1D:
+        if is1D and ( not isProfile ):
             ymin = hDef.getParameter('yMin',mType) if hDef.getParameter('yMin',mType)!=None else 0.
             ymax = hDef.getParameter('yMax',mType) if hDef.getParameter('yMax',mType)!=None else 1.05
             if effCuts!=None:

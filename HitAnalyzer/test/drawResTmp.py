@@ -135,6 +135,70 @@ widthVsPath = {
     'profile' : True
 }
 
+widthVsModX90 = {
+    'histogramTitle' : 'width vs x modula 90 #mu m', \
+    'variable' : 'clusterSize:floatMod(10000*localPos.x(),90)', \
+    'baseCuts' : 'tof<12.5&&pabs>0.3', \
+    'xTitle' : 'x modulo 90 #mu m [#mu m]', \
+    'xNbins' : 100, \
+    'xMin' : -5, \
+    'xMax' : 95, \
+    'yTitle' : 'cluster width', \
+#    'yNbins' : 10,
+    'yMin' : 0, \
+    'yMax' : 25, \
+    'mType23' : { 'display' : False },
+    'mType24' : { 'display' : False },
+    'profile' : True
+}
+
+widthVsMod2DX90 = {
+    'histogramTitle' : 'width vs x modula 90 #mu m', \
+    'variable' : 'clusterSize:floatMod(10000*localPos.x(),90)', \
+    'baseCuts' : 'tof<12.5&&pabs>0.3', \
+    'xTitle' : 'x modulo 90 #mu m [#mu m]', \
+    'xNbins' : 100, \
+    'xMin' : -5, \
+    'xMax' : 95, \
+    'yTitle' : 'cluster width', \
+    'yNbins' : 10, \
+    'yMin' : 0, \
+    'yMax' : 10, \
+    'mType23' : { 'display' : False },
+    'mType24' : { 'display' : False }
+}
+
+widthVsModX100 = {
+    'histogramTitle' : 'width vs x modula 100 #mu m', \
+    'variable' : 'clusterSize:floatMod(10000*localPos.x(),100)', \
+    'baseCuts' : 'tof<12.5&&pabs>0.3', \
+    'xTitle' : 'x modulo 100 #mu m [#mu m]', \
+    'xNbins' : 110, \
+    'xMin' : -5, \
+    'xMax' : 105, \
+    'yTitle' : 'cluster width', \
+#    'yNbins' : 10,
+    'yMin' : 0, \
+    'yMax' : 25, \
+    'mType25' : { 'display' : False }, \
+    'profile' : True
+}
+
+widthVsMod2DX100 = {
+    'histogramTitle' : 'width vs x modula 100 #mu m', \
+    'variable' : 'clusterSize:floatMod(10000*localPos.x(),100)', \
+    'baseCuts' : 'tof<12.5&&pabs>0.3', \
+    'xTitle' : 'x modulo 100 #mu m [#mu m]', \
+    'xNbins' : 110, \
+    'xMin' : -5, \
+    'xMax' : 105, \
+    'yTitle' : 'cluster width', \
+    'yNbins' : 10, \
+    'yMin' : 0, \
+    'yMax' : 10, \
+    'mType25' : { 'display' : False }
+}
+
 #pathX = {
 #    #'canvasName' : 'cEffX1', \
 #    #'histogramName' : 'effX1', \
