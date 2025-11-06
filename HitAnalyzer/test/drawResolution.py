@@ -122,12 +122,18 @@ def fillHistoByDef(tree,hDef,extraCuts):
                 histos[mType][1] = ROOT.TH1F(hName+"_2",hName+"_2",nbx,xmin,xmax)
                 tree.Project(hName+"_2",variable, \
                             cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType),effCuts))
+                histos[mType][3] = ROOT.TEfficiency(histos[mType][1],histos[mType][0])
+            else:
+                # always keep final histogram in 4th position
+                histos[mType][3] = histos[mType][0]
         elif isProfile:
             ymin = hDef.getParameter('yMin',mType)
             ymax = hDef.getParameter('yMax',mType)
             histos[mType] = [ ROOT.TProfile(hName+"_1",hName+"_1",nbx,xmin,xmax,ymin,ymax,'S'), None, None, None ]
             tree.Project(hName+"_1",variable, \
                           cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType)))
+            # always keep final histogram in 4th position
+            histos[mType][3] = histos[mType][0]
         else:
             nby = hDef.getParameter('yNbins',mType)
             ymin = hDef.getParameter('yMin',mType)
@@ -142,12 +148,18 @@ def fillHistoByDef(tree,hDef,extraCuts):
                 #            cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType),effCuts))
                 tree.Project(hName+"_2",variable, \
                             cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType),effCuts))
-
+                histos[mType][1].Divide(histos[mType][0])
+                # always keep final histogram in 4th position
+                histos[mType][3] = histos[mType][1]
+            else:
+                # always keep final histogram in 4th position
+                histos[mType][3] = histos[mType][0]
+                
     savedDir.cd()
     return histos
 
 
-def drawHistoByDef(histos,hDef):
+def drawHistoByDef(histos,hDef,same=False):
     result = { 'cnv' : None, 'histos' : histos, 'pave' : None }
 
     savedDir = ROOT.gDirectory
@@ -215,7 +227,6 @@ def drawHistoByDef(histos,hDef):
             zmin = hDef.getParameter('zMin',mType) if hDef.getParameter('zMin',mType)!=None else 0.
             zmax = hDef.getParameter('zMax',mType) if hDef.getParameter('zMax',mType)!=None else 1.05
             if effCuts!=None:
-                histos[mType][1].Divide(histos[mType][0])
                 histos[mType][1].SetTitle(hTitle)
                 histos[mType][1].GetXaxis().SetTitle(xtitle)
                 histos[mType][1].GetYaxis().SetTitle(ytitle)
@@ -379,6 +390,16 @@ canvases = [ ]
 histos = { }
 paves = [ ]
 
+allObjects = [ ]
+for cName in allHDefs.canvasNames():
+    cHistos = { }
+    for hName in allHDefs.byCanvas[cName]:
+        print(cName,hName)
+        cHistos[hName] = fillHistoByDef(simHitTree,allHDefs.byCanvas[cName][hName],extraCuts)
+    for hName in cHistos:
+        allObjects.append(drawHistoByDef(cHistos[hName],allHDefs.byCanvas[cName][hName]))
+#    yMin = min([ x.GetMinimum() for x in cHistos
+sys.exit()
 
 allObjects = [ ]
 for hdef in allHDefs.allDefinitions.values():

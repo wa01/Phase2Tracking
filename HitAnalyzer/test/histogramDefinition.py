@@ -125,16 +125,27 @@ class HistogramDefinitions:
         self.allDefinitions = { }
         self.allHistoNames = set()
         self.allCanvases = set()
+        self.byCanvas = { }
 
     def add(self,hdef):
         assert not hdef.name in self.allDefinitions
-        assert not hdef.getParameter('histogramName') in self.allHistoNames
-        assert not hdef.getParameter('canvasName') in self.allCanvases
-        self.allDefinitions[hdef.name] = hdef
-        self.allHistoNames.add(hdef.getParameter('histogramName'))
-        self.allCanvases.add(hdef.getParameter('canvasName'))
-        
 
+        hName = hdef.getParameter('histogramName')
+        assert not hName in self.allHistoNames
+        self.allHistoNames.add(hName)
+
+        cName = hdef.getParameter('canvasName')
+        assert not cName in self.allCanvases
+        self.allDefinitions[hdef.name] = hdef
+        self.allCanvases.add(cName)
+
+        if not cName in self.byCanvas:
+            self.byCanvas[cName] = { }
+        self.byCanvas[cName][hdef.name] = hdef
+
+    def canvasNames(self):
+        return self.allCanvases
+    
     def __getitem__(self,name):
         if name in self.allDefinitions:
             return self.allDefinitions[name]
