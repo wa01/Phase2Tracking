@@ -10,7 +10,7 @@ class HistogramDefinition:
     requiredFields = reqGenFields + reqHistFields
     optGenFields =  [ 'effCuts', 'logY' ]
     optHistFields = [ 'xNbins', 'xMin', 'xMax', 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', \
-                          'zMin', 'zMax', 'display' ]
+                          'zMin', 'zMax', 'display', 'profile' ]
     optionalFields = optGenFields + optHistFields
     allFields = requiredFields + optionalFields
     allHistFields = reqHistFields + optHistFields
@@ -185,11 +185,14 @@ def drawHistoByDef(tree,hDef,extraCuts):
     result = { 'cnv' : None, 'histos' : { }, 'pave' : None }
     histos = result['histos']
 
+    savedDir = ROOT.gDirectory
+    ROOT.gROOT.cd()
     cnv = ROOT.TCanvas(hDef.getParameter('canvasName'),hDef.getParameter('canvasName'),1000,1000)
     result['cnv'] = cnv
     cnv.Divide(2,2)
 
     is1D = hDef.getParameter('yNbins')==None
+    isProfile = hDef.getParameter('profile')!=None and hDef.getParameter('profile')
     #print(hDef['canvasName'],'is',is1D)
     
     ic = 0
@@ -216,25 +219,47 @@ def drawHistoByDef(tree,hDef,extraCuts):
         xmin = hDef.getParameter('xMin',mType)
         xmax = hDef.getParameter('xMax',mType)
         if is1D:
-            tree.Draw("("+variable+")>>"+hName+"_1("+str(nbx)+","+str(xmin)+","+str(xmax)+")",
+            histos[mType] = [ ROOT.TH1F(hName+"_1",hName+"_1",nbx,xmin,xmax), None, None, None ]
+            #tree.Draw("("+variable+")>>"+hName+"_1("+str(nbx)+","+str(xmin)+","+str(xmax)+")",
+            #            cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType)))
+            tree.Project(hName+"_1",variable, \
                         cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType)))
             if effCuts!=None:
-                tree.Draw("("+variable+")>>"+hName+"_2("+str(nbx)+","+str(xmin)+","+str(xmax)+")",
+                histos[mType][1] = ROOT.TH1F(hName+"_2",hName+"_2",nbx,xmin,xmax)
+                #tree.Draw("("+variable+")>>"+hName+"_2("+str(nbx)+","+str(xmin)+","+str(xmax)+")",
+                #            cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType),effCuts))
+                tree.Project(hName+"_2",variable, \
                             cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType),effCuts))
+        elif isProfile:
+            ymin = hDef.getParameter('yMin',mType)
+            ymax = hDef.getParameter('yMax',mType)
+            histos[mType] = [ ROOT.TProfile(hName+"_1",hName+"_1",nbx,xmin,xmax,ymin,ymax,'S'), None, None, None ]
+            #tree.Draw(variable+">>"+hName+"_1("+str(nbx)+","+str(xmin)+","+str(xmax)+","+ \
+            #              str(nby)+","+str(ymin)+","+str(ymax)+")",
+            #              cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType)))
+            tree.Project(hName+"_1",variable, \
+                          cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType)))
         else:
             nby = hDef.getParameter('yNbins',mType)
             ymin = hDef.getParameter('yMin',mType)
             ymax = hDef.getParameter('yMax',mType)
-            tree.Draw(variable+">>"+hName+"_1("+str(nbx)+","+str(xmin)+","+str(xmax)+","+ \
-                          str(nby)+","+str(ymin)+","+str(ymax)+")",
+            histos[mType] = [ ROOT.TH2F(hName+"_1",hName+"_1",nbx,xmin,xmax,nby,ymin,ymax), None, None, None ]
+            #tree.Draw(variable+">>"+hName+"_1("+str(nbx)+","+str(xmin)+","+str(xmax)+","+ \
+            #              str(nby)+","+str(ymin)+","+str(ymax)+")",
+            #              cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType)))
+            tree.Project(hName+"_1",variable, \
                           cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType)))
             if effCuts!=None:
-                tree.Draw(variable+">>"+hName+"_2("+str(nbx)+","+str(xmin)+","+str(xmax)+","+ \
-                            str(nby)+","+str(ymin)+","+str(ymax)+")",
+                histos[mType][1] = ROOT.TH2F(hName+"_2",hName+"_2",nbx,xmin,xmax,nby,ymin,ymax)
+                #tree.Draw(variable+">>"+hName+"_2("+str(nbx)+","+str(xmin)+","+str(xmax)+","+ \
+                #            str(nby)+","+str(ymin)+","+str(ymax)+")",
+                #            cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType),effCuts))
+                tree.Project(hName+"_2",variable, \
                             cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType),effCuts))
-        histos[mType] = [ ROOT.gDirectory.Get(hName+"_1"), None, None, None ]
-        if effCuts!=None:
-            histos[mType][1] = ROOT.gDirectory.Get(hName+"_2")
+
+        #histos[mType] = [ ROOT.gDirectory.Get(hName+"_1"), None, None, None ]
+        #if effCuts!=None:
+        #    histos[mType][1] = ROOT.gDirectory.Get(hName+"_2")
         xtitle = hDef.getParameter('xTitle',mType) if hDef.getParameter('xTitle',mType) else variable
         ytitle = hDef.getParameter('yTitle',mType) if hDef.getParameter('yTitle',mType) else ""
         if is1D:
@@ -253,6 +278,14 @@ def drawHistoByDef(tree,hDef,extraCuts):
                 histos[mType][0].GetXaxis().SetTitle(xtitle)
                 histos[mType][0].GetYaxis().SetTitle(ytitle)
                 histos[mType][0].Draw()
+        elif isProfile:
+            histos[mType][0].SetTitle(hTitle)
+            histos[mType][0].GetXaxis().SetTitle(xtitle)
+            histos[mType][0].GetYaxis().SetTitle(ytitle)
+            histos[mType][0].SetMarkerSize(0.5)
+            #histos[mType][0].SetFillColor(ROOT.TColor.GetColorBright(ROOT.kGray))
+            #histos[mType][0].SetFillColor(ROOT.kGray)
+            histos[mType][0].Draw()
         else:
             zmin = hDef.getParameter('zMin',mType) if hDef.getParameter('zMin',mType)!=None else 0.
             zmax = hDef.getParameter('zMax',mType) if hDef.getParameter('zMax',mType)!=None else 1.05
@@ -275,6 +308,10 @@ def drawHistoByDef(tree,hDef,extraCuts):
     result['pave'] = drawCutPave(cnv,hDef.getParameter('variable'), \
                                      cutString(extraCuts,hDef.getParameter('baseCuts')), \
                                      cutString(hDef.getParameter('effCuts')))
+
+    #ROOT.gDirectory.ls()
+    savedDir.cd()
+    #ROOT.gDirectory.ls()
     return result
 
     
