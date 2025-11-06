@@ -1,111 +1,8 @@
 import sys,os
+from histogramDefinition import *
 import ROOT
 import argparse
 from fnmatch import fnmatch
-
-class HistogramDefinition:
-
-    reqGenFields = [ 'canvasName', 'histogramName', 'histogramTitle', 'variable', 'baseCuts' ]
-    reqHistFields = [ ]
-    requiredFields = reqGenFields + reqHistFields
-    optGenFields =  [ 'effCuts', 'logY' ]
-    optHistFields = [ 'xNbins', 'xMin', 'xMax', 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', \
-                          'zMin', 'zMax', 'display', 'profile' ]
-    optionalFields = optGenFields + optHistFields
-    allFields = requiredFields + optionalFields
-    allHistFields = reqHistFields + optHistFields
-
-    def __init__(self,name,inputDict):
-        #
-        self.name = name
-        self.parameters = { x:None for x in HistogramDefinition.allFields }
-        for k,v in inputDict.items():
-            if k.startswith('__'):
-                continue
-            if k in HistogramDefinition.allFields:
-                #
-                # general variable
-                #
-                self.parameters[k] = v
-            elif k.startswith("mType"):
-                #
-                # mType-specific histogram parameters
-                #
-                assert type(v)==dict and ( not k in self.parameters ) and len(k)>5 and k[5:].isdigit()
-                self.parameters[k] = { x:None for x in HistogramDefinition.allHistFields }
-                for kh,vh in v.items():
-                    if kh in HistogramDefinition.allHistFields:
-                        self.parameters[k][kh] = vh
-                    else:
-                        print("Warning: key",kh, \
-                                  "is not a standard histogram field name - ignoring the entry in", \
-                                  self.name)
-            else:
-                print("Warning: key",k,"is not a standard field name - ignoring the entry in",self.name)
-        #
-        if self.parameters['canvasName']==None:
-            self.parameters['canvasName'] = "c" + self.name[0].upper() + self.name[1:]
-        if self.parameters['histogramName']==None:
-            self.parameters['histogramName'] = "h" + self.name[0].upper() + self.name[1:]
-        #
-        for f in HistogramDefinition.requiredFields:
-            assert ( f in self.parameters ) and self.parameters[f]!=None
-
-    #def __getitem__(self,field):
-    #    if field in self.parameters:
-    #        return self.parameters[field]
-    #    return None
-
-    def getParameter(self,name,mType=None):
-        result = None
-        #
-        # give priority to parameter specific to a module type
-        #
-        mTName = "mType"+str(mType) if mType!=None else None
-        if ( mTName in self.parameters ) and ( name in self.parameters[mTName] ):
-          result = self.parameters[mTName][name]
-          if result!=None:
-            return self.parameters[mTName][name]
-        #
-        # not found: use general parameter
-        #
-        if name in self.parameters:
-            return self.parameters[name]
-        return None
-
-    def vetoMType(self,mType):
-        ''' Check for an mType entry with display = False
-        '''
-        #
-        # try to get 'display' parameter
-        #
-        name = 'display'
-        mTName = "mType"+str(mType) if mType!=None else None
-        if ( mTName in self.parameters ) and ( name in self.parameters[mTName] ):
-            if self.parameters[mTName][name]!=None:
-                return not self.parameters[mTName][name]
-        return False
-
-class HistogramDefinitions:
-
-    def __init__(self):
-        self.allDefinitions = { }
-        self.allHistoNames = set()
-        self.allCanvases = set()
-
-    def add(self,hdef):
-        assert not hdef.name in self.allDefinitions
-        assert not hdef.getParameter('histogramName') in self.allHistoNames
-        assert not hdef.getParameter('canvasName') in self.allCanvases
-        self.allDefinitions[hdef.name] = hdef
-        self.allHistoNames.add(hdef.getParameter('histogramName'))
-        self.allCanvases.add(hdef.getParameter('canvasName'))
-        
-
-    def __getitem__(self,name):
-        if name in self.allDefinitions:
-            return self.allDefinitions[name]
-        return None
         
 def fitHistogram(mType,h):
     f1name = "f1"+str(mType)
@@ -343,42 +240,7 @@ vetoedHistoNames = args.vetoedHistograms.split(",")
 #
 # load histogram definitions
 #
-allHDefs = HistogramDefinitions()
-if args.definitions!=None:
-    module = __import__(args.definitions)
-    for n in dir(module):
-        if n.startswith('__'):
-            continue
-        hDict = getattr(module,n)
-        #print(n,type(hDict))
-        #sys.exit()
-        assert type(hDict)==dict
-        #
-        # check if in list of histograms to be displayed
-        #
-        selFlg = False
-        for p in selectedHistoNames:
-            if fnmatch(n,p):
-                selFlg = True
-                break
-        if not selFlg:
-            continue
-        #
-        # check if in list of histograms to be vetoed
-        #
-        selFlg = True
-        for p in vetoedHistoNames:
-            if fnmatch(n,p):
-                selFlg = False
-                break
-        if not selFlg:
-            continue
-        #
-        # add histogram
-        #
-        hDef = HistogramDefinition(n,hDict)
-        allHDefs.add(hDef)
-        print("Added",hDef.getParameter('canvasName'))
+allHDefs = loadHistogramDefinitions(args.definitions,selectedHistoNames,vetoedHistoNames)
 
 if args.effVar!=None:
     effVarDict = { }
