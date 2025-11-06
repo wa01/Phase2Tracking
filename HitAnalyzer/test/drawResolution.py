@@ -211,7 +211,7 @@ def drawHistoByDef(tree,hDef,extraCuts):
     #ROOT.gDirectory.ls()
     return result
 
-def addHistogram(varString,cuts,effCuts=None):
+def addHistogram(varString,cuts,effCuts=None,name='userHist'):
     extraHDict = { }
     # split into string defining the variable(s) and (1 or 2) axis definition(s)
     fields1 = varString.split(";")
@@ -219,7 +219,7 @@ def addHistogram(varString,cuts,effCuts=None):
     extraHDict['variable'] = fields1[0]
     #extraHDict['canvasName'] = "cEffArg"
     #extraHDict['histogramName'] = "hEffArg"
-    extraHDict['histogramTitle'] = "userHistogram"
+    extraHDict['histogramTitle'] = name
     # x-axis
     fields2 = fields1[1].split(",")
     assert len(fields2)==3 
@@ -239,7 +239,7 @@ def addHistogram(varString,cuts,effCuts=None):
         extraHDict['yMin'] = 0.
         extraHDict['yMax'] = 1.05
         extraHDict['xTitle'] = extraHDict['variable']
-        extraHDict['yTitle'] = 'efficiency'
+        extraHDict['yTitle'] = 'efficiency' if effCuts!=None else 'events/bin'
     extraHDict['baseCuts'] = cuts
     if effCuts!=None:
         extraHDict['effCuts'] = effCuts
@@ -250,15 +250,16 @@ def addHistogram(varString,cuts,effCuts=None):
     #print(allHDefs.allDefinitions.keys())
     #print(allHDefs.allCanvases)
     #print(allHDefs['hEffArg'])
-    return HistogramDefinition("userHist",extraHDict)
+    return HistogramDefinition(name,extraHDict)
 
 
     
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--definitions', '-d', help='python module with dictionaries defining efficiency histograms', \
                         type=str, default=None)
-parser.add_argument('--histogram', help='definition of extra histogram (format <variable>;<nbins>,<min>,<max>[;<nybins>,<ymin>,<ymax>)', \
-                        type=str, default=None)
+parser.add_argument('--histogram', \
+                    help='definition of extra histogram (format <variable>;<nbx>,<xmin>,<xmax>[;<nny>,<ymin>,<ymax>)', \
+                    action='append', type=str, default=[])
 parser.add_argument('--dxMax', help='max. local dx for efficiency plots', type=float, default=0.0075)
 parser.add_argument('--cuts', '-c', help="basic cut string", type=str, default="")
 parser.add_argument('--effCuts', '-e', help="basic cut string", type=str, default=None)
@@ -285,8 +286,8 @@ vetoedHistoNames = args.vetoedHistograms.split(",")
 #
 allHDefs = loadHistogramDefinitions(args.definitions,selectedHistoNames,vetoedHistoNames)
 
-if args.histogram!=None:
-    allHDefs.add(addHistogram(args.histogram,args.cuts,args.effCuts))
+for ih,h in enumerate(args.histogram):
+    allHDefs.add(addHistogram(h,args.cuts,args.effCuts,name="userH"+str(ih+1)))
 #!#     varEffDict = { }
 #!#     # split into string defining the variable(s) and (1 or 2) axis definition(s)
 #!#     fields1 = args.varEff.split(";")
