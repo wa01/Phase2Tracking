@@ -199,6 +199,63 @@ widthVsMod2DX100 = {
     'mType25' : { 'display' : False }
 }
 
+widthVsModY015 =  {
+    'histogramTitle' : 'Width vs. y % 1.5 mm', \
+    'variable' : 'clusterSize:floatMod(100*localPos.y(),15)/10.', \
+    'baseCuts' : 'tof<12.5&&pabs>0.3', \
+    'xTitle' : 'x modulo 1.5mm [mm]', \
+    #'xNbins' : 340, \
+    #'xMin' : -0.1, \
+    #'xMax' : 1.6, \
+    'xNbins' : 200, \
+    'xMin' : -0.25, \
+    'xMax' : 1.75, \
+    'yTitle' : 'cluster width', \
+#    'yNbins' : 10,
+    'yMin' : 0, \
+    'yMax' : 25, \
+    'mType24' : { 'display' : False }, \
+    'mType25' : { 'display' : False }, \
+    'profile' : True
+}
+
+widthVsModY250 =  {
+    'histogramTitle' : 'Width vs. y % 2.5 cm', \
+    'variable' : 'clusterSize:floatMod(10*localPos.y(),25)/10.', \
+    'baseCuts' : 'tof<12.5&&pabs>0.3', \
+    'xTitle' : 'x modulo 2.5cm [cm]', \
+    'xNbins' : 300, \
+    'xMin' : -0.25, \
+    'xMax' : 2.75, \
+    'yTitle' : 'cluster width', \
+#    'yNbins' : 10,
+    'yMin' : 0, \
+    'yMax' : 25, \
+    'mType23' : { 'display' : False }, \
+    'mType25' : { 'display' : False }, \
+    'profile' : True
+}
+
+
+widthVsModY500 =  {
+    'histogramTitle' : 'Width vs. y % 5 cm', \
+    'variable' : 'clusterSize:floatMod(10*localPos.y(),50)/10.', \
+    'baseCuts' : 'tof<12.5&&pabs>0.3', \
+    'xTitle' : 'x modulo 5cm [cm]', \
+    'xNbins' : 275, \
+    'xMin' : -0.25, \
+    'xMax' : 5.25, \
+    'yTitle' : 'cluster width', \
+#    'yNbins' : 10,
+    'yMin' : 0, \
+    'yMax' : 25, \
+    'mType23' : { 'display' : False }, \
+    'mType24' : { 'display' : False }, \
+    'profile' : True
+}
+
+
+
 #pathX = {
 #    #'canvasName' : 'cEffX1', \
 #    #'histogramName' : 'effX1', \

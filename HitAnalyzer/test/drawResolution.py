@@ -211,14 +211,57 @@ def drawHistoByDef(tree,hDef,extraCuts):
     #ROOT.gDirectory.ls()
     return result
 
+def addHistogram(varString,cuts,effCuts=None):
+    varEffDict = { }
+    # split into string defining the variable(s) and (1 or 2) axis definition(s)
+    fields1 = varString.split(";")
+    assert len(fields1)<=3
+    varEffDict['variable'] = fields1[0]
+    #varEffDict['canvasName'] = "cEffArg"
+    #varEffDict['histogramName'] = "hEffArg"
+    varEffDict['histogramTitle'] = "hEffArg"
+    # x-axis
+    fields2 = fields1[1].split(",")
+    assert len(fields2)==3 
+    varEffDict['xNbins'] = int(fields2[0])
+    varEffDict['xMin'] = float(fields2[1])
+    varEffDict['xMax'] = float(fields2[2])
+    # check for info on y axis (== presence of 2nd variable)
+    if len(fields1)==3:
+        assert ":" in varEffDict['variable']
+        fields3 = fields1[2].split(",")
+        varEffDict['yNbins'] = int(fields3[0])
+        varEffDict['yMin'] = float(fields3[1])
+        varEffDict['yMax'] = float(fields3[2])
+        varEffDict['xTitle'] = varEffDict['variable'].split(":")[1]
+        varEffDict['yTitle'] = varEffDict['variable'].split(":")[0]
+    else:
+        varEffDict['yMin'] = 0.
+        varEffDict['yMax'] = 1.05
+        varEffDict['xTitle'] = varEffDict['variable']
+        varEffDict['yTitle'] = 'efficiency'
+    varEffDict['baseCuts'] = cuts
+    if effCuts!=None:
+        varEffDict['effCuts'] = effCuts
+    #xxx = HistogramDefinition("effV",varEffDict)
+    #print("xxx",xxx)
+    #print("xxx",xxx.parameters)
+    #allHDefs.add(HistogramDefinition("effV",varEffDict))
+    #print(allHDefs.allDefinitions.keys())
+    #print(allHDefs.allCanvases)
+    #print(allHDefs['hEffArg'])
+    return HistogramDefinition("effV",varEffDict)
+
+
     
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--definitions', '-d', help='python module with dictionaries defining efficiency histograms', \
                         type=str, default=None)
-parser.add_argument('--effVar', help='variable for extra efficiency plot (format <name>,<nbins>,<min>,<max>)', \
+parser.add_argument('--histogram', help='definition of extra histogram (format <variable>;<nbins>,<min>,<max>[;<nybins>,<ymin>,<ymax>)', \
                         type=str, default=None)
 parser.add_argument('--dxMax', help='max. local dx for efficiency plots', type=float, default=0.0075)
 parser.add_argument('--cuts', '-c', help="basic cut string", type=str, default="")
+parser.add_argument('--effCuts', '-e', help="basic cut string", type=str, default=None)
 parser.add_argument('--output', '-o', help='output directory for graphic output', type=str, default=None)
 parser.add_argument('--sampleName', help='sample label for output', type=str, default=None)
 parser.add_argument('--fitResiduals', '-f', \
@@ -242,44 +285,45 @@ vetoedHistoNames = args.vetoedHistograms.split(",")
 #
 allHDefs = loadHistogramDefinitions(args.definitions,selectedHistoNames,vetoedHistoNames)
 
-if args.effVar!=None:
-    effVarDict = { }
-    # split into string defining the variable(s) and (1 or 2) axis definition(s)
-    fields1 = args.effVar.split(";")
-    assert len(fields1)<=3
-    effVarDict['variable'] = fields1[0]
-    #effVarDict['canvasName'] = "cEffArg"
-    #effVarDict['histogramName'] = "hEffArg"
-    effVarDict['histogramTitle'] = "hEffArg"
-    # x-axis
-    fields2 = fields1[1].split(",")
-    assert len(fields2)==3 
-    effVarDict['xNbins'] = int(fields2[0])
-    effVarDict['xMin'] = float(fields2[1])
-    effVarDict['xMax'] = float(fields2[2])
-    # check for info on y axis (== presence of 2nd variable)
-    if len(fields1)==3:
-        assert ":" in effVarDict['variable']
-        fields3 = fields1[2].split(",")
-        effVarDict['yNbins'] = int(fields3[0])
-        effVarDict['yMin'] = float(fields3[1])
-        effVarDict['yMax'] = float(fields3[2])
-        effVarDict['xTitle'] = effVarDict['variable'].split(":")[1]
-        effVarDict['yTitle'] = effVarDict['variable'].split(":")[0]
-    else:
-        effVarDict['yMin'] = 0.
-        effVarDict['yMax'] = 1.05
-        effVarDict['xTitle'] = effVarDict['variable']
-        effVarDict['yTitle'] = 'efficiency'
-    effVarDict['baseCuts'] = args.cuts
-    effVarDict['effCuts'] = cutString("hasRecHit>0","abs(localPos.x()-rhLocalPos.x())<"+str(args.dxMax))
-    #xxx = HistogramDefinition("effV",effVarDict)
-    #print("xxx",xxx)
-    #print("xxx",xxx.parameters)
-    allHDefs.add(HistogramDefinition("effV",effVarDict))
-    #print(allHDefs.allDefinitions.keys())
-    #print(allHDefs.allCanvases)
-    #print(allHDefs['hEffArg'])
+if args.histogram!=None:
+    allHDefs.add(addHistogram(args.histogram,args.cuts,args.effCuts))
+#!#     varEffDict = { }
+#!#     # split into string defining the variable(s) and (1 or 2) axis definition(s)
+#!#     fields1 = args.varEff.split(";")
+#!#     assert len(fields1)<=3
+#!#     varEffDict['variable'] = fields1[0]
+#!#     #varEffDict['canvasName'] = "cEffArg"
+#!#     #varEffDict['histogramName'] = "hEffArg"
+#!#     varEffDict['histogramTitle'] = "hEffArg"
+#!#     # x-axis
+#!#     fields2 = fields1[1].split(",")
+#!#     assert len(fields2)==3 
+#!#     varEffDict['xNbins'] = int(fields2[0])
+#!#     varEffDict['xMin'] = float(fields2[1])
+#!#     varEffDict['xMax'] = float(fields2[2])
+#!#     # check for info on y axis (== presence of 2nd variable)
+#!#     if len(fields1)==3:
+#!#         assert ":" in varEffDict['variable']
+#!#         fields3 = fields1[2].split(",")
+#!#         varEffDict['yNbins'] = int(fields3[0])
+#!#         varEffDict['yMin'] = float(fields3[1])
+#!#         varEffDict['yMax'] = float(fields3[2])
+#!#         varEffDict['xTitle'] = varEffDict['variable'].split(":")[1]
+#!#         varEffDict['yTitle'] = varEffDict['variable'].split(":")[0]
+#!#     else:
+#!#         varEffDict['yMin'] = 0.
+#!#         varEffDict['yMax'] = 1.05
+#!#         varEffDict['xTitle'] = varEffDict['variable']
+#!#         varEffDict['yTitle'] = 'efficiency'
+#!#     varEffDict['baseCuts'] = args.cuts
+#!#     varEffDict['effCuts'] = cutString("hasRecHit>0","abs(localPos.x()-rhLocalPos.x())<"+str(args.dxMax))
+#!#     #xxx = HistogramDefinition("effV",varEffDict)
+#!#     #print("xxx",xxx)
+#!#     #print("xxx",xxx.parameters)
+#!#     allHDefs.add(HistogramDefinition("effV",varEffDict))
+#!#     #print(allHDefs.allDefinitions.keys())
+#!#     #print(allHDefs.allCanvases)
+#!#     #print(allHDefs['hEffArg'])
         
 #extraCuts = "abs(particleType)==13"
 #extraCuts = "tof<12.5"
