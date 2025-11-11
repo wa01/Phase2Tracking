@@ -255,19 +255,29 @@ widthVsModY500 =  {
 }
 
 
+pathX = {
+    'histogramTitle' : 'path (x)', \
+    'variable' : '10000*abs(path.x())', \
+    'baseCuts' : 'tof<12.5&&pabs>0.3', \
+    #'baseCuts' : 'tof<12.5&&hasRecHit>0', \
+    #'effCuts' : 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075', \
+    'xTitle' : 'SimHit path (x) [#mum]', \
+    'xNbins' : 200, \
+    'xMin' : 0, \
+    'xMax' : 1000
+}
 
-#pathX = {
-#    #'canvasName' : 'cEffX1', \
-#    #'histogramName' : 'effX1', \
-#    'histogramTitle' : 'path (x)', \
-#    'variable' : 'abs(path.x())', \
-#    'baseCuts' : 'tof<12.5&&hasRecHit>0', \
-#    #'effCuts' : 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075', \
-#    'xTitle' : 'SimHit path (x)', \
-#    'xNbins' : 200, \
-#    'xMin' : 0, \
-#    'xMax' : 0.02
-#}
+pathY = {
+    'histogramTitle' : 'path (y)', \
+    'variable' : '10000*abs(path.y())', \
+    'baseCuts' : 'tof<12.5&&pabs>0.3', \
+    #'baseCuts' : 'tof<12.5&&hasRecHit>0', \
+    #'effCuts' : 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075', \
+    'xTitle' : 'SimHit path (y [#mum])', \
+    'xNbins' : 200, \
+    'xMin' : 0, \
+    'xMax' : 2000
+}
 
 effX = {
     #'canvasName' : 'cEffX1', \
@@ -436,7 +446,8 @@ effVsModY015 =  {
     #'xNbins' : 340, \
     #'xMin' : -0.1, \
     #'xMax' : 1.6, \
-    'xNbins' : 200, \
+    'xNbins' : 400, \
+    #'xNbins' : 200, \
     'xMin' : -0.25, \
     'xMax' : 1.75, \
 #    'yTitle' : 'cluster width', \
@@ -453,7 +464,8 @@ effVsModY250 =  {
     'baseCuts' : 'tof<12.5&&pabs>0.3', \
     'effCuts' : 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075', \
     'xTitle' : 'x modulo 2.5cm [cm]', \
-    'xNbins' : 300, \
+    'xNbins' : 600, \
+    #'xNbins' : 300, \
     'xMin' : -0.25, \
     'xMax' : 2.75, \
 #    'yTitle' : 'cluster width', \
@@ -471,7 +483,8 @@ effVsModY500 =  {
     'baseCuts' : 'tof<12.5&&pabs>0.3', \
     'effCuts' : 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075', \
     'xTitle' : 'x modulo 5cm [cm]', \
-    'xNbins' : 275, \
+    'xNbins' : 550, \
+    #'xNbins' : 275, \
     'xMin' : -0.25, \
     'xMax' : 5.25, \
 #    'yTitle' : 'cluster width', \

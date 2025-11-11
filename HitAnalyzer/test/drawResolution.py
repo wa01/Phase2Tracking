@@ -114,6 +114,7 @@ def fillHistoByDef(tree,hDef,extraCuts):
         nbx = hDef.getParameter('xNbins',mType)
         xmin = hDef.getParameter('xMin',mType)
         xmax = hDef.getParameter('xMax',mType)
+        #print("Starting for ",hDef.name,hName,hTitle)
         if is1D and ( not isProfile ):
             histos[mType] = [ ROOT.TH1F(hName+"_1",hName+"_1",nbx,xmin,xmax), None, None, None ]
             tree.Project(hName+"_1",variable, \
@@ -154,6 +155,7 @@ def fillHistoByDef(tree,hDef,extraCuts):
             else:
                 # always keep final histogram in 4th position
                 histos[mType][3] = histos[mType][0]
+        #print("Ending for ",hDef.name,hName,hTitle)
                 
     savedDir.cd()
     return histos
@@ -203,7 +205,8 @@ def drawHistoByDef(histos,hDef,same=False):
             ymin = hDef.getParameter('yMin',mType) if hDef.getParameter('yMin',mType)!=None else 0.
             ymax = hDef.getParameter('yMax',mType) if hDef.getParameter('yMax',mType)!=None else 1.05
             if effCuts!=None:
-                histos[mType][2] = ROOT.gPad.DrawFrame(xmin,ymin,xmax,ymax)
+                if not same:
+                    histos[mType][2] = ROOT.gPad.DrawFrame(xmin,ymin,xmax,ymax)
                 histos[mType][2].SetTitle(hTitle)
                 histos[mType][2].GetXaxis().SetTitle(xtitle)
                 histos[mType][2].GetYaxis().SetTitle(ytitle)
@@ -214,7 +217,7 @@ def drawHistoByDef(histos,hDef,same=False):
                 histos[mType][0].SetTitle(hTitle)
                 histos[mType][0].GetXaxis().SetTitle(xtitle)
                 histos[mType][0].GetYaxis().SetTitle(ytitle)
-                histos[mType][0].Draw()
+                histos[mType][0].Draw("same" if same else "")
         elif isProfile:
             histos[mType][0].SetTitle(hTitle)
             histos[mType][0].GetXaxis().SetTitle(xtitle)
@@ -222,8 +225,9 @@ def drawHistoByDef(histos,hDef,same=False):
             histos[mType][0].SetMarkerSize(0.5)
             #histos[mType][0].SetFillColor(ROOT.TColor.GetColorBright(ROOT.kGray))
             #histos[mType][0].SetFillColor(ROOT.kGray)
-            histos[mType][0].Draw()
+            histos[mType][0].Draw("same" if same else "")
         else:
+            assert not same
             zmin = hDef.getParameter('zMin',mType) if hDef.getParameter('zMin',mType)!=None else 0.
             zmax = hDef.getParameter('zMax',mType) if hDef.getParameter('zMax',mType)!=None else 1.05
             if effCuts!=None:
@@ -392,34 +396,34 @@ paves = [ ]
 
 allObjects = [ ]
 for cName in allHDefs.canvasNames():
+    same = False
     cHistos = { }
     for hName in allHDefs.byCanvas[cName]:
-        print(cName,hName)
         cHistos[hName] = fillHistoByDef(simHitTree,allHDefs.byCanvas[cName][hName],extraCuts)
-    for hName in cHistos:
-        allObjects.append(drawHistoByDef(cHistos[hName],allHDefs.byCanvas[cName][hName]))
+        allObjects.append(drawHistoByDef(cHistos[hName],allHDefs.byCanvas[cName][hName],same=same))
+        same = True
 #    yMin = min([ x.GetMinimum() for x in cHistos
-sys.exit()
+#sys.exit()
 
-allObjects = [ ]
-for hdef in allHDefs.allDefinitions.values():
-    #
-    # draw histograms according to definition
-    #
-    histos = fillHistoByDef(simHitTree,hdef,extraCuts)
-    allObjects.append(drawHistoByDef(histos,hdef))
-    #
-    # perform fit of resolution histogram
-    #
-    if hdef.name in fitResiduals:
-        objects = allObjects[-1]
-        cnv = objects['cnv']
-        # fit and redraw each panel
-        ic = 0
-        for mType in range(23,26):
-            ic += 1
-            cnv.cd(ic)
-            f = fitHistogram(mType,objects['histos'][mType][0])
+#!# allObjects = [ ]
+#!# for hdef in allHDefs.allDefinitions.values():
+#!#     #
+#!#     # draw histograms according to definition
+#!#     #
+#!#     histos = fillHistoByDef(simHitTree,hdef,extraCuts)
+#!#     allObjects.append(drawHistoByDef(histos,hdef))
+#!#     #
+#!#     # perform fit of resolution histogram
+#!#     #
+#!#     if hdef.name in fitResiduals:
+#!#         objects = allObjects[-1]
+#!#         cnv = objects['cnv']
+#!#         # fit and redraw each panel
+#!#         ic = 0
+#!#         for mType in range(23,26):
+#!#             ic += 1
+#!#             cnv.cd(ic)
+#!#             f = fitHistogram(mType,objects['histos'][mType][0])
 
 
 if args.output!=None:
