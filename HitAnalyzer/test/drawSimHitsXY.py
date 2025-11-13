@@ -28,7 +28,7 @@ def interpolate(x,xys):
         
 
 rootObjects = [ ]
-def drawHits(t,x,y,direction,inTimeWindow):
+def drawHits(hitPositions,direction,inTimeWindow):
     f = ROOT.gPad.DrawFrame(-120.,-120.,120.,120.)
     rootObjects.append(f)
     e = ROOT.TEllipse()
@@ -55,29 +55,29 @@ def drawHits(t,x,y,direction,inTimeWindow):
     rootObjects.append(mout2)
     rootObjects.append(minw1)
     rootObjects.append(minw2)
-    for i in range(len(x)):
+    for i in range(len(hitPositions)):
         if inTimeWindow[i]:
             if direction[i]:
-                mout1.DrawMarker(x[i],y[i])
+                mout1.DrawMarker(hitPositions[i].x,hitPositions[i].y)
             else:
-                minw1.DrawMarker(x[i],y[i])
+                minw1.DrawMarker(hitPositions[i].x,hitPositions[i].y)
         else:
             if direction[i]:
-                mout2.DrawMarker(x[i],y[i])
+                mout2.DrawMarker(hitPositions[i].x,hitPositions[i].y)
             else:
-                minw2.DrawMarker(x[i],y[i])
+                minw2.DrawMarker(hitPositions[i].x,hitPositions[i].y)
 
-    xc = sum(x)/len(x)
-    yc = sum(y)/len(y)
+    xc = sum([ v.x for v in hitPositions ])/len(hitPositions)
+    yc = sum([ v.y for v in hitPositions ])/len(hitPositions)
     print("center",xc,yc)
     gtxys = [ ]
-    for i in range(len(x)):
-        phi = atan2(y[i]-yc,x[i]-xc)
+    for i in range(len(hitPositions)):
+        phi = atan2(hitPositions[i].y-yc,hitPositions[i].x-xc)
         #if phis and sgn==None:
         #    sgn = 1 if phi>phis[-1] else -1
         #if phis and sgn*(phi-phis[-1])<0:
         #    phi += sgn*2*pi
-        gtxys.append((t[i],phi,sqrt((x[i]-xc)**2+(y[i]-yc)**2)))
+        gtxys.append((hitPositions[i].t,phi,sqrt((hitPositions[i].x-xc)**2+(hitPositions[i].y-yc)**2)))
     gtxys.sort()
 
     phis = [ ]
@@ -191,14 +191,20 @@ for evHits,evTracks in zip(simHitTree,simTrackTree):
                 ",",(evHits.tof[i]>tMin and evHits.tof[i]<tMax))
     if len(ishSel)>0:
         hitPositions = [ ]
+        directions = [ ]
+        timeWindows = [ ]
         for i in ishSel:
             hitPositions.append(HitPos4D(evHits.tof[i],evHits.globalPos[i].x(), \
                                        evHits.globalPos[i].y(),evHits.globalPos[i].z()))
-        drawHits([ evHits.tof[i] for i in ishSel ], \
-                 [ evHits.globalPos[i].x() for i in ishSel ], [ evHits.globalPos[i].y() for i in ishSel ], \
-                 [ (evHits.globalDir[i].x()*evHits.globalPos[i].x()+evHits.globalDir[i].y()*evHits.globalPos[i].y())>0 \
-                       for i in ishSel ], \
-                 [ ( evHits.tof[i]>tMin and evHits.tof[i]<tMax ) for i in ishSel ]
-                     )
+            directions.append((evHits.globalDir[i].x()*evHits.globalPos[i].x()+ \
+                               evHits.globalDir[i].y()*evHits.globalPos[i].y())>0)
+            timeWindows.append((evHits.tof[i]>tMin and evHits.tof[i]<tMax))
+        drawHits(hitPositions,directions,timeWindows)
+        #drawHits([ evHits.tof[i] for i in ishSel ], \
+        #         [ evHits.globalPos[i].x() for i in ishSel ], [ evHits.globalPos[i].y() for i in ishSel ], \
+        #         [ (evHits.globalDir[i].x()*evHits.globalPos[i].x()+evHits.globalDir[i].y()*evHits.globalPos[i].y())>0 \
+        #               for i in ishSel ], \
+        #         [ ( evHits.tof[i]>tMin and evHits.tof[i]<tMax ) for i in ishSel ]
+        #             )
         print([ ( evHits.tof[i]>tMin and evHits.tof[i]<tMax ) for i in ishSel ])
         #continue
