@@ -10,26 +10,40 @@ class HitPos4D:
         self.y = y
         self.z = z
 
-def interpolate(x,xys):
-    ''' assume xys sorted in x
+def interpolate(x,xyzs):
+    ''' assume xyzs sorted in x
     '''
-    for i in range(len(xys)-1):
-        x1,y1 = xys[i]
-        x2,y2 = xys[i+1]
+    for i in range(len(xyzs)-1):
+        x1,y1,z1 = xyzs[i]
+        x2,y2,z2 = xyzs[i+1]
         if (x-x1)*(x-x2)<=0.:
-            return y1 + (x-x1)/(x2-x1)*(y2-y1)
+            return (y1 + (x-x1)/(x2-x1)*(y2-y1)), (z1 + (x-x1)/(x2-x1)*(z2-z1))
     # outside range
-    xs = [ v[0] for v in xys ]
-    ys = [ v[1] for v in xys ]
-    if x1<sum(xs)/len(xs):
-        return min(xs)
+    minxyz = ( 999999, 999999, 999999 )
+    maxxyz = ( -999999, -999999, -999999 )
+    for i in range(len(xyzs)):
+        if xyzs[i][0]<minxyz[0]:
+            minxyz = xysz[i]
+        if xyzs[i][0]>maxxyz[0]:
+            maxxyz = xysz[i]
+        
+    #xs = [ v[0] for v in xysz ]
+    #ys = [ v[1] for v in xysz ]
+    #xs = [ v[2] for v in xysz ]
+    if x1<sum([ v[0] for v in xyzs ])/len(xyzs):
+        return minxyz[0],minxyz[2]
     else:
-        return max(xs)
+        return maxxyz[0],maxxyz[2]
         
 
 rootObjects = [ ]
 def drawHits(hitPositions,direction,inTimeWindow):
-    f = ROOT.gPad.DrawFrame(-120.,-120.,120.,120.)
+    cnvXY.cd()
+    f = cnvXY.DrawFrame(-120.,-120.,120.,120.)
+    cnvRZ.cd()
+    f = cnvRZ.DrawFrame(0.,0.,350.,120.)
+
+    cnvXY.cd()
     rootObjects.append(f)
     e = ROOT.TEllipse()
     e.SetLineColor(4)
@@ -37,8 +51,8 @@ def drawHits(hitPositions,direction,inTimeWindow):
     rootObjects.append(e)
     for r in [23.5,36.5,51.5]:
         e.DrawEllipse(0.,0.,r,r,0.,360.,0.)
-    cnv.SetGridx(1)
-    cnv.SetGridy(1)
+    cnvXY.SetGridx(1)
+    cnvXY.SetGridy(1)
     mout1 = ROOT.TMarker()
     mout1.SetMarkerStyle(20)
     mout1.SetMarkerColor(3)
@@ -58,68 +72,85 @@ def drawHits(hitPositions,direction,inTimeWindow):
     for i in range(len(hitPositions)):
         if inTimeWindow[i]:
             if direction[i]:
-                mout1.DrawMarker(hitPositions[i].x,hitPositions[i].y)
+                marker = mout1
+                #mout1.DrawMarker(hitPositions[i].x,hitPositions[i].y)
             else:
-                minw1.DrawMarker(hitPositions[i].x,hitPositions[i].y)
+                marker = minw1
+                #minw1.DrawMarker(hitPositions[i].x,hitPositions[i].y)
         else:
             if direction[i]:
-                mout2.DrawMarker(hitPositions[i].x,hitPositions[i].y)
+                marker = mout2
+                #mout2.DrawMarker(hitPositions[i].x,hitPositions[i].y)
             else:
-                minw2.DrawMarker(hitPositions[i].x,hitPositions[i].y)
+                marker = minw2
+                #minw2.DrawMarker(hitPositions[i].x,hitPositions[i].y)
+        cnvXY.cd()
+        marker.DrawMarker(hitPositions[i].x,hitPositions[i].y)
+        cnvRZ.cd()
+        marker.DrawMarker(abs(hitPositions[i].z),sqrt(hitPositions[i].x**2+hitPositions[i].y**2))
 
     xc = sum([ v.x for v in hitPositions ])/len(hitPositions)
     yc = sum([ v.y for v in hitPositions ])/len(hitPositions)
     print("center",xc,yc)
-    gtxys = [ ]
+    gtxyzs = [ ]
     for i in range(len(hitPositions)):
         phi = atan2(hitPositions[i].y-yc,hitPositions[i].x-xc)
         #if phis and sgn==None:
         #    sgn = 1 if phi>phis[-1] else -1
         #if phis and sgn*(phi-phis[-1])<0:
         #    phi += sgn*2*pi
-        gtxys.append((hitPositions[i].t,phi,sqrt((hitPositions[i].x-xc)**2+(hitPositions[i].y-yc)**2)))
-    gtxys.sort()
+        gtxyzs.append((hitPositions[i].t,phi,sqrt((hitPositions[i].x-xc)**2+(hitPositions[i].y-yc)**2), \
+                       hitPositions[i].z))
+    gtxyzs.sort()
 
     phis = [ ]
     sgn = None
-    gxys = [ ]
-    for i,txy in enumerate(gtxys):
-        t,x,y = txy
+    gxyzs = [ ]
+    for i,txyz in enumerate(gtxyzs):
+        t,x,y,z = txyz
         #print(i,txy,y*cos(x)+xc,y*sin(x)+yc)
-        if gxys and sgn==None:
-            sgn = 1 if x>gxys[-1][0] else -1
+        if gxyzs and sgn==None:
+            sgn = 1 if x>gxyzs[-1][0] else -1
             #print("Setting sgn to",sgn,"at point",i+1,y*cos(x)+xc,y*sin(x)+yc)
-        if gxys:
+        if gxyzs:
             #print(sgn*(x-gxys[-1][0]))
-            if sgn*(x-gxys[-1][0])<(-pi):
+            if sgn*(x-gxyzs[-1][0])<(-pi):
                 #print("Correcting phi by 2pi from",x,"to",x+sgn*2*pi)
                 x += sgn*2*pi
-            if sgn*(x-gxys[-1][0])<0:
+            if sgn*(x-gxyzs[-1][0])<0:
                 #print("Starting new loop at point",i+1,sgn,x,gxys[-1][0])
                 x += sgn*2*pi
-        gxys.append((x,y))
+        gxyzs.append((x,y,z))
         phis.append(x)
 
-    g = ROOT.TGraph()
-    rootObjects.append(g)
-    for i,gxy in enumerate(gxys):
-        g.SetPoint(i,gxy[0],gxy[1])
-    spline = ROOT.TSpline3("myspline",g)
-    rootObjects.append(spline)
+    #g = ROOT.TGraph()
+    #rootObjects.append(g)
+    #for i,gxy in enumerate(gxys):
+    #    g.SetPoint(i,gxy[0],gxy[1])
+    #spline = ROOT.TSpline3("myspline",g)
+    #rootObjects.append(spline)
     phiMin = min(phis)
     phiMax = max(phis)
     #print(phiMin,phiMax)
-    polyLine = ROOT.TPolyLine()
+    polyLineXY = ROOT.TPolyLine()
+    polyLineRZ = ROOT.TPolyLine()
     phi = phiMin
     while phi<phiMax:
         #r = spline.Eval(phi)
-        r = interpolate(phi,gxys)
-        polyLine.SetNextPoint(xc+cos(phi)*r,yc+sin(phi)*r)
+        r,zglob = interpolate(phi,gxyzs)
+        xglob = xc+cos(phi)*r
+        yglob = yc+sin(phi)*r
+        polyLineXY.SetNextPoint(xglob,yglob)
+        polyLineRZ.SetNextPoint(abs(zglob),sqrt(xglob**2+yglob**2))
         #print("-",phi,r,xc+cos(phi)*r,yc+sin(phi)*r)
         phi += 0.1
-    rootObjects.append(polyLine)
-    polyLine.Draw()
-    ROOT.gPad.Update()
+    rootObjects.append(polyLineXY)
+    cnvXY.cd()
+    polyLineXY.Draw()
+    cnvXY.Update()
+    cnvRZ.cd()
+    polyLineRZ.Draw()
+    cnvRZ.Update()
 
     
     input("Enter")
@@ -143,7 +174,8 @@ if len(sys.argv)==4:
     tMin = float(sys.argv[2])
     tMax = float(sys.argv[3])
     
-cnv = ROOT.TCanvas("c","c",1000,1000)
+cnvXY = ROOT.TCanvas("cxy","cxy",1000,1000)
+cnvRZ = ROOT.TCanvas("crz","crz",1200,400)
 
 for evHits,evTracks in zip(simHitTree,simTrackTree):
     #
@@ -152,7 +184,7 @@ for evHits,evTracks in zip(simHitTree,simTrackTree):
     itkSel = None
     tkId = None
     for itk in range(len(evTracks.SimTrack_trackId)):
-        if evTracks.SimTrack_momentum[itk].Rho()<0.5 or abs(evTracks.SimTrack_momentum[itk].Eta())>0.1 or \
+        if evTracks.SimTrack_momentum[itk].Rho()<0.5 or abs(evTracks.SimTrack_momentum[itk].Eta())>1.5 or \
           abs(evTracks.SimTrack_type[itk])!=211:
             continue
         itkSel = itk
