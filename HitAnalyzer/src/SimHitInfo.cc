@@ -22,6 +22,8 @@ void SimHitInfo::setBranches(TTree& tree) {
   tree.Branch("moduleType",&simHitData.moduleType);
   tree.Branch("detNormal",&simHitData.detNormal);
   tree.Branch("trackId",&simHitData.trackId);
+  tree.Branch("trackType",&simHitData.trackType);
+  tree.Branch("trackMom",&simHitData.trackMom);
   tree.Branch("hasRecHit",&simHitData.hasRecHit);
 
   tree.Branch("rhNMatched",&simHitData.rhNMatched);
@@ -228,7 +230,20 @@ void SimHitInfo::fillSimHitInfo(const PSimHit& simHit) {
   GlobalVector detNormalGlobal(geomDetUnit->toGlobal(LocalVector(0.,0.,1.)));
   ROOT::Math::XYZVectorF detNormal(detNormalGlobal.x(),detNormalGlobal.y(),detNormalGlobal.z());
   simHitData.detNormal.push_back(detNormal);
+  
   simHitData.trackId.push_back(simHit.trackId());
+  TrackIdSimTrackMap::const_iterator itSimTrack(simTracksById_->find(simHit.trackId()));
+  if ( itSimTrack!=simTracksById_->end() ) {
+    // std::cout << "trackIds " << simHit.trackId() << " " << itSimTrack->first << " / "
+    //      << "types " << simHit.particleType() << " " << itSimTrack->second.type() << std::endl;
+    simHitData.trackType.push_back(itSimTrack->second.type());
+    const math::XYZTLorentzVectorD& tkMom(itSimTrack->second.momentum());
+    simHitData.trackMom.push_back(ROOT::Math::XYZVectorF(tkMom.x(),tkMom.y(),tkMom.z()));
+  }
+  else {
+    simHitData.trackType.push_back(0);
+    simHitData.trackMom.push_back(ROOT::Math::XYZVectorF(0.,0.,0.));
+  }
 
 
   const Phase2TrackerRecHit1D* rechit(0);
@@ -307,6 +322,8 @@ void SimHitInfo::clear() {
   simHitData.moduleType.clear();
   simHitData.detNormal.clear();
   simHitData.trackId.clear();
+  simHitData.trackType.clear();
+  simHitData.trackMom.clear();
   simHitData.hasRecHit.clear();
 
   simHitData.rhNMatched.clear();

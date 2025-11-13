@@ -7,6 +7,7 @@
 #include "SimDataFormats/TrackingHit/interface/PSimHitContainer.h"
 #include "SimDataFormats/TrackerDigiSimLink/interface/PixelDigiSimLink.h"
 #include "DataFormats/TrackerRecHit2D/interface/Phase2TrackerRecHit1D.h"
+#include "SimDataFormats/Track/interface/SimTrack.h"
 
 #include "DataFormats/Math/interface/Point3D.h"
 #include "DataFormats/Math/interface/Vector3D.h"
@@ -26,6 +27,8 @@ class SimHitInfo {
 
   typedef std::pair<const Phase2TrackerRecHit1D*, float> RecHitDistancePair;
   typedef std::vector<RecHitDistancePair> RecHitDistancePairs;
+
+  typedef std::map<unsigned int, SimTrack> TrackIdSimTrackMap;
   
  public:
   struct SimHitData {
@@ -44,8 +47,11 @@ class SimHitInfo {
     std::vector<unsigned short> layer;
     std::vector<unsigned short> moduleType;
     std::vector<ROOT::Math::XYZVectorF> detNormal;
-    std::vector<unsigned int> trackId;
     std::vector<bool> hasRecHit;
+
+    std::vector<unsigned int> trackId;
+    std::vector<int> trackType;
+    std::vector<ROOT::Math::XYZVectorF> trackMom;
 
     std::vector<unsigned int> rhNMatched;
     std::vector<ROOT::Math::XYZPointF> rhLocalPos;
@@ -61,12 +67,15 @@ class SimHitInfo {
     std::vector<unsigned short> clusterColumn;
     std::vector<unsigned short> clusterEdge;
     std::vector<unsigned short> clusterThreshold;
+
+    
   };
   SimHitData simHitData;
 
   SimHitInfo() {
     tTopo_ = 0;
     tkGeom_ = 0;
+    simTracksById_ = 0;
   };
 
   ~SimHitInfo() {}
@@ -92,10 +101,12 @@ class SimHitInfo {
   void setupEvent(const TrackerTopology* topo, const TrackerGeometry* geom,
 		  const edm::DetSetVector<PixelDigiSimLink>* links,
 		  edm::Handle<edm::PSimHitContainer> *simHitsRaw,
-		  const Phase2TrackerRecHit1DCollectionNew& rechits) {
+		  const Phase2TrackerRecHit1DCollectionNew& rechits,
+		  const TrackIdSimTrackMap* simTrackMap) {
     tTopo_ = topo;
     tkGeom_ = geom;
-    pixelSimLinks = links;    //
+    pixelSimLinks = links;
+    simTracksById_ = simTrackMap;
     // fill SimHit map
     //
     // simHitsPerDet_.clear();
@@ -114,6 +125,8 @@ class SimHitInfo {
 
   DetSimHitsMap simHitsPerDet_;
   DetRecHitsMap recHitsPerDet_;
+
+  const TrackIdSimTrackMap* simTracksById_;
 };
 
 #endif

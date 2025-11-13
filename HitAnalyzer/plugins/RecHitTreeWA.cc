@@ -236,7 +236,7 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
   }
   simTrackTree->Fill();
 
-  simHitInfo_.setupEvent(tTopo,tkGeom,pixelSimLinks.product(),simHitsRaw,*rechits.product());
+  simHitInfo_.setupEvent(tTopo,tkGeom,pixelSimLinks.product(),simHitsRaw,*rechits.product(),&simTracks);
   for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
     for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
 	 simhitIt != simHitsRaw[simhitidx]->end(); ++simhitIt) {

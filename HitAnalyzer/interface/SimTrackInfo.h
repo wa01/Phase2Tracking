@@ -59,7 +59,8 @@ public:
     /* std::vector<float> SimTrack_phi; */
     std::vector<int> SimTrack_type;
     std::vector<int> SimTrack_charge;
-    std::vector<int> SimTrack_trackInfo;
+    std::vector<unsigned short> SimTrack_trackInfo;
+    std::vector<unsigned int> SimTrack_trackId;
   };
   SimTrackData simTrackData;
 

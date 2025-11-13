@@ -18,6 +18,7 @@ void SimTrackInfo::setBranches(TTree& tree) {
   tree.Branch("SimTrack_type",      &simTrackData.SimTrack_type);
   tree.Branch("SimTrack_charge",    &simTrackData.SimTrack_charge);
   tree.Branch("SimTrack_trackInfo", &simTrackData.SimTrack_trackInfo);
+  tree.Branch("SimTrack_trackId", &simTrackData.SimTrack_trackId);
 };
   
 void SimTrackInfo::fillSimTrackInfo(const SimTrack& simTrack) {
@@ -52,6 +53,7 @@ void SimTrackInfo::fillSimTrackInfo(const SimTrack& simTrack) {
   simTrackData.SimTrack_type.push_back(simTrack.type());
   simTrackData.SimTrack_charge.push_back(simTrack.charge());
   simTrackData.SimTrack_trackInfo.push_back(simTrack.getTrackInfo());
+  simTrackData.SimTrack_trackId.push_back(simTrack.trackId());
 };
 
 
@@ -72,4 +74,5 @@ void SimTrackInfo::clear() {
   simTrackData.SimTrack_type.clear();
   simTrackData.SimTrack_charge.clear();
   simTrackData.SimTrack_trackInfo.clear();
+  simTrackData.SimTrack_trackId.clear();
 };
