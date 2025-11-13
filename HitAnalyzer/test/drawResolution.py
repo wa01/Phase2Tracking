@@ -161,7 +161,7 @@ def fillHistoByDef(tree,hDef,extraCuts):
     return histos
 
 
-def drawHistoByDef(histos,hDef,same=False):
+def drawHistoByDef(histos,hDef,logY=False,same=False):
     result = { 'cnv' : None, 'histos' : histos, 'pave' : None }
 
     savedDir = ROOT.gDirectory
@@ -242,7 +242,7 @@ def drawHistoByDef(histos,hDef,same=False):
                 histos[mType][0].GetXaxis().SetTitle(xtitle)
                 histos[mType][0].GetYaxis().SetTitle(ytitle)
                 histos[mType][0].Draw("ZCOL")
-        if hDef.getParameter('logY'):
+        if logY or hDef.getParameter('logY'):
             ROOT.gPad.SetLogy(1)
         ROOT.gPad.Update()
     result['pave'] = drawCutPave(cnv,hDef.getParameter('variable'), \
@@ -313,6 +313,7 @@ parser.add_argument('--selectedHistograms', help='comma-separated names of histo
                         type=str, default='*')
 parser.add_argument('--vetoedHistograms', help='comma-separated names of histogram definitions not to be used',
                         type=str, default='')
+parser.add_argument('--logY', help='use log scale', action='store_true', default=False)
 parser.add_argument('--list', '-l', help='list typle contents', action='store_true', default=False)
 parser.add_argument('file', help='input file', type=str, nargs=1, default=None)
 args = parser.parse_args()
@@ -400,7 +401,7 @@ for cName in allHDefs.canvasNames():
     cHistos = { }
     for hName in allHDefs.byCanvas[cName]:
         cHistos[hName] = fillHistoByDef(simHitTree,allHDefs.byCanvas[cName][hName],extraCuts)
-        allObjects.append(drawHistoByDef(cHistos[hName],allHDefs.byCanvas[cName][hName],same=same))
+        allObjects.append(drawHistoByDef(cHistos[hName],allHDefs.byCanvas[cName][hName],logY=args.logY,same=same))
         same = True
 #    yMin = min([ x.GetMinimum() for x in cHistos
 #sys.exit()
