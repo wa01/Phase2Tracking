@@ -40,6 +40,48 @@ resX = {
 #    #'yMax' : 1.05
 }
 
+resX1 = {
+    'histogramTitle' : 'residuals (x) - cluster size 1', \
+    'variable' : 'localPos.x()-rhLocalPos.x()', \
+    'baseCuts' : 'tof<12.5&&hasRecHit>0&&clusterSize==1', \
+    'xTitle' : '#Delta x [cm]', \
+    'xNbins' : 300, \
+    'xMin' : -0.075, \
+    'xMax' : 0.075, \
+    'logY' : True
+#    #'yTitle' : 'efficiency', \
+#    #'yMin' : 0.8, \
+#    #'yMax' : 1.05
+}
+
+resX2 = {
+    'histogramTitle' : 'residuals (x) - cluster size 2', \
+    'variable' : 'localPos.x()-rhLocalPos.x()', \
+    'baseCuts' : 'tof<12.5&&hasRecHit>0&&clusterSize==2', \
+    'xTitle' : '#Delta x [cm]', \
+    'xNbins' : 300, \
+    'xMin' : -0.075, \
+    'xMax' : 0.075, \
+    'logY' : True
+#    #'yTitle' : 'efficiency', \
+#    #'yMin' : 0.8, \
+#    #'yMax' : 1.05
+}
+
+resX3P = {
+    'histogramTitle' : 'residuals (x) - cluster size >2', \
+    'variable' : 'localPos.x()-rhLocalPos.x()', \
+    'baseCuts' : 'tof<12.5&&hasRecHit>0&&clusterSize>2', \
+    'xTitle' : '#Delta x [cm]', \
+    'xNbins' : 300, \
+    'xMin' : -0.075, \
+    'xMax' : 0.075, \
+    'logY' : True
+#    #'yTitle' : 'efficiency', \
+#    #'yMin' : 0.8, \
+#    #'yMax' : 1.05
+}
+
 resY = {
     #'canvasName' : 'cEffX1', \
     #'histogramName' : 'effX1', \
@@ -203,7 +245,7 @@ widthVsModY015 =  {
     'histogramTitle' : 'Width vs. y % 1.5 mm', \
     'variable' : 'clusterSize:floatMod(100*localPos.y(),15)/10.', \
     'baseCuts' : 'tof<12.5&&pabs>0.3', \
-    'xTitle' : 'x modulo 1.5mm [mm]', \
+    'xTitle' : 'y modulo 1.5mm [mm]', \
     #'xNbins' : 340, \
     #'xMin' : -0.1, \
     #'xMax' : 1.6, \
@@ -223,7 +265,7 @@ widthVsModY250 =  {
     'histogramTitle' : 'Width vs. y % 2.5 cm', \
     'variable' : 'clusterSize:floatMod(10*localPos.y(),25)/10.', \
     'baseCuts' : 'tof<12.5&&pabs>0.3', \
-    'xTitle' : 'x modulo 2.5cm [cm]', \
+    'xTitle' : 'y modulo 2.5cm [cm]', \
     'xNbins' : 300, \
     'xMin' : -0.25, \
     'xMax' : 2.75, \
@@ -241,7 +283,7 @@ widthVsModY500 =  {
     'histogramTitle' : 'Width vs. y % 5 cm', \
     'variable' : 'clusterSize:floatMod(10*localPos.y(),50)/10.', \
     'baseCuts' : 'tof<12.5&&pabs>0.3', \
-    'xTitle' : 'x modulo 5cm [cm]', \
+    'xTitle' : 'y modulo 5cm [cm]', \
     'xNbins' : 275, \
     'xMin' : -0.25, \
     'xMax' : 5.25, \
@@ -442,7 +484,7 @@ effVsModY015 =  {
     #'variable' : 'floatMod(100*localPos.y(),15)', \
     'baseCuts' : 'tof<12.5&&pabs>0.3', \
     'effCuts' : 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075', \
-    'xTitle' : 'x modulo 1.5mm [mm]', \
+    'xTitle' : 'y modulo 1.5mm [mm]', \
     #'xNbins' : 340, \
     #'xMin' : -0.1, \
     #'xMax' : 1.6, \
@@ -463,7 +505,7 @@ effVsModY250 =  {
     'variable' : 'floatMod(10*localPos.y(),25)/10.', \
     'baseCuts' : 'tof<12.5&&pabs>0.3', \
     'effCuts' : 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075', \
-    'xTitle' : 'x modulo 2.5cm [cm]', \
+    'xTitle' : 'y modulo 2.5cm [cm]', \
     'xNbins' : 600, \
     #'xNbins' : 300, \
     'xMin' : -0.25, \
@@ -482,7 +524,7 @@ effVsModY500 =  {
     'variable' : 'floatMod(10*localPos.y(),50)/10.', \
     'baseCuts' : 'tof<12.5&&pabs>0.3', \
     'effCuts' : 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075', \
-    'xTitle' : 'x modulo 5cm [cm]', \
+    'xTitle' : 'y modulo 5cm [cm]', \
     'xNbins' : 550, \
     #'xNbins' : 275, \
     'xMin' : -0.25, \
