@@ -1,3 +1,4 @@
+#! /bin/env python3
 import sys,os
 from histogramDefinition import *
 import ROOT
@@ -130,7 +131,8 @@ def fillHistoByDef(tree,hDef,extraCuts):
         elif isProfile:
             ymin = hDef.getParameter('yMin',mType)
             ymax = hDef.getParameter('yMax',mType)
-            histos[mType] = [ ROOT.TProfile(hName+"_1",hName+"_1",nbx,xmin,xmax,ymin,ymax,'S'), None, None, None ]
+            #histos[mType] = [ ROOT.TProfile(hName+"_1",hName+"_1",nbx,xmin,xmax,ymin,ymax,'S'), None, None, None ]
+            histos[mType] = [ ROOT.TProfile(hName+"_1",hName+"_1",nbx,xmin,xmax,ymin,ymax), None, None, None ]
             tree.Project(hName+"_1",variable, \
                           cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType)))
             # always keep final histogram in 4th position
@@ -301,10 +303,13 @@ parser.add_argument('--definitions', '-d', help='python module with dictionaries
 parser.add_argument('--histogram', \
                     help='definition of extra histogram (format <variable>;<nbx>,<xmin>,<xmax>[;<nny>,<ymin>,<ymax>)', \
                     action='append', type=str, default=[])
+parser.add_argument('--batch', '-b', help='ROOT batch mode', action='store_true', default=False)
 parser.add_argument('--dxMax', help='max. local dx for efficiency plots', type=float, default=0.0075)
 parser.add_argument('--cuts', '-c', help="basic cut string", type=str, default="")
 parser.add_argument('--effCuts', '-e', help="basic cut string", type=str, default=None)
 parser.add_argument('--output', '-o', help='output directory for graphic output', type=str, default=None)
+parser.add_argument('--formats', help='comma-separated list of extensions for output files', \
+                        type=str, default="pdf,png")
 parser.add_argument('--sampleName', help='sample label for output', type=str, default=None)
 parser.add_argument('--fitResiduals', '-f', \
                         help='comma-separated list of names of histogram sets with residuals to be fit', \
@@ -314,12 +319,16 @@ parser.add_argument('--selectedHistograms', help='comma-separated names of histo
 parser.add_argument('--vetoedHistograms', help='comma-separated names of histogram definitions not to be used',
                         type=str, default='')
 parser.add_argument('--logY', help='use log scale', action='store_true', default=False)
-parser.add_argument('--list', '-l', help='list typle contents', action='store_true', default=False)
-parser.add_argument('file', help='input file', type=str, nargs=1, default=None)
+parser.add_argument('--printTree', '-p', help='print TTree contents', action='store_true', default=False)
+parser.add_argument('--listHistograms', '-l', help='list predefined and selected histograms', \
+                        action='store_true', default=False)
+parser.add_argument('file', help='input file', type=str, nargs='+', default=None)
 args = parser.parse_args()
+outputFormats = [ ]
 if args.output!=None:
     assert os.path.isdir(args.output)
     print("***",args.output)
+    outputFormats = [ x.strip() for x in args.formats.strip().split(",") ]
 fitResiduals = args.fitResiduals.split(",") if args.fitResiduals else [ ]
 selectedHistoNames = args.selectedHistograms.split(",")
 vetoedHistoNames = args.vetoedHistograms.split(",")
@@ -327,9 +336,16 @@ vetoedHistoNames = args.vetoedHistograms.split(",")
 # load histogram definitions
 #
 allHDefs = loadHistogramDefinitions(args.definitions,selectedHistoNames,vetoedHistoNames)
-
+if args.listHistograms:
+    hnames = sorted(allHDefs.allHistoNames)
+    for hn in hnames:
+        print(hn)
+    sys.exit()
+    
 for ih,h in enumerate(args.histogram):
     allHDefs.add(addHistogram(h,args.cuts,args.effCuts,name="userH"+str(ih+1)))
+
+
 #!#     varEffDict = { }
 #!#     # split into string defining the variable(s) and (1 or 2) axis definition(s)
 #!#     fields1 = args.varEff.split(";")
@@ -372,6 +388,8 @@ for ih,h in enumerate(args.histogram):
 #extraCuts = "tof<12.5"
 extraCuts = args.cuts
 
+if args.batch:
+    ROOT.gROOT.SetBatch(1)
 ROOT.gROOT.ProcessLine(".L setTDRStyle.C")
 ROOT.gROOT.ProcessLine(".L floatMod.C+")
 ROOT.setTDRStyle()
@@ -385,9 +403,14 @@ ROOT.gStyle.SetTitleAlign(13)
 ROOT.gStyle.SetTitleBorderSize(0)
 #ROOT.gStyle.SetTitleFillColor(0)
 ROOT.gStyle.SetOptTitle(1)
-tf = ROOT.TFile(args.file[0])
-simHitTree = simHitTree = tf.Get("analysis").Get("SimHitTree")
-if args.list:
+#tf = ROOT.TFile(args.file[0])
+#simHitTree = simHitTree = tf.Get("analysis").Get("SimHitTree")
+simHitTree = ROOT.TChain("analysis/SimHitTree")
+for fn in args.file:
+    simHitTree.Add(fn)
+#print(type(tchain))
+#tchain.Print()
+if args.printTree:
     simHitTree.Print()
     sys.exit()
 
@@ -400,9 +423,19 @@ for cName in allHDefs.canvasNames():
     same = False
     cHistos = { }
     for hName in allHDefs.byCanvas[cName]:
+        print("Processing histogram",hName,"in canvas",cName)
         cHistos[hName] = fillHistoByDef(simHitTree,allHDefs.byCanvas[cName][hName],extraCuts)
         allObjects.append(drawHistoByDef(cHistos[hName],allHDefs.byCanvas[cName][hName],logY=args.logY,same=same))
         same = True
+    if args.output!=None:
+        c = allObjects[-1]['cnv']
+        #for c in [ x['cnv'] for x in allObjects ]:
+        basename = os.path.join(args.output,c.GetName())
+        if args.sampleName!=None:
+            basename += "_" + args.sampleName
+        print(basename)
+        for fmt in outputFormats:
+            c.SaveAs(basename+"."+fmt)
 #    yMin = min([ x.GetMinimum() for x in cHistos
 #sys.exit()
 
@@ -427,11 +460,11 @@ for cName in allHDefs.canvasNames():
 #!#             f = fitHistogram(mType,objects['histos'][mType][0])
 
 
-if args.output!=None:
-    for c in [ x['cnv'] for x in allObjects ]:
-        basename = os.path.join(args.output,c.GetName())
-        if args.sampleName!=None:
-            basename += "_" + args.sampleName
-        print(basename)
-        c.SaveAs(basename+".pdf")
-        c.SaveAs(basename+".png")
+#if args.output!=None:
+#    for c in [ x['cnv'] for x in allObjects ]:
+#        basename = os.path.join(args.output,c.GetName())
+#        if args.sampleName!=None:
+#            basename += "_" + args.sampleName
+#        print(basename)
+#        c.SaveAs(basename+".pdf")
+#        c.SaveAs(basename+".png")
