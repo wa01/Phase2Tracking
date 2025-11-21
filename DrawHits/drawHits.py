@@ -4,7 +4,79 @@ from histogramDefinition import *
 import ROOT
 import argparse
 from fnmatch import fnmatch
-        
+
+def divideRatios(cnv,nx,ny,widthRatios,heightRatios,canvasTopMargin=0.,canvasLeftMargin=0.):
+    result = [ ]
+    cnv.cd()
+ 
+    wrs = len(widthRatios)
+    hrs = len(heightRatios)
+    nxl = min(nx,wrs)
+    nyl = min(ny,hrs)
+ 
+    if wrs==0: nxl = nx
+    if hrs==0: nyl = ny
+ 
+    pn = 1
+    xr = 0.
+    yr = 0.
+    x  = 0.
+    y  = 1.
+    # Check the validity of the margins
+    if canvasTopMargin<0 or canvasTopMargin>1:
+        raise Exception("DivideRatios: The canvas top margin must be >= 0 and <= 1")
+    else:
+        y = 1.- canvasTopMargin
+    if canvasLeftMargin <0 or canvasLeftMargin >1:
+        raise Exception("DivideRatios", "The canvas left margin must be >= 0 and <= 1")
+ 
+    # Check the validity of the ratios
+    sumOfHeightRatios = canvasTopMargin
+    if hrs:
+      for i in range(nyl):
+          yr = heightRatios[i]
+          sumOfHeightRatios = sumOfHeightRatios + yr
+          if yr<0 or yr>1:
+              raise Exception("DivideRatios", "Y ratios plus the top margin must be >= 0 and <= 1")
+
+    if sumOfHeightRatios>1.:
+        raise Exception("DivideRatios", "The sum of Y ratios plus the top margin must be <= 1 %g",sumOfHeightRatios)
+    sumOfWidthRatios = canvasLeftMargin
+    if wrs:
+      for j in range(nxl):
+          xr = widthRatios[j]
+          sumOfWidthRatios = sumOfWidthRatios + xr
+          if xr <0 or xr >1:
+              raise Exception("DivideRatios", "X ratios must be >= 0 and <= 1")
+    if sumOfWidthRatios>1.:
+        raise Exception("DivideRatios", "The sum of X ratios must be <= 1 %g ",sumOfWidthRatios)
+ 
+    # Create the pads according to the ratios
+    for i in range(nyl):
+      x = canvasLeftMargin
+      if hrs:
+          yr = heightRatios[i]
+      else:
+          yr = 1./nyl
+      for j in range(nxl):
+          if wrs:
+              xr = widthRatios[j]
+          else:
+              xr = 1./nxl
+          x1 = max(0., x)
+          y1 = max(0., y - yr)
+          x2 = min(1., x + xr)
+          y2 = min(1., y)
+          pad = ROOT.TPad(cnv.GetName()+str(pn),cnv.GetName()+str(pn),x1, y1, x2 ,y2)
+          result.append(pad)
+          pad.SetNumber(pn)
+          pad.Draw()
+          x = x + xr
+          pn += 1
+      y = y - yr
+
+    return result
+
 def fitHistogram(mType,h):
     f1name = "f1"+str(mType)
     f1 = ROOT.TF1(f1name,"gaus(0)")
@@ -31,49 +103,129 @@ def cutString(*cuts):
     #print("&&".join([ c for c in cuts if ( c!=None and c.strip()!="" ) ]))
     return "&&".join([ c for c in cuts if ( c!=None and c.strip()!="" ) ])
 
-def drawString(pave,title,s):
-    t = pave.AddText(title)
-    t.SetTextFont(42)
-    t.SetTextSize(0.05)
-    t.SetTextAlign(13)
-    t = pave.AddText("")
-    t = pave.AddText("  "+s)
-    t = pave.AddText("")
-
-def drawCuts(pave,title,cuts):
-    t = pave.AddText(title)
-    t.SetTextFont(42)
-    t.SetTextSize(0.05)
-    t.SetTextAlign(13)
-    t = pave.AddText("")
+def cutLines(cuts,maxChar=40):
+    result = [ ]
+    line = ""
     for ic,c in enumerate(cuts):
-        l = "  " + c
+        line += c
         if ic<(len(cuts)-1):
-            l += " &&"
-        t = pave.AddText(l)
+            line += "&&"
+        if len(line)>maxChar:
+            result.append(line)
+            line = ""
+    if line!="":
+        result.append(line)
+    return result
+
+# def drawString(pave,title,s=""):
+#     t = pave.AddText(title)
+#     t.SetTextFont(43)
+#     t.SetTextSize(0.06)
+#     t.SetTextSize(16)
+#     t.SetTextAlign(13)
+#     #yt += 14
+#     if s!="":
+#         #t = pave.AddText("")
+#         t = pave.AddText("  "+s)
+#         t.SetTextFont(43)
+#         t.SetTextSize(14)
+#         t.SetTextAlign(13)
+#         #t = pave.AddText("")
+
+# def drawCuts(pave,title,cuts):
+#     #t = pave.AddText(title)
+#     #t = pave.AddText("")
+#     lines = [ ]
+#     line = ""
+#     for ic,c in enumerate(cuts):
+#         line += c
+#         if ic<(len(cuts)-1):
+#             line += "&&"
+#         if len(line)>40:
+#             lines.append(line)
+#             line = ""
+#     if line!="":
+#         lines.append(line)
+#     for l in lines:
+#         if l!="":
+#             t = pave.AddText("  "+l)
+#             t.SetTextFont(43)
+#             t.SetTextSize(0.04)
+#             t.SetTextSize(14)
+#             t.SetTextAlign(13)
+#         #l = "  " + c
+#         #if ic<(len(cuts)-1):
+#         #    l += " &&"
+#         ##    if len(l
+#         #if 
+#         #t = pave.AddText(l)
 
     
-def drawCutPave(canvas,variable,cuts,effcuts=None):
+def drawCutPave(cnv,ic,variable,cuts,effcuts=None):
     indBaseCuts = cuts.split("&&")
     indEffCuts = None if effcuts==None else effcuts.split("&&")
     #print(indBaseCuts)
     #print(indEffCuts)
-    canvas.cd(4)
-    hpave = 0.05+2*0.04+0.05+(len(indBaseCuts)+1)*0.04
+    cnv.cd(ic+3)
+    #hpave = 3*0.06+(len(indBaseCuts)+1)*0.04
+    #if indEffCuts!=None:
+    #    hpave += (len(indEffCuts)+2)*0.04
+
+    #print(ROOT.gPad.UtoPixel(0.),ROOT.gPad.UtoPixel(1.))
+    #print(ROOT.gPad.VtoPixel(0.),ROOT.gPad.VtoPixel(1.))
+    allLines = [ ]
+    allLines.append(('hdr','Variable(s)'))
+    allLines.append(('txt',variable))
+    allLines.append(('hdr','Basic selection'))
+    for l in cutLines(indBaseCuts):
+        if l!="":
+            allLines.append(('txt',l))
     if indEffCuts!=None:
-        hpave += 0.05+(len(indEffCuts)+2)*0.04
+        allLines.append(('hdr','Efficiency selection'))
+        for l in cutLines(indEffCuts):
+            if l!="":
+                allLines.append(('txt',l))
+
+    hdrPixels = 16
+    txtPixels = 14
+    #pave = ROOT.TPaveText(0.05,max(0,1.0-hpave),0.95,1.0)
+    hpave = ((hdrPixels+txtPixels+2)*len([ x for x in allLines if x[0]=='hdr' ]) + \
+             (txtPixels+2)*len([ x for x in allLines if x[0]=='txt' ])) / (ROOT.gPad.VtoPixel(0.)-ROOT.gPad.VtoPixel(1.))
+    #print(hpave)
+    if hpave>1.:
+        scale = 1./hpave
+        hpave = 1
+    else:
+        scale = 1
         
-    pave = ROOT.TPaveText(0.05,1.0-hpave,0.95,1.0)
+    pave = ROOT.TPaveText(0.,1.-hpave,1.,1.)
     pave.SetBorderSize(0)
     pave.SetFillStyle(0)
-    pave.SetTextFont(42)
-    pave.SetTextSize(0.04)
+    pave.SetTextFont(43)
+    #pave.SetMargin(0)
+    #pave.SetTextSize(0.04)
+    pave.SetTextSize(int(scale*txtPixels))
     pave.SetTextAlign(13)
-    drawString(pave,"Variable(s)",variable)
-    drawCuts(pave,"Basic selection",indBaseCuts)
-    if indEffCuts!=None:
-        t = pave.AddText("")
-        drawCuts(pave,"Efficiency selection",indEffCuts)
+    nhdr = 0
+    for x,y in allLines:
+        if x=='hdr':
+            if nhdr>0:
+                t = pave.AddText("")
+                t.SetTextSize(int(scale*txtPixels))
+            t = pave.AddText(y)
+            t.SetTextFont(63)
+            t.SetTextSize(int(scale*hdrPixels))
+            nhdr += 1
+        else:
+            t = pave.AddText("  "+y)
+            t.SetTextSize(int(scale*txtPixels))
+    #drawString(pave,"Variable(s)",variable)
+    #drawString(pave,"Basic selection")
+    #drawCuts(pave,"Basic selection",indBaseCuts)
+    #if indEffCuts!=None:
+    #    #t = pave.AddText("")
+    #    drawString(pave,"Efficiency selection")
+    #    drawCuts(pave,"Efficiency selection",indEffCuts)
         
     pave.Draw()
     ROOT.gPad.Update()
@@ -88,14 +240,10 @@ def fillHistoByDef(tree,hDef,extraCuts):
     #result['cnv'] = cnv
     #cnv.Divide(2,2)
 
-    is1D = hDef.getParameter('yNbins')==None
-    isProfile = hDef.getParameter('profile')!=None and hDef.getParameter('profile')
     #print(hDef['canvasName'],'is',is1D)
     
     ic = 0
-    hEffVs = { }
-    effCuts = hDef.getParameter('effCuts')
-    variable = hDef.getParameter('variable')
+    #hEffVs = { }
     for mType in range(23,26):
         #print("Checking mType",mType,"for",hDef.name)
         ic += 1
@@ -104,14 +252,18 @@ def fillHistoByDef(tree,hDef,extraCuts):
         #
         if hDef.vetoMType(mType):
             continue
+        is1D = hDef.getParameter('yNbins',mType)==None
+        isProfile = hDef.getParameter('profile',mType)!=None and hDef.getParameter('profile',mType)
+        effCuts = hDef.getParameter('effCuts',mType)
+        variable = hDef.getParameter('variable',mType)
         ##
         #cnv.cd(ic)
         #ROOT.gPad.SetGridx(1)
         #ROOT.gPad.SetGridy(1)
         #if not is1D:
         #    ROOT.gPad.SetRightMargin(0.125)
-        hName = hDef.getParameter('histogramName') + str(mType)
-        hTitle = hDef.getParameter('histogramTitle') + " module type " +str(mType)
+        hName = hDef.getParameter('histogramName',mType) + str(mType)
+        hTitle = hDef.getParameter('histogramTitle',mType) + " module type " +str(mType)
         nbx = hDef.getParameter('xNbins',mType)
         xmin = hDef.getParameter('xMin',mType)
         xmax = hDef.getParameter('xMax',mType)
@@ -119,11 +271,11 @@ def fillHistoByDef(tree,hDef,extraCuts):
         if is1D and ( not isProfile ):
             histos[mType] = [ ROOT.TH1F(hName+"_1",hName+"_1",nbx,xmin,xmax), None, None, None ]
             tree.Project(hName+"_1",variable, \
-                        cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType)))
+                        cutString(extraCuts,hDef.getParameter('baseCuts',mType),"moduleType=="+str(mType)))
             if effCuts!=None:
                 histos[mType][1] = ROOT.TH1F(hName+"_2",hName+"_2",nbx,xmin,xmax)
                 tree.Project(hName+"_2",variable, \
-                            cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType),effCuts))
+                            cutString(extraCuts,hDef.getParameter('baseCuts',mType),"moduleType=="+str(mType),effCuts))
                 histos[mType][3] = ROOT.TEfficiency(histos[mType][1],histos[mType][0])
             else:
                 # always keep final histogram in 4th position
@@ -134,7 +286,7 @@ def fillHistoByDef(tree,hDef,extraCuts):
             #histos[mType] = [ ROOT.TProfile(hName+"_1",hName+"_1",nbx,xmin,xmax,ymin,ymax,'S'), None, None, None ]
             histos[mType] = [ ROOT.TProfile(hName+"_1",hName+"_1",nbx,xmin,xmax,ymin,ymax), None, None, None ]
             tree.Project(hName+"_1",variable, \
-                          cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType)))
+                          cutString(extraCuts,hDef.getParameter('baseCuts',mType),"moduleType=="+str(mType)))
             # always keep final histogram in 4th position
             histos[mType][3] = histos[mType][0]
         else:
@@ -143,14 +295,14 @@ def fillHistoByDef(tree,hDef,extraCuts):
             ymax = hDef.getParameter('yMax',mType)
             histos[mType] = [ ROOT.TH2F(hName+"_1",hName+"_1",nbx,xmin,xmax,nby,ymin,ymax), None, None, None ]
             tree.Project(hName+"_1",variable, \
-                          cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType)))
+                          cutString(extraCuts,hDef.getParameter('baseCuts',mType),"moduleType=="+str(mType)))
             if effCuts!=None:
                 histos[mType][1] = ROOT.TH2F(hName+"_2",hName+"_2",nbx,xmin,xmax,nby,ymin,ymax)
                 #tree.Draw(variable+">>"+hName+"_2("+str(nbx)+","+str(xmin)+","+str(xmax)+","+ \
                 #            str(nby)+","+str(ymin)+","+str(ymax)+")",
-                #            cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType),effCuts))
+                #            cutString(extraCuts,hDef.getParameter('baseCuts',mType),"moduleType=="+str(mType),effCuts))
                 tree.Project(hName+"_2",variable, \
-                            cutString(extraCuts,hDef.getParameter('baseCuts'),"moduleType=="+str(mType),effCuts))
+                            cutString(extraCuts,hDef.getParameter('baseCuts',mType),"moduleType=="+str(mType),effCuts))
                 histos[mType][1].Divide(histos[mType][0])
                 # always keep final histogram in 4th position
                 histos[mType][3] = histos[mType][1]
@@ -168,34 +320,40 @@ def drawHistoByDef(histos,hDef,logY=False,same=False):
 
     savedDir = ROOT.gDirectory
     ROOT.gROOT.cd()
-    cnv = ROOT.TCanvas(hDef.getParameter('canvasName'),hDef.getParameter('canvasName'),1000,1000)
+    cnvName = hDef.getParameter('canvasName')
+    cnv = ROOT.TCanvas(cnvName,cnvName,1500,800)
     result['cnv'] = cnv
-    cnv.Divide(2,2)
+    #cnv.Divide(3,2)
+    result['pads'] = divideRatios(cnv,3,2,[1./3.,1./3.,1/3.],[2/3.,1/3.])
 
-    is1D = hDef.getParameter('yNbins')==None
-    isProfile = hDef.getParameter('profile')!=None and hDef.getParameter('profile')
     #print(hDef['canvasName'],'is',is1D)
     
     ic = 0
-    hEffVs = { }
-    effCuts = hDef.getParameter('effCuts')
-    variable = hDef.getParameter('variable')
+    #hEffVs = { }
     for mType in range(23,26):
         #print("Checking mType",mType,"for",hDef.name)
         ic += 1
+        cnv.cd(ic)
+        #padNameUp = cnvName+str(mType)+'up'
+        #result[padNameUp] = ROOT.TPad(padNameUp,padNameUp,(ic-1)/3.,1/3.,ic/3.,1.)
+        #result[padNameUp].Draw()
         #
         # draw histogram?
         #
         if hDef.vetoMType(mType):
             continue
+        is1D = hDef.getParameter('yNbins',mType)==None
+        isProfile = hDef.getParameter('profile',mType)!=None and hDef.getParameter('profile',mType)
+        effCuts = hDef.getParameter('effCuts',mType)
+        variable = hDef.getParameter('variable',mType)
         #
-        cnv.cd(ic)
+        #result[padNameUp].cd()
         ROOT.gPad.SetGridx(1)
         ROOT.gPad.SetGridy(1)
         if not is1D:
             ROOT.gPad.SetRightMargin(0.125)
-        hName = hDef.getParameter('histogramName') + str(mType)
-        hTitle = hDef.getParameter('histogramTitle') + " module type " +str(mType)
+        hName = hDef.getParameter('histogramName',mType) + str(mType)
+        hTitle = hDef.getParameter('histogramTitle',mType) + " module type " +str(mType)
 
         xtitle = hDef.getParameter('xTitle',mType) if hDef.getParameter('xTitle',mType) else variable
         nbx = hDef.getParameter('xNbins',mType)
@@ -244,13 +402,20 @@ def drawHistoByDef(histos,hDef,logY=False,same=False):
                 histos[mType][0].GetXaxis().SetTitle(xtitle)
                 histos[mType][0].GetYaxis().SetTitle(ytitle)
                 histos[mType][0].Draw("ZCOL")
-        if logY or hDef.getParameter('logY'):
+        if logY or hDef.getParameter('logY',mType):
             ROOT.gPad.SetLogy(1)
         ROOT.gPad.Update()
-    result['pave'] = drawCutPave(cnv,hDef.getParameter('variable'), \
-                                     cutString(extraCuts,hDef.getParameter('baseCuts')), \
-                                     cutString(hDef.getParameter('effCuts')))
+        
+        #cnv.cd()
+        #padNameDown = cnvName+str(mType)+'down'
+        #result[padNameDown] = ROOT.TPad(padNameDown,padNameDown,(ic-1)/3.,0.,ic/3.,1/3.)
+        #result[padNameDown].Draw()
+        result['pave'+str(mType)] = drawCutPave(cnv,ic,hDef.getParameter('variable',mType), \
+                                                cutString(extraCuts,hDef.getParameter('baseCuts',mType)), \
+                                                cutString(hDef.getParameter('effCuts',mType)))
 
+    #for k,v in result.items():
+    #    print(k,v)
     savedDir.cd()
     return result
 
@@ -396,8 +561,8 @@ ROOT.setTDRStyle()
 ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetOptFit(1)
 ROOT.gStyle.SetTitleFont(42)
-ROOT.gStyle.SetTitleFontSize(0.04)
-ROOT.gStyle.SetTitleX(0.10)
+ROOT.gStyle.SetTitleFontSize(0.03)
+ROOT.gStyle.SetTitleX(0.12)
 ROOT.gStyle.SetTitleY(1.00)
 ROOT.gStyle.SetTitleAlign(13)
 ROOT.gStyle.SetTitleBorderSize(0)

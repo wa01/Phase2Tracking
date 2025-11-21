@@ -6,15 +6,21 @@ from fnmatch import fnmatch
 class HistogramDefinition:
     ''' A single histogram definition. 
     '''
+    # fields that have to be present in the general section
     reqGenFields = [ 'canvasName', 'histogramName', 'histogramTitle', 'variable', 'baseCuts' ]
+    # fields that have to be present in a histogram section
     reqHistFields = [ ]
     requiredFields = reqGenFields + reqHistFields
+    # optional fields in the general section
     optGenFields =  [ 'effCuts', 'logY' ]
+    # optional fields in the histogram section
     optHistFields = [ 'xNbins', 'xMin', 'xMax', 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', \
                           'zMin', 'zMax', 'display', 'profile' ]
     optionalFields = optGenFields + optHistFields
     allFields = requiredFields + optionalFields
     allHistFields = reqHistFields + optHistFields
+    # fields that cannot be present for a single module type
+    vetoMtypeFields = [ 'variable', 'baseCuts', 'effCuts', 'profile' ]
 
     def __init__(self,name,inputDict):
         ''' Define histogram and drawing parameters from dictionary.
@@ -98,6 +104,9 @@ class HistogramDefinition:
         if ( mTName in self.parameters ) and ( name in self.parameters[mTName] ):
           result = self.parameters[mTName][name]
           if result!=None:
+            # check for parameters that can only be general
+            if name in HistogramDefinition.vetoMtypeFields:
+              raise Exception('Parameter '+name+' cannot be present in the section for an individual module type')
             return self.parameters[mTName][name]
         #
         # not found: use general parameter
@@ -106,6 +115,11 @@ class HistogramDefinition:
             return self.parameters[name]
         return None
 
+    def __call__(self,name,mType=None):
+        ''' Make access to parameters easier - use function call
+        '''
+        return self.getParameter(name,mType)
+    
     def vetoMType(self,mType):
         ''' Check for an mType entry with display = False
         '''
