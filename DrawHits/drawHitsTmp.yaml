@@ -17,17 +17,17 @@ effAlphaLoose:
 #
 #
 effAlphaTight:
-  baseCuts: 'tof<12.5&&pabs>0.3'
-  effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.1'
-  histogramTitle: 'Efficiency vs. alpha(xz) loose'
-  variable: 'atan2(abs(path.x()),abs(path.z()))/3.1415*180'
-  xMax: 100.0
-  xMin: 0
-  xNbins: 100
-  xTitle: 'alpha(xz) [deg]'
-  yMax: 1.05
-  yMin: 0.5
-  yTitle: 'efficiency'
+   baseCuts: 'tof<12.5&&pabs>0.3'
+   effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.1'
+   histogramTitle: 'Efficiency vs. alpha(xz) loose'
+   variable: 'atan2(abs(path.x()),abs(path.z()))/3.1415*180'
+   xMax: 100.0
+   xMin: 0
+   xNbins: 100
+   xTitle: 'alpha(xz) [deg]'
+   yMax: 1.05
+   yMin: 0.5
+   yTitle: 'efficiency'
 #
 #
 #
@@ -65,7 +65,7 @@ effVsModY:
    effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
    yMin: 0
    yMax: 1.05
-   mType23::
+   mType23:
       histogramTitle: 'Efficiency vs. y % 1.5 mm'
       variable: 'floatMod(100*localPos.y(),15)/10.'
       xTitle: 'y modulo 1.5mm [mm]'
@@ -79,7 +79,7 @@ effVsModY:
       xNbins: 600
       xMax: 2.75
       xMin: -0.25
-   mTyp25:
+   mType25:
       histogramTitle: 'Efficiency vs. y % 5 cm'
       variable: 'floatMod(10*localPos.y(),50)/10.'
       xTitle: 'y modulo 5cm [cm]'

@@ -182,7 +182,7 @@ def drawCutPave(cnv,ic,variable,cuts,effcuts=None):
         if l!="":
             allLines.append(('txt',l))
     if indEffCuts!=None:
-        allLines.append(('hdr','Efficiency selection'+str(indEffCuts)))
+        allLines.append(('hdr','Efficiency selection'))
         for l in cutLines(indEffCuts):
             if l!="":
                 allLines.append(('txt',l))
