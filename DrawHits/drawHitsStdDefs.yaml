@@ -1,39 +1,41 @@
 eff2D1:
-  baseCuts: tof<12.5
-  canvasName: cEff2D1
-  effCuts: hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075
-  histogramName: eff2D1
-  histogramTitle: Efficiency 2D
-  variable: localPos.y():localPos.x()
-  xMax: 7.5
-  xMin: -7.5
-  xNbins: 75
-  xTitle: local x [cm]
-  yMax: 7.5
-  yMin: -7.5
-  yNbins: 15
-  yTitle: efficiency
-  zMax: 1.05
-  zMin: 0.75
+   baseCuts: tof<12.5
+   canvasName: cEff2D1
+   effCuts: hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075
+   histogramName: eff2D1
+   histogramTitle: Efficiency 2D
+   variable: localPos.y():localPos.x()
+   xMax: 7.5
+   xMin: -7.5
+   xNbins: 75
+   xTitle: local x [cm]
+   yMax: 7.5
+   yMin: -7.5
+   yNbins: 15
+   yTitle: efficiency
+   zMax: 1.05
+   zMin: 0.75
+
 effX1:
-  baseCuts: tof<12.5
-  canvasName: cEffX1
-  effCuts: hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075
-  histogramName: effX1
-  histogramTitle: Efficiency 1D
-  variable: localPos.x()
-  xMax: 7.5
-  xMin: -7.5
-  xNbins: 240
-  xTitle: local x [cm]
-  yMax: 1.05
-  yMin: 0.8
-  yTitle: efficiency
+   baseCuts: tof<12.5
+   canvasName: cEffX1
+   effCuts: hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075
+   histogramName: effX1
+   histogramTitle: Efficiency 1D
+   variable: localPos.x()
+   xMax: 7.5
+   xMin: -7.5
+   xNbins: 240
+   xTitle: local x [cm]
+   yMax: 1.05
+   yMin: 0.8
+   yTitle: efficiency
+
 stdRes:
-  baseCuts: tof<12.5&&hasRecHit>0
-  histogramTitle: my resolution
-  variable: localPos.x()-rhLocalPos.x()
-  xMax: 0.1
-  xMin: -0.1
-  xNbins: 200
-  xTitle: local x [cm]
+   baseCuts: tof<12.5&&hasRecHit>0
+   histogramTitle: my resolution
+   variable: localPos.x()-rhLocalPos.x()
+   xMax: 0.1
+   xMin: -0.1
+   xNbins: 200
+   xTitle: local x [cm]
