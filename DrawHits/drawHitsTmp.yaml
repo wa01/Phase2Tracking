@@ -1,0 +1,327 @@
+#
+#
+#
+effAlphaLoose:
+   baseCuts: 'tof<12.5&&pabs>0.3'
+   effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+   histogramTitle: 'Efficiency vs. alpha(xz) tight'
+   variable: 'atan2(abs(path.x()),abs(path.z()))/3.1415*180'
+   xMax: 100.0
+   xMin: 0
+   xNbins: 100
+   xTitle: 'alpha(xz) [deg]'
+   yMax: 1.05
+   yMin: 0.5
+   yTitle: 'efficiency'
+#
+#
+#
+effAlphaTight:
+  baseCuts: 'tof<12.5&&pabs>0.3'
+  effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.1'
+  histogramTitle: 'Efficiency vs. alpha(xz) loose'
+  variable: 'atan2(abs(path.x()),abs(path.z()))/3.1415*180'
+  xMax: 100.0
+  xMin: 0
+  xNbins: 100
+  xTitle: 'alpha(xz) [deg]'
+  yMax: 1.05
+  yMin: 0.5
+  yTitle: 'efficiency'
+#
+#
+#
+effVsModX:
+   baseCuts: 'tof<12.5&&pabs>0.3'
+   effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+   yMin: 0
+   yMax: 1.05
+   mType23:
+      histogramTitle: 'Efficiency vs. x % 100 #mu m'
+      variable: 'floatMod(10000*localPos.x(),100)'
+      xTitle: 'x modulo 100 #mu m [#mu m]'
+      xNbins: 220
+      xMax: 105
+      xMin: -5
+   mType24:
+      histogramTitle: 'Efficiency vs. x % 100 #mu m'
+      variable: 'floatMod(10000*localPos.x(),100)'
+      xTitle: 'x modulo 100 #mu m [#mu m]'
+      xNbins: 220
+      xMax: 105
+      xMin: -5
+   mType25:
+      histogramTitle: 'Efficiency vs. x % 90 #mu m'
+      variable: 'floatMod(10000*localPos.x(),90)'
+      xTitle: 'x modulo 90 #mu m [#mu m]'
+      xNbins: 200
+      xMax: 95
+      xMin: -5
+#
+#
+#
+effVsModY:
+   baseCuts: 'tof<12.5&&pabs>0.3'
+   effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+   yMin: 0
+   yMax: 1.05
+   mType23::
+      histogramTitle: 'Efficiency vs. y % 1.5 mm'
+      variable: 'floatMod(100*localPos.y(),15)/10.'
+      xTitle: 'y modulo 1.5mm [mm]'
+      xNbins: 400
+      xMax: 1.75
+      xMin: -0.25
+   mType24:
+      histogramTitle: 'Efficiency vs. y % 2.5 cm'
+      variable: 'floatMod(10*localPos.y(),25)/10.'
+      xTitle: 'y modulo 2.5cm [cm]'
+      xNbins: 600
+      xMax: 2.75
+      xMin: -0.25
+   mTyp25:
+      histogramTitle: 'Efficiency vs. y % 5 cm'
+      variable: 'floatMod(10*localPos.y(),50)/10.'
+      xTitle: 'y modulo 5cm [cm]'
+      xNbins: 550
+      xMax: 5.25
+      xMin: -0.25
+#
+#
+#
+effX:
+   baseCuts: 'tof<12.5&&pabs>0.3'
+   effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+   histogramTitle: 'Efficiency 1D'
+   variable: 'localPos.x()'
+   xTitle: 'local x [cm]'
+   yMax: 1.05
+   yMin: 0.8
+   yTitle: 'efficiency'
+   mType23:
+      xMax: 5.5
+      xMin: -5.5
+      xNbins: 550
+   mType24:
+      xMax: 5.0
+      xMin: -5.0
+      xNbins: 250
+   mType25:
+      xMax: 5
+      xMin: -5
+      xNbins: 250
+#
+#
+#
+effY:
+   variable: 'localPos.y()'
+   baseCuts: 'tof<12.5&&pabs>0.3'
+   effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+   histogramTitle: 'Efficiency Y 1D'
+   xTitle: 'local y [cm]'
+   xNbins: 550
+   xMax: 5.5
+   xMin: -5.5
+   yTitle: 'efficiency'
+   yMax: 1.05
+   yMin: 0.8
+#
+#
+#
+pathX:
+  baseCuts: 'tof<12.5&&pabs>0.3'
+  histogramTitle: 'path (x)'
+  variable: '10000*abs(path.x())'
+  xMax: 1000
+  xMin: 0
+  xNbins: 200
+  xTitle: 'SimHit path (x) [#mum]'
+pathY:
+  baseCuts: 'tof<12.5&&pabs>0.3'
+  histogramTitle: 'path (y)'
+  variable: '10000*abs(path.y())'
+  xMax: 2000
+  xMin: 0
+  xNbins: 200
+  xTitle: 'SimHit path (y [#mum])'
+pullX:
+  baseCuts: 'tof<12.5&&hasRecHit>0'
+  histogramTitle: 'pulls (x)'
+  logY: true
+  variable: '(localPos.x()-rhLocalPos.x())/rhLocalErr.x()'
+  xMax: 5
+  xMin: -5
+  xNbins: 200
+  xTitle: 'pull local x'
+resX:
+  baseCuts: 'tof<12.5&&hasRecHit>0'
+  histogramTitle: 'residuals (x)'
+  logY: true
+  variable: 'localPos.x()-rhLocalPos.x()'
+  xMax: 0.075
+  xMin: -0.075
+  xNbins: 300
+  xTitle: '#Delta x [cm]'
+resX1:
+  baseCuts: 'tof<12.5&&hasRecHit>0&&clusterSize==1'
+  histogramTitle: 'residuals (x) - cluster size 1'
+  logY: true
+  variable: 'localPos.x()-rhLocalPos.x()'
+  xMax: 0.075
+  xMin: -0.075
+  xNbins: 300
+  xTitle: '#Delta x [cm]'
+resX2:
+  baseCuts: 'tof<12.5&&hasRecHit>0&&clusterSize==2'
+  histogramTitle: 'residuals (x) - cluster size 2'
+  logY: true
+  variable: 'localPos.x()-rhLocalPos.x()'
+  xMax: 0.075
+  xMin: -0.075
+  xNbins: 300
+  xTitle: '#Delta x [cm]'
+resX3P:
+  baseCuts: 'tof<12.5&&hasRecHit>0&&clusterSize>2'
+  histogramTitle: 'residuals (x) - cluster size >2'
+  logY: true
+  variable: 'localPos.x()-rhLocalPos.x()'
+  xMax: 0.075
+  xMin: -0.075
+  xNbins: 300
+  xTitle: '#Delta x [cm]'
+resY:
+  baseCuts: 'tof<12.5&&hasRecHit>0'
+  histogramTitle: 'pulls (y)'
+  logY: true
+  variable: '(localPos.y()-rhLocalPos.y())/rhLocalErr.y()'
+  xMax: 5
+  xMin: -5
+  xNbins: 200
+  xTitle: 'pull local y'
+stdRes2D:
+  baseCuts: 'tof<12.5&&hasRecHit>0'
+  histogramTitle: 'my resolution'
+  variable: 'abs(path.x()):localPos.x()-rhLocalPos.x()'
+  xMax: 0.1
+  xMin: -0.1
+  xNbins: 200
+  xTitle: 'residual x [cm]'
+  yMax: 0.1
+  yMin: 0.0
+  yNbins: 20
+  yTitle: 'dx [cm]'
+widthVsMod2DX:
+  baseCuts: 'tof<12.5&&pabs>0.3'
+  mType23:
+    histogramTitle: 'width vs x modula 90 #mu m'
+    variable: 'clusterSize:floatMod(10000*localPos.x(),90)'
+    xMax: 95
+    xMin: -5
+    xNbins: 100
+    xTitle: 'x modulo 90 #mu m [#mu m]'
+  mType24:
+    histogramTitle: 'width vs x modula 90 #mu m'
+    variable: 'clusterSize:floatMod(10000*localPos.x(),90)'
+    xMax: 95
+    xMin: -5
+    xNbins: 100
+    xTitle: 'x modulo 90 #mu m [#mu m]'
+  mType25:
+    histogramTitle: 'width vs x modula 100 #mu m'
+    variable: 'clusterSize:floatMod(10000*localPos.x(),100)'
+    xMax: 105
+    xMin: -5
+    xNbins: 110
+    xTitle: 'x modulo 100 #mu m [#mu m]'
+  yMax: 10
+  yMin: 0
+  yNbins: 10
+  yTitle: 'cluster width'
+widthVsModX:
+  baseCuts: 'tof<12.5&&pabs>0.3'
+  mType23:
+    histogramTitle: 'width vs x modula 90 #mu m'
+    variable: 'clusterSize:floatMod(10000*localPos.x(),90)'
+    xMax: 95
+    xMin: -5
+    xNbins: 100
+    xTitle: 'x modulo 90 #mu m [#mu m]'
+  mType24:
+    histogramTitle: 'width vs x modula 90 #mu m'
+    variable: 'clusterSize:floatMod(10000*localPos.x(),90)'
+    xMax: 95
+    xMin: -5
+    xNbins: 100
+    xTitle: 'x modulo 90 #mu m [#mu m]'
+  mType25:
+    histogramTitle: 'width vs x modula 100 #mu m'
+    variable: 'clusterSize:floatMod(10000*localPos.x(),100)'
+    xMax: 105
+    xMin: -5
+    xNbins: 110
+    xTitle: 'x modulo 100 #mu m [#mu m]'
+  profile: true
+  yMax: 25
+  yMin: 0
+  yTitle: 'cluster width'
+widthVsModY015:
+  baseCuts: 'tof<12.5&&pabs>0.3'
+  histogramTitle: 'Width vs. y % 1.5 mm'
+  mType24:
+    display: false
+  mType25:
+    display: false
+  profile: true
+  variable: 'clusterSize:floatMod(100*localPos.y(),15)/10.'
+  xMax: 1.75
+  xMin: -0.25
+  xNbins: 200
+  xTitle: 'y modulo 1.5mm [mm]'
+  yMax: 25
+  yMin: 0
+  yTitle: 'cluster width'
+widthVsModY250:
+  baseCuts: 'tof<12.5&&pabs>0.3'
+  histogramTitle: 'Width vs. y % 2.5 cm'
+  mType23:
+    display: false
+  mType25:
+    display: false
+  profile: true
+  variable: 'clusterSize:floatMod(10*localPos.y(),25)/10.'
+  xMax: 2.75
+  xMin: -0.25
+  xNbins: 300
+  xTitle: 'y modulo 2.5cm [cm]'
+  yMax: 25
+  yMin: 0
+  yTitle: 'cluster width'
+widthVsModY500:
+  baseCuts: 'tof<12.5&&pabs>0.3'
+  histogramTitle: 'Width vs. y % 5 cm'
+  mType23:
+    display: false
+  mType24:
+    display: false
+  profile: true
+  variable: 'clusterSize:floatMod(10*localPos.y(),50)/10.'
+  xMax: 5.25
+  xMin: -0.25
+  xNbins: 275
+  xTitle: 'y modulo 5cm [cm]'
+  yMax: 25
+  yMin: 0
+  yTitle: 'cluster width'
+widthVsPath:
+  baseCuts: 'tof<12.5&&hasRecHit>0'
+  histogramTitle: 'width vs path'
+  profile: true
+  variable: 'clusterSize:abs(path.x())'
+  xMax: 0.2
+  xMin: 0
+  xNbins: 100
+  xTitle: 'SimHit path (x)'
+  yMax: 25
+  yMin: 0.0
+  yNbins: 25
+  yTitle: 'clustersize'

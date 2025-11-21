@@ -1,6 +1,7 @@
 #
 # Definitions for histograms from a configuration file
 #
+import yaml
 from fnmatch import fnmatch
 
 class HistogramDefinition:
@@ -182,14 +183,11 @@ def loadHistogramDefinitions(configName,selectedNames=[],vetoedNames=[]):
     if configName==None:
         return result
 
-    moduleName = configName[:-3] if configName.endswith(".py") else configName
-    module = __import__(moduleName)
-    for n in dir(module):
-        if n.startswith('__'):
-            continue
-        hDict = getattr(module,n)
-        #print(n,type(hDict))
-        #sys.exit()
+    with open(configName,"rt") as yamlFile:
+        allDicts = yaml.load(yamlFile,Loader=yaml.Loader)
+        yamlFile.close()
+    for n,hDict in allDicts.items():
+        #
         assert type(hDict)==dict
         #
         # check if in list of histograms to be displayed
@@ -217,6 +215,42 @@ def loadHistogramDefinitions(configName,selectedNames=[],vetoedNames=[]):
         hDef = HistogramDefinition(n,hDict)
         result.add(hDef)
         print("Added",hDef.getParameter('canvasName'))
+        
+#!#     moduleName = configName[:-3] if configName.endswith(".py") else configName
+#!#     module = __import__(moduleName)
+#!#     for n in dir(module):
+#!#         if n.startswith('__'):
+#!#             continue
+#!#         hDict = getattr(module,n)
+#!#         #print(n,type(hDict))
+#!#         #sys.exit()
+#!#         assert type(hDict)==dict
+#!#         #
+#!#         # check if in list of histograms to be displayed
+#!#         #
+#!#         selFlg = False
+#!#         for p in selectedNames:
+#!#             if fnmatch(n,p):
+#!#                 selFlg = True
+#!#                 break
+#!#         if not selFlg:
+#!#             continue
+#!#         #
+#!#         # check if in list of histograms to be vetoed
+#!#         #
+#!#         selFlg = True
+#!#         for p in vetoedNames:
+#!#             if fnmatch(n,p):
+#!#                 selFlg = False
+#!#                 break
+#!#         if not selFlg:
+#!#             continue
+#!#         #
+#!#         # add histogram
+#!#         #
+#!#         hDef = HistogramDefinition(n,hDict)
+#!#         result.add(hDef)
+#!#         print("Added",hDef.getParameter('canvasName'))
 
     return result
 
