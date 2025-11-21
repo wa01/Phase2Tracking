@@ -100,8 +100,9 @@ def fitHistogram(mType,h):
 
 
 def cutString(*cuts):
-    #print("&&".join([ c for c in cuts if ( c!=None and c.strip()!="" ) ]))
-    return "&&".join([ c for c in cuts if ( c!=None and c.strip()!="" ) ])
+    if len(cuts)>0 and cuts[0]!=None:
+        return "&&".join([ c for c in cuts if ( c!=None and c.strip()!="" ) ])
+    return None
 
 def cutLines(cuts,maxChar=40):
     result = [ ]
@@ -181,7 +182,7 @@ def drawCutPave(cnv,ic,variable,cuts,effcuts=None):
         if l!="":
             allLines.append(('txt',l))
     if indEffCuts!=None:
-        allLines.append(('hdr','Efficiency selection'))
+        allLines.append(('hdr','Efficiency selection'+str(indEffCuts)))
         for l in cutLines(indEffCuts):
             if l!="":
                 allLines.append(('txt',l))

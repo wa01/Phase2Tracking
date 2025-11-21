@@ -7,20 +7,22 @@ class HistogramDefinition:
     ''' A single histogram definition. 
     '''
     # fields that have to be present in the general section
-    reqGenFields = [ 'canvasName', 'histogramName', 'histogramTitle', 'variable', 'baseCuts' ]
+    reqGenFields = [ 'canvasName' ]
     # fields that have to be present in a histogram section
     reqHistFields = [ ]
-    requiredFields = reqGenFields + reqHistFields
+    requiredFields = list(set(reqGenFields + reqHistFields))
     # optional fields in the general section
-    optGenFields =  [ 'effCuts', 'logY' ]
+    optGenFields =  [ 'variable', 'baseCuts', 'effCuts', 'logY' ]
     # optional fields in the histogram section
-    optHistFields = [ 'xNbins', 'xMin', 'xMax', 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', \
+    optHistFields = [ 'variable', 'histogramName', 'histogramTitle', \
+                          'xNbins', 'xMin', 'xMax', 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', \
                           'zMin', 'zMax', 'display', 'profile' ]
-    optionalFields = optGenFields + optHistFields
-    allFields = requiredFields + optionalFields
-    allHistFields = reqHistFields + optHistFields
+    optionalFields = list(set(optGenFields + optHistFields))
+    allFields = list(set(requiredFields + optionalFields))
+    allHistFields = list(set(reqHistFields + optHistFields))
     # fields that cannot be present for a single module type
     vetoMtypeFields = [ 'variable', 'baseCuts', 'effCuts', 'profile' ]
+    vetoMtypeFields = [ 'profile' ]
 
     def __init__(self,name,inputDict):
         ''' Define histogram and drawing parameters from dictionary.
