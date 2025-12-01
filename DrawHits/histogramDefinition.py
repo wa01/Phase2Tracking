@@ -13,7 +13,7 @@ class HistogramDefinition:
     reqHistFields = [ ]
     requiredFields = list(set(reqGenFields + reqHistFields))
     # optional fields in the general section
-    optGenFields =  [ 'variable', 'baseCuts', 'effCuts', 'logY' ]
+    optGenFields =  [ 'variable', 'baseCuts', 'effCuts', 'logY', 'logZ' ]
     # optional fields in the histogram section
     optHistFields = [ 'variable', 'histogramName', 'histogramTitle', \
                           'xNbins', 'xMin', 'xMax', 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', \

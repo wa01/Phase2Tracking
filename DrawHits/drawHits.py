@@ -316,7 +316,7 @@ def fillHistoByDef(tree,hDef,extraCuts):
     return histos
 
 
-def drawHistoByDef(histos,hDef,logY=False,same=False):
+def drawHistoByDef(histos,hDef,logY=False,logZ=False,same=False):
     result = { 'cnv' : None, 'histos' : histos, 'pave' : None }
 
     savedDir = ROOT.gDirectory
@@ -405,6 +405,8 @@ def drawHistoByDef(histos,hDef,logY=False,same=False):
                 histos[mType][0].Draw("ZCOL")
         if logY or hDef.getParameter('logY',mType):
             ROOT.gPad.SetLogy(1)
+        if not is1D and ( logZ or hDef.getParameter('logZ',mType) ):
+            ROOT.gPad.SetLogz(1)
         ROOT.gPad.Update()
         
         #cnv.cd()
@@ -484,7 +486,8 @@ parser.add_argument('--selectedHistograms', help='comma-separated names of histo
                         type=str, default='*')
 parser.add_argument('--vetoedHistograms', help='comma-separated names of histogram definitions not to be used',
                         type=str, default='')
-parser.add_argument('--logY', help='use log scale', action='store_true', default=False)
+parser.add_argument('--logY', help='use log scale for y axis', action='store_true', default=False)
+parser.add_argument('--logZ', help='use log scale for z axis', action='store_true', default=False)
 parser.add_argument('--printTree', '-p', help='print TTree contents', action='store_true', default=False)
 parser.add_argument('--listHistograms', '-l', help='list predefined and selected histograms', \
                         action='store_true', default=False)
@@ -591,7 +594,8 @@ for cName in allHDefs.canvasNames():
     for hName in allHDefs.byCanvas[cName]:
         print("Processing histogram",hName,"in canvas",cName)
         cHistos[hName] = fillHistoByDef(simHitTree,allHDefs.byCanvas[cName][hName],extraCuts)
-        allObjects.append(drawHistoByDef(cHistos[hName],allHDefs.byCanvas[cName][hName],logY=args.logY,same=same))
+        allObjects.append(drawHistoByDef(cHistos[hName],allHDefs.byCanvas[cName][hName], \
+                                             logY=args.logY,logZ=args.logZ,same=same))
         same = True
     if args.output!=None:
         c = allObjects[-1]['cnv']
