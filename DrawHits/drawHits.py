@@ -254,6 +254,8 @@ def fillHistoByDef(tree,hDef,extraCuts):
         if hDef.vetoMType(mType):
             continue
         is1D = hDef.getParameter('yNbins',mType)==None
+        is2D = hDef.getParameter('yNbins',mType)!=None and hDef.getParameter('zNbins',mType)==None
+        is3D = hDef.getParameter('yNbins',mType)!=None and hDef.getParameter('zNbins',mType)!=None
         isProfile = hDef.getParameter('profile',mType)!=None and hDef.getParameter('profile',mType)
         effCuts = hDef.getParameter('effCuts',mType)
         variable = hDef.getParameter('variable',mType)
@@ -290,7 +292,7 @@ def fillHistoByDef(tree,hDef,extraCuts):
                           cutString(extraCuts,hDef.getParameter('baseCuts',mType),"moduleType=="+str(mType)))
             # always keep final histogram in 4th position
             histos[mType][3] = histos[mType][0]
-        else:
+        elif is2D:
             nby = hDef.getParameter('yNbins',mType)
             ymin = hDef.getParameter('yMin',mType)
             ymax = hDef.getParameter('yMax',mType)
@@ -310,6 +312,20 @@ def fillHistoByDef(tree,hDef,extraCuts):
             else:
                 # always keep final histogram in 4th position
                 histos[mType][3] = histos[mType][0]
+        elif is3D:
+            nby = hDef.getParameter('yNbins',mType)
+            ymin = hDef.getParameter('yMin',mType)
+            ymax = hDef.getParameter('yMax',mType)
+            nbz = hDef.getParameter('zNbins',mType)
+            zmin = hDef.getParameter('zMin',mType)
+            zmax = hDef.getParameter('zMax',mType)
+            histos[mType] = [ ROOT.TH3F(hName+"_1",hName+"_1",nbx,xmin,xmax,nby,ymin,ymax,nbz,zmin,zmax), \
+                                  None, None, None ]
+            tree.Project(hName+"_1",variable, \
+                          cutString(extraCuts,hDef.getParameter('baseCuts',mType),"moduleType=="+str(mType)))
+            assert effCuts==None
+            # always keep final histogram in 4th position
+            histos[mType][3] = histos[mType][0]
         #print("Ending for ",hDef.name,hName,hTitle)
                 
     savedDir.cd()
@@ -344,6 +360,8 @@ def drawHistoByDef(histos,hDef,logY=False,logZ=False,same=False):
         if hDef.vetoMType(mType):
             continue
         is1D = hDef.getParameter('yNbins',mType)==None
+        is2D = hDef.getParameter('yNbins',mType)!=None and hDef.getParameter('zNbins',mType)==None
+        is3D = hDef.getParameter('yNbins',mType)!=None and hDef.getParameter('zNbins',mType)!=None
         isProfile = hDef.getParameter('profile',mType)!=None and hDef.getParameter('profile',mType)
         effCuts = hDef.getParameter('effCuts',mType)
         variable = hDef.getParameter('variable',mType)
@@ -362,6 +380,7 @@ def drawHistoByDef(histos,hDef,logY=False,logZ=False,same=False):
         xmax = hDef.getParameter('xMax',mType)
 
         ytitle = hDef.getParameter('yTitle',mType) if hDef.getParameter('yTitle',mType) else ""
+        ztitle = hDef.getParameter('zTitle',mType) if hDef.getParameter('zTitle',mType) else ""
         if is1D and ( not isProfile ):
             ymin = hDef.getParameter('yMin',mType) if hDef.getParameter('yMin',mType)!=None else 0.
             ymax = hDef.getParameter('yMax',mType) if hDef.getParameter('yMax',mType)!=None else 1.05
@@ -387,7 +406,7 @@ def drawHistoByDef(histos,hDef,logY=False,logZ=False,same=False):
             #histos[mType][0].SetFillColor(ROOT.TColor.GetColorBright(ROOT.kGray))
             #histos[mType][0].SetFillColor(ROOT.kGray)
             histos[mType][0].Draw("same" if same else "")
-        else:
+        elif is2D:
             assert not same
             zmin = hDef.getParameter('zMin',mType) if hDef.getParameter('zMin',mType)!=None else 0.
             zmax = hDef.getParameter('zMax',mType) if hDef.getParameter('zMax',mType)!=None else 1.05
@@ -403,9 +422,19 @@ def drawHistoByDef(histos,hDef,logY=False,logZ=False,same=False):
                 histos[mType][0].GetXaxis().SetTitle(xtitle)
                 histos[mType][0].GetYaxis().SetTitle(ytitle)
                 histos[mType][0].Draw("ZCOL")
+        elif is3D:
+            assert not same
+            zmin = hDef.getParameter('zMin',mType) if hDef.getParameter('zMin',mType)!=None else 0.
+            zmax = hDef.getParameter('zMax',mType) if hDef.getParameter('zMax',mType)!=None else 1.05
+            assert effCuts==None
+            histos[mType][0].SetTitle(hTitle)
+            histos[mType][0].GetXaxis().SetTitle(xtitle)
+            histos[mType][0].GetYaxis().SetTitle(ytitle)
+            histos[mType][0].GetZaxis().SetTitle(ztitle)
+            histos[mType][0].Draw()
         if logY or hDef.getParameter('logY',mType):
             ROOT.gPad.SetLogy(1)
-        if not is1D and ( logZ or hDef.getParameter('logZ',mType) ):
+        if is2D and ( logZ or hDef.getParameter('logZ',mType) ):
             ROOT.gPad.SetLogz(1)
         ROOT.gPad.Update()
         

@@ -17,7 +17,7 @@ class HistogramDefinition:
     # optional fields in the histogram section
     optHistFields = [ 'variable', 'histogramName', 'histogramTitle', \
                           'xNbins', 'xMin', 'xMax', 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', \
-                          'zMin', 'zMax', 'display', 'profile' ]
+                          'zNbins', 'zMin', 'zMax', 'display', 'profile' ]
     optionalFields = list(set(optGenFields + optHistFields))
     allFields = list(set(requiredFields + optionalFields))
     allHistFields = list(set(reqHistFields + optHistFields))

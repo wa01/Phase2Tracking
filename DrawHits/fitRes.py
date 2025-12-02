@@ -13,56 +13,165 @@ class FitHistogram:
         
     def __init__(self,histogram):
         self.hist = histogram
-        self.graph = None
-        self.intGraph = None
+        self.graph_ = None
+        self.cumulativeGraph_ = None
+        self.cumNormGraph_ = None
+
+    def graph(self):
+        ''' Histogram converted to list of (x,y) coordinates with x = bin center and y = bin contents.
+            Ignores under- / overflow.
+        '''
+        if self.graph_==None:
+            self.graph_ = [ ]
+
+            for i in range(self.hist.GetNbinsX()):
+                xbin = self.hist.GetBinLowEdge(i+1) + self.hist.GetBinWidth(i+1)/2.
+                self.graph_.append( (xbin,self.hist.GetBinContent(i+1)) )
+
+        return self.graph_
+
+    def cumulativeGraph(self):
+        ''' Histogram converted to list of (x,y) coordinates with x = bin center and y = cumulated bin contents.
+            Ignores under- / overflow.
+        '''
+        if self.cumulativeGraph_==None:
+            self.cumulativeGraph_ = [ ]
+            sum = 0.
+            for i in range(self.hist.GetNbinsX()):
+                xbin = self.hist.GetBinLowEdge(i+1) + self.hist.GetBinWidth(i+1)/2.
+                sum += self.hist.GetBinContent(i+1)
+                self.cumulativeGraph_.append( (xbin,sum) )
+
+        return self.cumulativeGraph_
+
+    def cumulativeNormGraph(self):
+        ''' Histogram converted to list of (x,y) coordinates with x = bin center and y = cumulated bin contents.
+            Normalized to total histogram contents (including under- / overflow).
+        '''
+        if self.cumNormGraph_==None:
+            cg = self.cumulativeGraph()
+            sum = self.hist.GetSumOfWeights()
+            self.cumNormGraph_ = [ ( x,y/sum ) for x,y in cg ]
+            
+        return self.cumNormGraph_
+        
+        
+    def intersects(self,value,cumulative=False,norm=False,direction=0):
+        ''' Calculate x-coordinates for intersection(s) of a graph defined by a list of (x,y) points sorted in x
+              with y==value. Uses linear interpolation.
+            Arguments:
+               value ....... target value
+               cumulative .. if true, use cumulative graph
+               norm ........ if true, use normalized cumulative graph
+               direction ... three possible values: 0 = any intersection, +1/-1 = consider only segments
+                             with positive / negative slope.
+        '''
+        #
+        # Get graph and do basic check
+        #
+        graph = None
+        if cumulative:
+            graph = self.cumulativeNormGraph() if norm else self.cumulativeGraph()
+        else:
+            assert norm==False
+            graph = self.graph()
+            
+        result = [ ]
+        if len(graph)<2:
+            return result
+        #
+        # loop over adjacent pairs of points
+        #
+        x1 = None
+        y1 = None
+        for x2,y2 in graph:
+            #
+            # start checking at 2nd point
+            #
+            if x1!=None:
+                assert x2>x1
+                #
+                # value in interval?
+                #
+                if value>=min(y1,y2) and value<=max(y1,y2):
+                    # check if dy is positive or negative, and compare with required sign of direction
+                    if direction==0 or direction*(y2-y1)>0:
+                        result.append(FitHistogram.interpolate(value,y2,y1,x2,x1))
+            #
+            # move to next point
+            #
+            x1 = x2
+            y1 = y2
+
+        return result
 
     def fwhm(self):
         ''' Return lowest / highest x corresponding to ymax/2, and ymax/2
         '''
         #
-        # target y value (1/2 maximum) and bin width (assume constant bin width)
+        # target y value (1/2 maximum)
         #
         y = self.hist.GetBinContent(self.hist.GetMaximumBin())/2.
-        dx = self.hist.GetBinWidth(1)
         #
-        # preset result (low / high x values)
+        # use first intersection with upward slope
         #
-        xlow = None
-        xhigh = None
+        xups = self.intersects(y,cumulative=False,direction=1)
+        print("xups",xups)
+        xlow = xups[0] if xups else None
         #
-        # loop over pairs of adjacent histogram bins
+        # use last intersection with downward slope
         #
-        x1 = self.hist.GetBinLowEdge(1)
-        y1 = self.hist.GetBinContent(1)
-        for i in range(2,self.hist.GetNbinsX()):
-            # check if target value between contents of neighbouring bins
-            x2 = self.hist.GetBinLowEdge(i)
-            y2 = self.hist.GetBinContent(i)
-            first = None
-            if y>=y1 and y<y2:
-                first = True
-            elif y<=y1 and y>y2:
-                first = False
-
-            if first!=None:
-                # calculate interpolated x value
-                x = FitHistogram.interpolate(y,y1,y2,x1,x2)
-                # store lowest and highest x corresponding to y
-                if first and xlow==None:
-                    xlow = x
-                elif not first:
-                    xhigh = x
-            # move to next bin
-            x1 = x2
-            y1 = y2
+        xdowns = self.intersects(y,cumulative=False,direction=-1)
+        print("xdowns",xdowns)
+        xhigh = xdowns[-1] if xdowns else None
+        #dx = self.hist.GetBinWidth(1)
+        ###
+        ## preset result (low / high x values)
+        ##
+        #xlow = None
+        #xhigh = None
+        ##
+        ## loop over pairs of adjacent histogram bins
+        ##
+        #x1 = self.hist.GetBinLowEdge(1)
+        #y1 = self.hist.GetBinContent(1)
+        #for i in range(2,self.hist.GetNbinsX()):
+        #    # check if target value between contents of neighbouring bins
+        #    x2 = self.hist.GetBinLowEdge(i)
+        #    y2 = self.hist.GetBinContent(i)
+        #    first = None
+        #    if y>=y1 and y<y2:
+        #        first = True
+        #    elif y<=y1 and y>y2:
+        #        first = False
+        #
+        #    if first!=None:
+        #        # calculate interpolated x value
+        #        x = FitHistogram.interpolate(y,y1,y2,x1,x2)
+        #        # store lowest and highest x corresponding to y
+        #        if first and xlow==None:
+        #            xlow = x
+        #        elif not first:
+        #            xhigh = x
+        #    # move to next bin
+        #    x1 = x2
+        #    y1 = y2
 
         #
         # require result ( assumes that first and last bins are < ymax/2 ) and
         # correct for bin width / 2 ( assumes that bin value corresponds to center of bin )
         assert xlow!=None and xhigh!=None
-        return (xlow+dx,xhigh+dx,y)
+        return (xlow,xhigh,y)
+        #return (xlow+dx,xhigh+dx,y)
 
-    def quantile(self,q):
+    def quantile(self,prob):
+        ''' Return x-value to quantile q. 
+        '''
+        result = self.intersects(prob,cumulative=True,norm=True,direction=1)
+        #print(prob,result)
+        assert len(result)<2
+
+        return result[0] if result else None
         
 class FitCanvas:
 
@@ -88,7 +197,7 @@ class FitCanvas:
         assert self.fhist!=None
 
     def histogram(self):
-        print("fhist",self.fhist,self.fhist.hist)
+        #print("fhist",self.fhist,self.fhist.hist)
         return self.fhist.hist
             
     def fwhm(self):
@@ -98,6 +207,8 @@ parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFo
 parser.add_argument('--moduleType', '-m', help='module type', type=int, choices=[23,24,25], default=23)
 parser.add_argument('--fwhm', help='determining FWHM', action='store_true', default=False)
 parser.add_argument('--slices', '-s', help='fit in slices in y', action='store_true', default=False)
+parser.add_argument('--quantile', '-q', help='calculate quantiles corresponding to +- x sigma (can be repeated)', \
+                        action='append', type=float, default=[])
 parser.add_argument('file', help='input file', type=str, nargs=1, default=None)
 args = parser.parse_args()
 
@@ -116,7 +227,13 @@ slices = [ ]
 
 mainCnv.Draw()
 fitCanvas = FitCanvas(mainCnv,args.moduleType)
-if not args.slices:
+fwhmArrow = ROOT.TArrow()
+fwhmArrow.SetLineColor(2)
+fwhmArrow.SetLineWidth(2)
+quantLine = ROOT.TLine()
+quantLine.SetLineColor(4)
+quantLine.SetLineWidth(2)
+if fitCanvas.histogram().GetDimension()==1 and ( not args.slices ):
     assert fitCanvas.histogram().GetDimension()==1
     #print(fitCanvas.fwhm())
     x1,x2,y = fitCanvas.fwhm()
@@ -124,13 +241,24 @@ if not args.slices:
             10000*(x1+x2)/2.,10000*(x2-x1),10000*(x2-x1)/2/sqrt(2*log(2)),x1,x2))
 
     fitCanvas.pad.cd()
-    fwhmArrow = ROOT.TArrow()
-    fwhmArrow.SetLineColor(2)
-    fwhmArrow.SetLineWidth(2)
     fwhmArrow.DrawArrow(x1,y,x2,y,0.005,"<>")
+    
+    quantiles = [ ]
+    qlmax = slices[-1].hist.GetMaximum()/10.
+    for sigma in args.quantile:
+        qs = [ ]
+        for sgn in [-1,1]:
+            p = ROOT.TMath.Freq(sgn*sigma)
+            qs.append(slices[-1].quantile(p))
+            #print(sigma,sgn,p,qs[-1])
+        quantiles.append(qs)
+        if not ( None in qs ):
+            quantLine.DrawLine(qs[0],0.,qs[0],qlmax)
+            quantLine.DrawLine(qs[1],0.,qs[1],qlmax)
+
     fitCanvas.pad.Update()
 
-else:
+elif fitCanvas.histogram().GetDimension()==2 and args.slices:
     hist2D = fitCanvas.histogram()
     assert hist2D.GetDimension()==2
     yaxis = hist2D.GetYaxis()
@@ -142,9 +270,6 @@ else:
     #cnv = ROOT.TCanvas("cslice","cslice",1200,1200)
     #cnv.Divide(ncol,ncol)
     #slices = [ ]
-    fwhmArrow = ROOT.TArrow()
-    fwhmArrow.SetLineColor(2)
-    fwhmArrow.SetLineWidth(2)
     hNameBase = hist2D.GetName()
     hTitleBase = hist2D.GetTitle()
     for iby in range(nby):
@@ -173,6 +298,76 @@ else:
         print(fmt.format(yaxis.GetBinLowEdge(iby+1),yaxis.GetBinUpEdge(iby+1), \
                 10000*(x1+x2)/2.,10000*(x2-x1),10000*(x2-x1)/2/sqrt(2*log(2)),x1,x2))
         fwhmArrow.DrawArrow(x1,y,x2,y,0.005,"<>")
+
+        quantiles = [ ]
+        qlmax = slices[-1].hist.GetMaximum()/10.
+        for sigma in args.quantile:
+            qs = [ ]
+            for sgn in [-1,1]:
+                p = ROOT.TMath.Freq(sgn*sigma)
+                qs.append(slices[-1].quantile(p))
+                #print(sigma,sgn,p,qs[-1])
+            quantiles.append(qs)
+            if not ( None in qs ):
+                quantLine.DrawLine(qs[0],0.,qs[0],qlmax)
+                quantLine.DrawLine(qs[1],0.,qs[1],qlmax)
+                
         ROOT.gPad.Update()
-    #cnv.Update()
+    
+elif fitCanvas.histogram().GetDimension()==3:
+    #
+    # calculate summary of quantiles in x
+    #
+    h = fitCanvas.histogram()
+    nby = h.GetNbinsY()
+    ymin = h.GetYaxis().GetXmin()
+    ymax = h.GetYaxis().GetXmax()
+    nbz = h.GetNbinsZ()
+    zmin = h.GetZaxis().GetXmin()
+    zmax = h.GetZaxis().GetXmax()
+    print(nby,ymin,ymax,nbz,zmin,zmax)
+    #
+    # define summary histograms
+    #
+    summaries = [ ]
+    for isigma,sigma in enumerate(args.quantile):
+        hcentre = ROOT.TH2F(h.GetName()+"Qc"+str(isigma), \
+                            h.GetTitle()+" (center {:3.1f}#sigma interval)".format(sigma), \
+                            nby,ymin,ymax,nbz,zmin,zmax)
+        hcentre.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
+        hcentre.GetYaxis().SetTitle(h.GetZaxis().GetTitle())
+        hhalfwidth = ROOT.TH2F(h.GetName()+"Qhw"+str(isigma), \
+                               h.GetTitle()+" (half-width {:3.1f}#sigma interval)".format(sigma), \
+                               nby,ymin,ymax,nbz,zmin,zmax)
+        hhalfwidth.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
+        hhalfwidth.GetYaxis().SetTitle(h.GetZaxis().GetTitle())
+        summaries.append((hcentre,hhalfwidth))
+
+    for iy in range(nby):
+        for iz in range(nbz):
+            htmp = h.ProjectionX(iymin=iy+1,iymax=iy+1,izmin=iz+1,izmax=iz+1)
+            if htmp.GetSumOfWeights()<100:
+                continue
+            fhtmp = FitHistogram(htmp)
+            for isigma,sigma in enumerate(args.quantile):
+                q1 = fhtmp.quantile(ROOT.TMath.Freq(-sigma))
+                q2 = fhtmp.quantile(ROOT.TMath.Freq(sigma))
+                if q1!=None and q2!=None:
+                    hsum = summaries[isigma][0]
+                    ibin = hsum.GetBin(iy+1,iz+1)
+                    hsum.SetBinContent(ibin,(q1+q2)/2.)
+                    hsum = summaries[isigma][1]
+                    hsum.SetBinContent(ibin,(q2-q1)/2.)
+
+    nsigma = len(args.quantile)
+    c = ROOT.TCanvas("cSum","cSum",500*nsigma,1000)
+    c.Divide(nsigma,2)
+    for i in range(nsigma):
+        c.cd(i+1)
+        summaries[i][0].Draw("ZCOL")
+        ROOT.gPad.Update()
+        c.cd(nsigma+i+1)
+        summaries[i][1].Draw("ZCOL")
+        ROOT.gPad.Update()
+    c.Update()
     

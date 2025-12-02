@@ -421,3 +421,33 @@ widthVsPath:
    yNbins: 25
    yMin: 0.0
    yMax: 25
+
+res3DXVsDxDzModX:
+   histogramTitle: 'residuals 3D (x)'
+   baseCuts: 'tof<12.5&&hasRecHit>0'
+   xTitle: '#Delta x [#mum]'
+   xNbins: 100
+   xMin: -500
+   xMax: 500
+   zTitle: 'local dx/dz'
+   zNbins: 21
+   zMin: -1.05
+   zMax: 1.05
+   mType23:
+      variable: 'path.x()/path.z():floatMod(10000*localPos.x(),100):10000*(localPos.x()-rhLocalPos.x())'
+      yTitle: 'x modulo 100 #mum [#mum]'
+      yNbins: 20
+      yMin: 0
+      yMax: 100
+   mType24:
+      variable: 'path.x()/path.z():floatMod(10000*localPos.x(),100):10000*(localPos.x()-rhLocalPos.x())'
+      yTitle: 'x modulo 100 #mum [#mum]'
+      yNbins: 20
+      yMin: 0
+      yMax: 100
+   mType25:
+      variable: 'path.x()/path.z():floatMod(10000*localPos.x(),90):10000*(localPos.x()-rhLocalPos.x())'
+      yTitle: 'x modulo 90 #mum [#mum]'
+      yNbins: 18
+      yMin: 0
+      yMax: 90
