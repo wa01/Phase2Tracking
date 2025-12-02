@@ -535,15 +535,14 @@ vetoedHistoNames = args.vetoedHistograms.split(",")
 #
 # add cut for zone definition?
 #
-match args.zone:
-    case "barrel":
-        zoneCuts = "detNormal.Rho()>0.99"
-    case "endcap":
-        zoneCuts = "detNormal.Rho()<0.01"
-    case "tilted":
-        zoneCuts = "detNormal.Rho()>0.05&&detNormal.Rho()<0.095"
-    case _:
-        zoneCuts = ""
+if args.zone=="barrel":
+    zoneCuts = "detNormal.Rho()>0.99"
+elif args.zone=="endcap":
+    zoneCuts = "detNormal.Rho()<0.01"
+elif args.zone=="tilted":
+    zoneCuts = "detNormal.Rho()>0.05&&detNormal.Rho()<0.095"
+else:
+    zoneCuts = ""
 args.cuts = cutString(args.cuts,zoneCuts)
     
 #
