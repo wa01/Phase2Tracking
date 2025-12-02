@@ -16,7 +16,8 @@ class HistogramDefinition:
     optGenFields =  [ 'variable', 'baseCuts', 'effCuts', 'logY', 'logZ' ]
     # optional fields in the histogram section
     optHistFields = [ 'variable', 'histogramName', 'histogramTitle', \
-                          'xNbins', 'xMin', 'xMax', 'xTitle', 'yTitle', 'yNbins', 'yMin', 'yMax', \
+                          'xNbins', 'xMin', 'xMax', 'xTitle', 'yTitle', 'zTitle', \
+                          'yNbins', 'yMin', 'yMax', \
                           'zNbins', 'zMin', 'zMax', 'display', 'profile' ]
     optionalFields = list(set(optGenFields + optHistFields))
     allFields = list(set(requiredFields + optionalFields))

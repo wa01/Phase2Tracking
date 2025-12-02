@@ -520,6 +520,8 @@ parser.add_argument('--logZ', help='use log scale for z axis', action='store_tru
 parser.add_argument('--printTree', '-p', help='print TTree contents', action='store_true', default=False)
 parser.add_argument('--listHistograms', '-l', help='list predefined and selected histograms', \
                         action='store_true', default=False)
+parser.add_argument('--zone', '-z', help='restrict to zone in OT (barrel, tilted, endcap)', type=str, \
+                        choices=['barrel','tilted','endcap'], default=None)
 parser.add_argument('file', help='input file', type=str, nargs='+', default=None)
 args = parser.parse_args()
 outputFormats = [ ]
@@ -530,6 +532,20 @@ if args.output!=None:
 fitResiduals = args.fitResiduals.split(",") if args.fitResiduals else [ ]
 selectedHistoNames = args.selectedHistograms.split(",")
 vetoedHistoNames = args.vetoedHistograms.split(",")
+#
+# add cut for zone definition?
+#
+match args.zone:
+    case "barrel":
+        zoneCuts = "detNormal.Rho()>0.99"
+    case "endcap":
+        zoneCuts = "detNormal.Rho()<0.01"
+    case "tilted":
+        zoneCuts = "detNormal.Rho()>0.05&&detNormal.Rho()<0.095"
+    case _:
+        zoneCuts = ""
+args.cuts = cutString(args.cuts,zoneCuts)
+    
 #
 # load histogram definitions
 #
@@ -632,6 +648,8 @@ for cName in allHDefs.canvasNames():
         basename = os.path.join(args.output,c.GetName())
         if args.sampleName!=None:
             basename += "_" + args.sampleName
+        if args.zone!=None:
+            basename += "_" + args.zone
         print(basename)
         for fmt in outputFormats:
             c.SaveAs(basename+"."+fmt)
