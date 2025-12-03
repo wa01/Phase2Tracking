@@ -16,6 +16,8 @@ class FitHistogram:
         self.graph_ = None
         self.cumulativeGraph_ = None
         self.cumNormGraph_ = None
+        self.cumNormTGraph_ = None
+        self.cumNormSpline_ = None               # spline corresponding to normalized cumulative graph
 
     def graph(self):
         ''' Histogram converted to list of (x,y) coordinates with x = bin center and y = bin contents.
@@ -54,7 +56,20 @@ class FitHistogram:
             self.cumNormGraph_ = [ ( x,y/sum ) for x,y in cg ]
             
         return self.cumNormGraph_
-        
+
+    def cumulativeNormSpline(self):
+        ''' Create (TGraph and) TSpline3 from cumulativeNormGraph
+        '''
+        if self.cumNormTGraph_==None:
+            self.cumNormTGraph_ = ROOT.TGraph()
+            for x,y in self.cumulativeNormGraph():
+                self.cumNormTGraph_.SetPoint(self.cumNormTGraph_.GetN(),x,y)
+
+        if self.cumNormSpline_==None:
+            self.cumNormSpline_ = ROOT.TSpline3(self.hist.GetName()+"-spline",self.cumNormTGraph_)
+
+        return self.cumNormSpline_
+            
         
     def intersects(self,value,cumulative=False,norm=False,direction=0):
         ''' Calculate x-coordinates for intersection(s) of a graph defined by a list of (x,y) points sorted in x
@@ -172,7 +187,58 @@ class FitHistogram:
         assert len(result)<2
 
         return result[0] if result else None
-        
+
+    def findRootSpline(self,value,eps=0.001):
+        ''' Find position where spline derived from cumulative NormGraph= value. Assumes that the spline is \
+            monotonously increasing. Tolerance is eps*<difference between first and last point)
+        '''
+        #
+        # Make sure spline is available
+        #
+        spline = self.cumulativeNormSpline()
+        #
+        # Initialize from first and last point and verify that monotonicity
+        #
+        xl = spline.GetXmin()
+        yl = spline.Eval(xl)
+        xh = spline.GetXmax()
+        yh = spline.Eval(xh)
+        if ymin>=ymax:
+            print("findRootSpline: last value <= first value")
+            return None
+        #
+        # Check if inside values spanned by spline
+        #
+        if value<ymin or value>ymax:
+            print("findRootSpline: required value outside range")
+            return None
+        #
+        # tolerance for distance between points
+        #
+        dxmax = eps*(ymax-ymin)
+        #
+        # loop with cutoff in case of non-convergence
+        #
+        found = False
+        for i in range(1000):
+            if (xh-xl)<dxmax:
+                found = True
+                break
+            x = (xl+xh)/2.
+            y = spline.Eval(x)
+            if y<=value:
+                xl = x
+                yl = y
+            else:
+                xh = x
+                yh = y
+        if not found:
+            print("findRootSpline: did not converge")
+            return None
+
+        return (xl+xh)/2.
+            
+
 class FitCanvas:
 
     def __init__(self,canvas,mtype):
@@ -255,7 +321,8 @@ if fitCanvas.histogram().GetDimension()==1 and ( not args.slices ):
         qs = [ ]
         for sgn in [-1,1]:
             p = ROOT.TMath.Freq(sgn*sigma)
-            qs.append(slices[-1].quantile(p))
+            #qs.append(slices[-1].quantile(p))
+            qs.append(slices[-1].findRootSpline(p))
             #print(sigma,sgn,p,qs[-1])
         quantiles.append(qs)
         if not ( None in qs ):
@@ -311,7 +378,8 @@ elif fitCanvas.histogram().GetDimension()==2 and args.slices:
             qs = [ ]
             for sgn in [-1,1]:
                 p = ROOT.TMath.Freq(sgn*sigma)
-                qs.append(slices[-1].quantile(p))
+                #qs.append(slices[-1].quantile(p))
+                qs.append(slices[-1].findRootSpline(p))
                 #print(sigma,sgn,p,qs[-1])
             quantiles.append(qs)
             if not ( None in qs ):
@@ -388,8 +456,10 @@ elif fitCanvas.histogram().GetDimension()==3:
                 continue
             fhtmp = FitHistogram(htmp)
             for isigma,sigma in enumerate(args.quantile):
-                q1 = fhtmp.quantile(ROOT.TMath.Freq(-sigma))
-                q2 = fhtmp.quantile(ROOT.TMath.Freq(sigma))
+                #q1 = fhtmp.quantile(ROOT.TMath.Freq(-sigma))
+                #q2 = fhtmp.quantile(ROOT.TMath.Freq(sigma))
+                q1  = fhtmp.findRootSpline(ROOT.TMath.Freq(-sigma))
+                q2  = fhtmp.findRootSpline(ROOT.TMath.Freq(sigma))
                 if q1!=None and q2!=None:
                     hsum = summaries[isigma][0]
                     if nby==1:
@@ -426,6 +496,7 @@ elif fitCanvas.histogram().GetDimension()==3:
                             g.SetPoint(g.GetN(),x,y)
                         g.Draw("L")
                         dbgObjects.append(g)
+                        #
                         
                     dbgObjects[0].Update()
                     allDbgObjects[isigma].append(dbgObjects)
