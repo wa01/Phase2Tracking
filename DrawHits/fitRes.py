@@ -209,6 +209,8 @@ parser.add_argument('--fwhm', help='determining FWHM', action='store_true', defa
 parser.add_argument('--slices', '-s', help='fit in slices in y', action='store_true', default=False)
 parser.add_argument('--quantile', '-q', help='calculate quantiles corresponding to +- x sigma (can be repeated)', \
                         action='append', type=float, default=[])
+parser.add_argument('--dbgQuantiles', help='modX,dxdz pairs defining individual bins for the quantile determination', \
+                        action='append', type=str, default=[ ])
 parser.add_argument('file', help='input file', type=str, nargs=1, default=None)
 args = parser.parse_args()
 
@@ -221,6 +223,10 @@ for k in tf.GetListOfKeys():
         assert mainCnv==None
         mainCnv = k.ReadObj()
 assert mainCnv!=None
+
+dbgQuantPoints = [ ]
+for qp in args.dbgQuantiles:
+    dbgQuantPoints.append( tuple([float(x.strip()) for x in qp.strip().split(",")]) )
 
 canvases = [ ]
 slices = [ ]
@@ -331,18 +337,50 @@ elif fitCanvas.histogram().GetDimension()==3:
     #
     summaries = [ ]
     for isigma,sigma in enumerate(args.quantile):
-        hcentre = ROOT.TH2F(h.GetName()+"Qc"+str(isigma), \
-                            h.GetTitle()+" (center {:3.1f}#sigma interval)".format(sigma), \
-                            nby,ymin,ymax,nbz,zmin,zmax)
-        hcentre.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
-        hcentre.GetYaxis().SetTitle(h.GetZaxis().GetTitle())
-        hhalfwidth = ROOT.TH2F(h.GetName()+"Qhw"+str(isigma), \
-                               h.GetTitle()+" (half-width {:3.1f}#sigma interval)".format(sigma), \
-                               nby,ymin,ymax,nbz,zmin,zmax)
-        hhalfwidth.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
-        hhalfwidth.GetYaxis().SetTitle(h.GetZaxis().GetTitle())
+        y1 = ROOT.TMath.Freq(-sigma)
+        y2 = ROOT.TMath.Freq(sigma)
+        if nby==1:
+            hcentre = ROOT.TH1F(h.GetName()+"Qc"+str(isigma), \
+                                h.GetTitle()+" (mean from quantiles)".format(y1,y2), \
+                                nbz,zmin,zmax)
+            hcentre.GetXaxis().SetTitle(h.GetZaxis().GetTitle())
+            hcentre.GetYaxis().SetTitle("mean of {:4.1%}/{:4.1%} quantiles".format(y1,y2))
+            hhalfwidth = ROOT.TH1F(h.GetName()+"Qhw"+str(isigma), \
+                                   h.GetTitle()+" (#sigma from quantiles)".format(y1,y2), \
+                                   nbz,zmin,zmax)
+            hhalfwidth.GetXaxis().SetTitle(h.GetZaxis().GetTitle())
+            hhalfwidth.GetYaxis().SetTitle("#sigma from {:4.1%}/{:4.1%} quantiles".format(y1,y2))
+        elif nbz==1:
+            hcentre = ROOT.TH1F(h.GetName()+"Qc"+str(isigma), \
+                                h.GetTitle()+" (mean from quantiles)".format(y1,y2), \
+                                nby,ymin,ymax)
+            hcentre.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
+            hcentre.GetYaxis().SetTitle("mean of {:4.1%}/{:4.1%} quantiles".format(y1,y2))
+            hhalfwidth = ROOT.TH2F(h.GetName()+"Qhw"+str(isigma), \
+                                   h.GetTitle()+" (#sigma from quantiles)".format(y1,y2), \
+                                   nby,ymin,ymax)
+            hhalfwidth.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
+            hhalfwidth.GetYaxis().SetTitle("#sigma from {:4.1%}/{:4.1%} quantiles".format(y1,y2))
+        else:
+            hcentre = ROOT.TH2F(h.GetName()+"Qc"+str(isigma), \
+                                h.GetTitle()+" (mean from quantiles)".format(y1,y2), \
+                                nby,ymin,ymax,nbz,zmin,zmax)
+            hcentre.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
+            hcentre.GetYaxis().SetTitle(h.GetZaxis().GetTitle())
+            hcentre.GetZaxis().SetTitle("mean of {:4.1%}/{:4.1%} quantiles".format(y1,y2))
+            hhalfwidth = ROOT.TH2F(h.GetName()+"Qhw"+str(isigma), \
+                                   h.GetTitle()+" (#sigma from quantiles)".format(y1,y2), \
+                                   nby,ymin,ymax,nbz,zmin,zmax)
+            hhalfwidth.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
+            hhalfwidth.GetYaxis().SetTitle(h.GetZaxis().GetTitle())
+            hhalfwidth.GetZaxis().SetTitle("#sigma from {:4.1%}/{:4.1%} quantiles".format(y1,y2))
         summaries.append((hcentre,hhalfwidth))
 
+    dbgBins = [ ]
+    for y,z in dbgQuantPoints:
+        dbgBins.append( (h.GetYaxis().FindBin(y), h.GetZaxis().FindBin(z)) )
+
+    allDbgObjects = { x:[ ] for x in range(len(args.quantile)) }
     for iy in range(nby):
         for iz in range(nbz):
             htmp = h.ProjectionX(iymin=iy+1,iymax=iy+1,izmin=iz+1,izmax=iz+1)
@@ -354,20 +392,61 @@ elif fitCanvas.histogram().GetDimension()==3:
                 q2 = fhtmp.quantile(ROOT.TMath.Freq(sigma))
                 if q1!=None and q2!=None:
                     hsum = summaries[isigma][0]
-                    ibin = hsum.GetBin(iy+1,iz+1)
+                    if nby==1:
+                        ibin = hsum.GetBin(iz+1)
+                    elif nbz==1:
+                        ibin = hsum.GetBin(iy+1)
+                    else:
+                        ibin = hsum.GetBin(iy+1,iz+1)
                     hsum.SetBinContent(ibin,(q1+q2)/2.)
                     hsum = summaries[isigma][1]
-                    hsum.SetBinContent(ibin,(q2-q1)/2.)
+                    hsum.SetBinContent(ibin,(q2-q1)/2./sigma)
+
+                #allDbgObjects[isigma] = [ ]
+                if (iy+1,iz+1) in dbgBins:
+                    dbgObjects = [ ]
+                    hResDbg =htmp.Clone("hResDbg_"+str(isigma)+"_"+str(len(allDbgObjects[isigma])))
+                    hResDbg.SetTitle("hResDbg "+str(isigma)+" y"+str(iy+1)+" z"+str(iz+1))
+                    hResDbg.GetXaxis().SetTitle(h.GetXaxis().GetTitle())
+                    savePad = ROOT.gPad
+                    dbgObjects.append(ROOT.TCanvas("c"+hResDbg.GetName()[1:],"c"+hResDbg.GetName()[1:],500,500))
+                    dbgObjects[0].SetGridx(1)
+                    dbgObjects[0].SetGridy(1)
+                    dbgObjects.append(hResDbg)
+                    hResDbg.Scale(1./hResDbg.GetMaximum())
+                    hResDbg.Draw("hist")
+                    if q1!=None and q2!=None:
+                        quantLine.DrawLine(q1,0.,q1,hResDbg.GetMaximum()/1.)
+                        quantLine.DrawLine(q2,0.,q2,hResDbg.GetMaximum()/1.)
+                        g = ROOT.TGraph()
+                        g.SetLineColor(ROOT.kMagenta)
+                        g.SetLineStyle(2)
+                        #g.SetMarkerStyle(20)
+                        for x,y in fhtmp.cumulativeNormGraph():
+                            g.SetPoint(g.GetN(),x,y)
+                        g.Draw("L")
+                        dbgObjects.append(g)
+                        
+                    dbgObjects[0].Update()
+                    allDbgObjects[isigma].append(dbgObjects)
+                    savePad.cd()
 
     nsigma = len(args.quantile)
     c = ROOT.TCanvas("cSum","cSum",500*nsigma,1000)
     c.Divide(nsigma,2)
     for i in range(nsigma):
         c.cd(i+1)
-        summaries[i][0].Draw("ZCOL")
+        if summaries[i][0].GetDimension()==2:
+            ROOT.gPad.SetRightMargin(0.15)
+            summaries[i][0].Draw("ZCOL")
+        else:
+            summaries[i][0].Draw("HIST")
         ROOT.gPad.Update()
         c.cd(nsigma+i+1)
-        summaries[i][1].Draw("ZCOL")
+        if summaries[i][1].GetDimension()==2:
+            summaries[i][1].Draw("ZCOL")
+        else:
+            summaries[i][1].Draw("HIST")
         ROOT.gPad.Update()
     c.Update()
     
