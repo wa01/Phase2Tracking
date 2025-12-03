@@ -23,9 +23,9 @@
 <use name="SimDataFormats/TrackingHit"/>
 <use name="SimDataFormats/Vertex"/>
 <use name="DataFormats/HepMCCandidate"/>
-<use name="UserAnalysis/HitAnalyzer"/>
+<use name="Phase2Tracking/HitAnalyzer"/>
 <use name="root"/>
 
-<library name="UserAnalysisHitAnalyzerPlugin" file="RecHitTreeWA.cc">
+<library name="Phase2TrackingHitAnalyzerPlugin" file="RecHitTreeWA.cc">
   <flags EDM_PLUGIN="1"/>
 </library>

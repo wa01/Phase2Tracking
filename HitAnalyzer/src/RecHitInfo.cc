@@ -1,4 +1,4 @@
-#include "UserAnalysis/HitAnalyzer/interface/RecHitInfo.h"
+#include "Phase2Tracking/HitAnalyzer/interface/RecHitInfo.h"
 #include "DataFormats/DetId/interface/DetId.h"
 #include "DataFormats/Phase2TrackerCluster/interface/Phase2TrackerCluster1D.h"
 #include "SimDataFormats/Track/interface/SimTrackContainer.h"
