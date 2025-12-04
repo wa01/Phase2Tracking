@@ -357,9 +357,14 @@ fitCanvas = FitCanvas(mainCnv,args.moduleType)
 fwhmArrow = ROOT.TArrow()
 fwhmArrow.SetLineColor(2)
 fwhmArrow.SetLineWidth(2)
-quantLine = ROOT.TLine()
-quantLine.SetLineColor(4)
-quantLine.SetLineWidth(2)
+quantLines = [ ]
+for i in range(len(args.quantile)):
+    quantLine = ROOT.TLine()
+    quantLine.SetLineColor(4)
+    #quantLine.SetLineWidth(2)
+    quantLine.SetLineStyle(i+1)
+    quantLines.append(quantLine)
+#quantLine.SetLineWidth(2)
 if fitCanvas.histogram().GetDimension()==1 and ( not args.slices ):
     assert fitCanvas.histogram().GetDimension()==1
     #print(fitCanvas.fwhm())
@@ -372,7 +377,7 @@ if fitCanvas.histogram().GetDimension()==1 and ( not args.slices ):
     
     quantiles = [ ]
     qlmax = slices[-1].hist.GetMaximum()/10.
-    for sigma in args.quantile:
+    for isigma,sigma in enumerate(args.quantile):
         qs = [ ]
         for sgn in [-1,0,1]:
             p = ROOT.TMath.Freq(sgn*sigma)
@@ -381,9 +386,9 @@ if fitCanvas.histogram().GetDimension()==1 and ( not args.slices ):
             #print(sigma,sgn,p,qs[-1])
         quantiles.append(qs)
         if not ( None in qs ):
-            quantLine.DrawLine(qs[0],0.,qs[0],qlmax)
-            quantLine.DrawLine(qs[1],0.,qs[1],qlmax)
-            quantLine.DrawLine(qs[2],0.,qs[2],qlmax)
+            quantLines[isigma].DrawLine(qs[0],0.,qs[0],qlmax)
+            quantLines[0].DrawLine(qs[1],0.,qs[1],qlmax)
+            quantLines[isigma].DrawLine(qs[2],0.,qs[2],qlmax)
 
     fitCanvas.pad.Update()
 
@@ -575,6 +580,8 @@ elif fitCanvas.histogram().GetDimension()==3:
                 hResDbg.SetTitle(hResTitle)
                 hResDbg.GetXaxis().SetTitle(h.GetXaxis().GetTitle())
                 hResDbg.GetYaxis().SetTitle("fraction per bin / cumulatitive fraction")
+                hResDbg.SetFillStyle(1001)
+                hResDbg.SetFillColor(ROOT.kYellow)
                 #dbgObjects.append(ROOT.TCanvas("c"+hResDbg.GetName()[1:],"c"+hResDbg.GetName()[1:],500,500))
                 iDbgPad += 1
                 dbgObjects.append(allDbgObjects['canvas'].cd(iDbgPad))
@@ -588,11 +595,11 @@ elif fitCanvas.histogram().GetDimension()==3:
                     q0  = fhtmp.findRootSpline(ROOT.TMath.Freq(0.))
                     qp1  = fhtmp.findRootSpline(ROOT.TMath.Freq(sigma))
                     if qm1!=None:
-                        quantLine.DrawLine(qm1,0.,qm1,hResDbg.GetMaximum()/1.)
+                        quantLines[isigma].DrawLine(qm1,0.,qm1,hResDbg.GetMaximum()/1.)
                     if q0!=None:
-                        quantLine.DrawLine(q0,0.,q0,hResDbg.GetMaximum()/1.)
+                        quantLines[0].DrawLine(q0,0.,q0,hResDbg.GetMaximum()/1.)
                     if qp1!=None:
-                        quantLine.DrawLine(qp1,0.,qp1,hResDbg.GetMaximum()/1.)
+                        quantLines[isigma].DrawLine(qp1,0.,qp1,hResDbg.GetMaximum()/1.)
                     g = ROOT.TGraph()
                     g.SetLineColor(ROOT.kMagenta)
                     g.SetLineStyle(2)
