@@ -280,6 +280,7 @@ def fillHistoByDef(tree,hDef,extraCuts):
                 tree.Project(hName+"_2",variable, \
                             cutString(extraCuts,hDef.getParameter('baseCuts',mType),"moduleType=="+str(mType),effCuts))
                 histos[mType][3] = ROOT.TEfficiency(histos[mType][1],histos[mType][0])
+                histos[mType][3].SetMarkerStyle(20)
             else:
                 # always keep final histogram in 4th position
                 histos[mType][3] = histos[mType][0]
@@ -391,7 +392,7 @@ def drawHistoByDef(histos,hDef,logY=False,logZ=False,same=False):
                 histos[mType][2].GetXaxis().SetTitle(xtitle)
                 histos[mType][2].GetYaxis().SetTitle(ytitle)
                 histos[mType][3] = ROOT.TEfficiency(histos[mType][1],histos[mType][0])
-                histos[mType][3].SetMarkerSize(0.3)
+                histos[mType][3].SetMarkerStyle(20)
                 histos[mType][3].Draw("same Z")
             else:
                 histos[mType][0].SetTitle(hTitle)
