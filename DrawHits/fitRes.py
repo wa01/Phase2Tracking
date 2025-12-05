@@ -197,6 +197,12 @@ class FitHistogram:
         #
         spline = self.cumulativeNormSpline()
         #
+        # No result if first / last point is above / below required value
+        #
+        cGraph = self.cumulativeGraph()
+        if len(cGraph)==0 or cGraph[0][1]>value or cGraph[-1][1]<value:
+            return None
+        #
         # Initialize from first and last point and verify that monotonicity
         #
         xl = spline.GetXmin()
@@ -532,8 +538,12 @@ elif fitCanvas.histogram().GetDimension()==3:
         for iz in range(nbz):
             htmp = h.ProjectionX(iymin=iy+1,iymax=iy+1,izmin=iz+1,izmax=iz+1)
             fhtmp = FitHistogram(htmp)
+            quantiles = [ ]
             for isigma,sigma in enumerate(args.quantile):
-                if htmp.GetSumOfWeights()>100:
+                #if htmp.GetSumOfWeights()>100:
+                # ensure sufficient statistics
+                p1 = ROOT.TMath.Freq(-sigma)
+                if htmp.GetSumOfWeights()>3/p1:
                     #q1 = fhtmp.quantile(ROOT.TMath.Freq(-sigma))
                     #q2 = fhtmp.quantile(ROOT.TMath.Freq(sigma))
                     qm1  = fhtmp.findRootSpline(ROOT.TMath.Freq(-sigma))
@@ -543,6 +553,7 @@ elif fitCanvas.histogram().GetDimension()==3:
                     qm1 = None
                     q0 = None
                     qp1 = None
+                quantiles.append((qm1,q0,qp1))
                 hsum = summaries[isigma][0]
                 if nby==1:
                     ibin = hsum.GetBin(iz+1)
@@ -555,6 +566,8 @@ elif fitCanvas.histogram().GetDimension()==3:
                 else:
                     print("No median for bins",iy+1,iz+1,"of",htmp.GetName())
                     hsum.SetBinContent(ibin,-999999)
+                if htmp.GetName()=="hPull3DXVsDxDzW223_1_px" and (iy+1)==1  and (iz+1)==3:
+                    print("...",isigma,sigma,qm1,q0,qp1,htmp.GetSumOfWeights())
                 hsum = summaries[isigma][1]
                 if qm1!=None and qp1!=None:
                     hsum.SetBinContent(ibin,(qp1-qm1)/2./sigma)
@@ -581,7 +594,7 @@ elif fitCanvas.histogram().GetDimension()==3:
                 hResDbg.GetXaxis().SetTitle(h.GetXaxis().GetTitle())
                 hResDbg.GetYaxis().SetTitle("fraction per bin / cumulatitive fraction")
                 hResDbg.SetFillStyle(1001)
-                hResDbg.SetFillColor(ROOT.kYellow)
+                hResDbg.SetFillColor(ROOT.kOrange)
                 #dbgObjects.append(ROOT.TCanvas("c"+hResDbg.GetName()[1:],"c"+hResDbg.GetName()[1:],500,500))
                 iDbgPad += 1
                 dbgObjects.append(allDbgObjects['canvas'].cd(iDbgPad))
@@ -591,9 +604,10 @@ elif fitCanvas.histogram().GetDimension()==3:
                 hResDbg.Scale(1./hResDbg.GetMaximum())
                 hResDbg.Draw("hist")
                 for isigma,sigma in enumerate(args.quantile):
-                    qm1  = fhtmp.findRootSpline(ROOT.TMath.Freq(-sigma))
-                    q0  = fhtmp.findRootSpline(ROOT.TMath.Freq(0.))
-                    qp1  = fhtmp.findRootSpline(ROOT.TMath.Freq(sigma))
+                    #qm1  = fhtmp.findRootSpline(ROOT.TMath.Freq(-sigma))
+                    #q0  = fhtmp.findRootSpline(ROOT.TMath.Freq(0.))
+                    #qp1  = fhtmp.findRootSpline(ROOT.TMath.Freq(sigma))
+                    qm1,q0,qp1 = quantiles[isigma]
                     if qm1!=None:
                         quantLines[isigma].DrawLine(qm1,0.,qm1,hResDbg.GetMaximum()/1.)
                     if q0!=None:

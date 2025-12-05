@@ -398,6 +398,9 @@ def drawHistoByDef(histos,hDef,logY=False,logZ=False,same=False):
                 histos[mType][0].GetXaxis().SetTitle(xtitle)
                 histos[mType][0].GetYaxis().SetTitle(ytitle)
                 histos[mType][0].Draw("same" if same else "")
+            fitFunc = hDef.getParameter('fit')
+            if fitFunc!=None:
+                histos[mType][0].Fit(fitFunc,"Q","same")
         elif isProfile:
             histos[mType][0].SetTitle(hTitle)
             histos[mType][0].GetXaxis().SetTitle(xtitle)
