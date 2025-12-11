@@ -244,7 +244,27 @@ class FitHistogram:
 
         return (xl+xh)/2.
             
+    def fitGaus(self,prob1=0.,prob2=1.):
+        assert prob2>prob1
+        result = ( None, None )
+        xmin = self.hist.GetXaxis().GetXmin()
+        if prob1>0.:
+            xmin = self.findRootSpline(prob1)
+            if xmin==None:
+                return result
+        xmax = self.hist.GetXaxis().GetXmax()
+        if prob2<1.:
+            xmax = self.findRootSpline(prob2)
+            if xmin==None:
+                return result
 
+        fitPtr = self.hist.Fit("gaus","S0","",xmin,xmax)
+        if ( not fitPtr.IsValid() ) or fitPtr.IsEmpty():
+            return result
+
+        return fitPtr,self.hist.GetFunction("gaus")
+            
+        
 class FitCanvas:
 
     def __init__(self,canvas,mtype):
@@ -321,6 +341,53 @@ def setHistogramMinMax(histo,limits,margins=0.05):
         
     return (vmin,vmax)
 
+def defineMeanWidthHistograms(h,nby,ymin,ymax,nbz,zmin,zmax,isigma=None,sigma=None):
+    if isigma!=None:
+        y1 = ROOT.TMath.Freq(-sigma)
+        y2 = ROOT.TMath.Freq(sigma)
+        hcName = h.GetName()+"Qc"+str(isigma)
+        hcTitle = h.GetTitle()+" (median)"
+        hwName = h.GetName()+"Qhw"+str(isigma)
+        hwTitle = h.GetTitle()+" (#sigma from quantiles)".format(y1,y2)
+        hwAxis1Title = "median [#mum]"
+        hwAxis2Title = "#sigma from {:4.1%}/{:4.1%} quantiles [#mum]".format(y1,y2)
+    else:
+        y1 = None
+        y2 = None
+        hcName = h.GetName()+"Qc fit"
+        hcTitle = h.GetTitle()+" (fitted mean)"
+        hwName = h.GetName()+"Qhw fit"
+        hwTitle = h.GetTitle()+" (fitted sigma)"
+        hwAxis1Title = "mean [#mum]"
+        hwAxis2Title = "#sigma from fit [#mum]".format(y1,y2)
+    if nby==1:
+        hcentre = ROOT.TH1F(hcName,hcTitle,nbz,zmin,zmax)
+        hcentre.GetXaxis().SetTitle(h.GetZaxis().GetTitle())
+        hcentre.GetYaxis().SetTitle(hwAxis1Title)
+        hhalfwidth = ROOT.TH1F(hwName,hwTitle,nbz,zmin,zmax)
+        hhalfwidth.GetXaxis().SetTitle(h.GetZaxis().GetTitle())
+        hhalfwidth.GetYaxis().SetTitle(hwAxis2Title)
+    elif nbz==1:
+        hcentre = ROOT.TH1F(hcName,hcTitle,nby,ymin,ymax)
+        hcentre.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
+        hcentre.GetYaxis().SetTitle(hwAxis1Title)
+        hhalfwidth = ROOT.TH2F(hwName,hwTitle,nby,ymin,ymax)
+        hhalfwidth.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
+        hhalfwidth.GetYaxis().SetTitle(hwAxis2Title)
+    else:
+        hcentre = ROOT.TH2F(hcName,hctitle,nby,ymin,ymax,nbz,zmin,zmax)
+        hcentre.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
+        hcentre.GetYaxis().SetTitle(h.GetZaxis().GetTitle())
+        hcentre.GetZaxis().SetTitle(hwAxis1Title)
+        hhalfwidth = ROOT.TH2F(hwName,hwTitle,nby,ymin,ymax,nbz,zmin,zmax)
+        hhalfwidth.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
+        hhalfwidth.GetYaxis().SetTitle(h.GetZaxis().GetTitle())
+        hhalfwidth.GetZaxis().SetTitle(hwAxis2Title)
+        hhalfwidth.SetMinimum(0.)
+
+    return hcentre,hhalfwidth
+
+    
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument('--moduleType', '-m', help='module type', type=int, choices=[23,24,25], default=23)
 parser.add_argument('--fwhm', help='determining FWHM', action='store_true', default=False)
@@ -473,45 +540,48 @@ elif fitCanvas.histogram().GetDimension()==3:
     #
     summaries = [ ]
     for isigma,sigma in enumerate(args.quantile):
-        y1 = ROOT.TMath.Freq(-sigma)
-        y2 = ROOT.TMath.Freq(sigma)
-        if nby==1:
-            hcentre = ROOT.TH1F(h.GetName()+"Qc"+str(isigma), \
-                                h.GetTitle()+" (median)", \
-                                nbz,zmin,zmax)
-            hcentre.GetXaxis().SetTitle(h.GetZaxis().GetTitle())
-            hcentre.GetYaxis().SetTitle("median [#mum]")
-            hhalfwidth = ROOT.TH1F(h.GetName()+"Qhw"+str(isigma), \
-                                   h.GetTitle()+" (#sigma from quantiles)".format(y1,y2), \
-                                   nbz,zmin,zmax)
-            hhalfwidth.GetXaxis().SetTitle(h.GetZaxis().GetTitle())
-            hhalfwidth.GetYaxis().SetTitle("#sigma from {:4.1%}/{:4.1%} quantiles [#mum]".format(y1,y2))
-        elif nbz==1:
-            hcentre = ROOT.TH1F(h.GetName()+"Qc"+str(isigma), \
-                                h.GetTitle()+" (median)", \
-                                nby,ymin,ymax)
-            hcentre.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
-            hcentre.GetYaxis().SetTitle("median [#mum]")
-            hhalfwidth = ROOT.TH2F(h.GetName()+"Qhw"+str(isigma), \
-                                   h.GetTitle()+" (#sigma from quantiles)".format(y1,y2), \
-                                   nby,ymin,ymax)
-            hhalfwidth.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
-            hhalfwidth.GetYaxis().SetTitle("#sigma from {:4.1%}/{:4.1%} quantiles [#mum]".format(y1,y2))
-        else:
-            hcentre = ROOT.TH2F(h.GetName()+"Qc"+str(isigma), \
-                                h.GetTitle()+" (median)", \
-                                nby,ymin,ymax,nbz,zmin,zmax)
-            hcentre.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
-            hcentre.GetYaxis().SetTitle(h.GetZaxis().GetTitle())
-            hcentre.GetZaxis().SetTitle("median [#mum]")
-            hhalfwidth = ROOT.TH2F(h.GetName()+"Qhw"+str(isigma), \
-                                   h.GetTitle()+" (#sigma from quantiles)".format(y1,y2), \
-                                   nby,ymin,ymax,nbz,zmin,zmax)
-            hhalfwidth.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
-            hhalfwidth.GetYaxis().SetTitle(h.GetZaxis().GetTitle())
-            hhalfwidth.GetZaxis().SetTitle("#sigma from {:4.1%}/{:4.1%} quantiles [#mum]".format(y1,y2))
-            hhalfwidth.SetMinimum(0.)
+#!#         y1 = ROOT.TMath.Freq(-sigma)
+#!#         y2 = ROOT.TMath.Freq(sigma)
+#!#         if nby==1:
+#!#             hcentre = ROOT.TH1F(h.GetName()+"Qc"+str(isigma), \
+#!#                                 h.GetTitle()+" (median)", \
+#!#                                 nbz,zmin,zmax)
+#!#             hcentre.GetXaxis().SetTitle(h.GetZaxis().GetTitle())
+#!#             hcentre.GetYaxis().SetTitle("median [#mum]")
+#!#             hhalfwidth = ROOT.TH1F(h.GetName()+"Qhw"+str(isigma), \
+#!#                                    h.GetTitle()+" (#sigma from quantiles)".format(y1,y2), \
+#!#                                    nbz,zmin,zmax)
+#!#             hhalfwidth.GetXaxis().SetTitle(h.GetZaxis().GetTitle())
+#!#             hhalfwidth.GetYaxis().SetTitle("#sigma from {:4.1%}/{:4.1%} quantiles [#mum]".format(y1,y2))
+#!#         elif nbz==1:
+#!#             hcentre = ROOT.TH1F(h.GetName()+"Qc"+str(isigma), \
+#!#                                 h.GetTitle()+" (median)", \
+#!#                                 nby,ymin,ymax)
+#!#             hcentre.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
+#!#             hcentre.GetYaxis().SetTitle("median [#mum]")
+#!#             hhalfwidth = ROOT.TH2F(h.GetName()+"Qhw"+str(isigma), \
+#!#                                    h.GetTitle()+" (#sigma from quantiles)".format(y1,y2), \
+#!#                                    nby,ymin,ymax)
+#!#             hhalfwidth.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
+#!#             hhalfwidth.GetYaxis().SetTitle("#sigma from {:4.1%}/{:4.1%} quantiles [#mum]".format(y1,y2))
+#!#         else:
+#!#             hcentre = ROOT.TH2F(h.GetName()+"Qc"+str(isigma), \
+#!#                                 h.GetTitle()+" (median)", \
+#!#                                 nby,ymin,ymax,nbz,zmin,zmax)
+#!#             hcentre.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
+#!#             hcentre.GetYaxis().SetTitle(h.GetZaxis().GetTitle())
+#!#             hcentre.GetZaxis().SetTitle("median [#mum]")
+ #!#             hhalfwidth = ROOT.TH2F(h.GetName()+"Qhw"+str(isigma), \
+#!#                                    h.GetTitle()+" (#sigma from quantiles)".format(y1,y2), \
+#!#                                    nby,ymin,ymax,nbz,zmin,zmax)
+#!#             hhalfwidth.GetXaxis().SetTitle(h.GetYaxis().GetTitle())
+#!#             hhalfwidth.GetYaxis().SetTitle(h.GetZaxis().GetTitle())
+#!#             hhalfwidth.GetZaxis().SetTitle("#sigma from {:4.1%}/{:4.1%} quantiles [#mum]".format(y1,y2))
+ #!#             hhalfwidth.SetMinimum(0.)
+        hcentre,hhalfwidth = defineMeanWidthHistograms(h,nby,ymin,ymax,nbz,zmin,zmax,isigma,sigma)
         summaries.append((hcentre,hhalfwidth))
+    hcentre,hhalfwidth = defineMeanWidthHistograms(h,nby,ymin,ymax,nbz,zmin,zmax,None,None)
+    summaries.append((hcentre,hhalfwidth))
 
     dbgBins = set()
     if args.dbgAllQuantiles:
@@ -525,6 +595,7 @@ elif fitCanvas.histogram().GetDimension()==3:
     dbgBins = sorted(dbgBins)
 
     allDbgObjects = { x:[ ] for x in range(len(args.quantile)) }
+    allFitObjects = [ ]
     nDbg = len(dbgBins)
     nrow = ncol = int(sqrt(nDbg))
     while nrow*ncol<nDbg:
@@ -601,7 +672,8 @@ elif fitCanvas.histogram().GetDimension()==3:
                 dbgObjects[0].SetGridx(1)
                 dbgObjects[0].SetGridy(1)
                 dbgObjects.append(hResDbg)
-                hResDbg.Scale(1./hResDbg.GetMaximum())
+                hResDbgMax = hResDbg.GetMaximum()
+                hResDbg.Scale(1./hResDbgMax)
                 hResDbg.Draw("hist")
                 for isigma,sigma in enumerate(args.quantile):
                     #qm1  = fhtmp.findRootSpline(ROOT.TMath.Freq(-sigma))
@@ -626,6 +698,17 @@ elif fitCanvas.histogram().GetDimension()==3:
 
                 dbgObjects[0].Update()
                 allDbgObjects[isigma].append(dbgObjects)
+                fitPtr = None
+                fitFunc = None
+                if htmp.GetSumOfWeights()>100:
+                    fitPtr,fitFunc = fhtmp.fitGaus(ROOT.TMath.Freq(-2.),ROOT.TMath.Freq(2.))
+                    print(fitPtr,fitFunc)
+                    if fitPtr!=None:
+                        fitFunc2 = fitFunc.Clone()
+                        fitFunc2.SetParameter(0,fitFunc.GetParameter(0)/hResDbgMax)
+                        fitFunc2.Draw("same")
+                        allFitObjects.append((fitPtr,fitFunc2))
+                        dbgObjects[0].Update()
             allDbgObjects['canvas'].Update()
 
     if args.output:
@@ -639,8 +722,8 @@ elif fitCanvas.histogram().GetDimension()==3:
     cName = "cResMeanWidth_mT"+str(args.moduleType)
     
     c = ROOT.TCanvas(cName,h.GetTitle()+" (mean/width summary)",500*nsigma,1000)
-    c.Divide(nsigma,2)
-    for i in range(nsigma):
+    c.Divide(nsigma+1,2)
+    for i in range(nsigma+1):
         c.cd(i+1)
         if summaries[i][0].GetDimension()==2:
             ROOT.gPad.SetRightMargin(0.15)
@@ -650,12 +733,13 @@ elif fitCanvas.histogram().GetDimension()==3:
             setHistogramMinMax(summaries[i][0],(-250,250),margins=0.05)
             summaries[i][0].Draw("HIST")
         ROOT.gPad.Update()
-        c.cd(nsigma+i+1)
+        c.cd(nsigma+1+i+1)
         if summaries[i][1].GetDimension()==2:
             summaries[i][1].Draw("ZCOL")
         else:
             summaries[i][1].Draw("HIST")
         ROOT.gPad.Update()
+    
     c.Update()
     if args.output!=None:
         saveCanvas(c,args.file[0],args.output,outputFormats)
