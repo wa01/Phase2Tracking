@@ -709,6 +709,29 @@ elif fitCanvas.histogram().GetDimension()==3:
                         fitFunc2.Draw("same")
                         allFitObjects.append((fitPtr,fitFunc2))
                         dbgObjects[0].Update()
+                        hsum = summaries[-1][0]
+                        if nby==1:
+                            ibin = hsum.GetBin(iz+1)
+                        elif nbz==1:
+                            ibin = hsum.GetBin(iy+1)
+                        else:
+                            ibin = hsum.GetBin(iy+1,iz+1)
+                        hsum.SetBinContent(ibin,fitPtr.Parameter(1))
+                        hsum.SetBinError(ibin,fitPtr.Error(1))
+                        hsum = summaries[-1][1]
+                        if nby==1:
+                            ibin = hsum.GetBin(iz+1)
+                        elif nbz==1:
+                            ibin = hsum.GetBin(iy+1)
+                        else:
+                            ibin = hsum.GetBin(iy+1,iz+1)
+                        hsum.SetBinContent(ibin,fitPtr.Parameter(2))
+                        hsum.SetBinError(ibin,fitPtr.Error(2))
+                else:
+                    print("No median for bins",iy+1,iz+1,"of",htmp.GetName())
+                    hsum.SetBinContent(ibin,-999999)
+
+                        
             allDbgObjects['canvas'].Update()
 
     if args.output:
@@ -724,6 +747,7 @@ elif fitCanvas.histogram().GetDimension()==3:
     c = ROOT.TCanvas(cName,h.GetTitle()+" (mean/width summary)",500*nsigma,1000)
     c.Divide(nsigma+1,2)
     for i in range(nsigma+1):
+        hopt = "HIST" if i<nsigma else ""
         c.cd(i+1)
         if summaries[i][0].GetDimension()==2:
             ROOT.gPad.SetRightMargin(0.15)
@@ -731,13 +755,13 @@ elif fitCanvas.histogram().GetDimension()==3:
             summaries[i][0].Draw("ZCOL")
         else:
             setHistogramMinMax(summaries[i][0],(-250,250),margins=0.05)
-            summaries[i][0].Draw("HIST")
+            summaries[i][0].Draw(hopt)
         ROOT.gPad.Update()
         c.cd(nsigma+1+i+1)
         if summaries[i][1].GetDimension()==2:
             summaries[i][1].Draw("ZCOL")
         else:
-            summaries[i][1].Draw("HIST")
+            summaries[i][1].Draw(hopt)
         ROOT.gPad.Update()
     
     c.Update()
