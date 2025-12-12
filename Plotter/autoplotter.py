@@ -115,7 +115,7 @@ if __name__=="__main__":
         else:
           command += "cp %s /tmp/%s/.;" %(inputdir+'/*',uuid_)
           command += "cp %s /tmp/%s/.;" %(inputdir_sample+'/*',uuid_)
-        command += "python3 autoplotter.py --name {} --output ./ --config ./{} --filelist ./{} --postfix _{} {};".format(s,os.path.basename(args.config),flname,ij,data)
+        command += "python3 autoplotter.py --name {} --treeName {} --output ./ --config ./{} --filelist ./{} --postfix _{} {};".format(s,args.treeName,os.path.basename(args.config),flname,ij,data)
         if 'eos' in outputdir_sample:
           fname = "{}_hist_{}".format(samp.name,ij)
           command += "eoscp ./{0}.root {1}/{0}.root;".format(fname,outputdir_sample)
