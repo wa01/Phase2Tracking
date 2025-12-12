@@ -5,7 +5,9 @@ This script intends to make histograms in a flexible way based on RDataFrame.
 ## Structure
 
 [Plotter/python/plotter.py](https://github.com/HephyAnalysisSW/Phase2Tracking/blob/main/Plotter/python/plotter.py): The main implementation of the plotting functions.
+
 [Plotter/autoplotter.py](https://github.com/HephyAnalysisSW/Phase2Tracking/blob/main/Plotter/autoplotter.py): The interface to call plotter in command lines.
+
 [Plotter/configs/config_hits.yaml](https://github.com/HephyAnalysisSW/Phase2Tracking/blob/main/Plotter/configs/config_hits.yaml): An example config file that defines variables and histograms to plot. Details of the config is explained in the file.
 
 ## Usage
