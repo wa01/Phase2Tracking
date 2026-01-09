@@ -1,4 +1,4 @@
-#include "UserAnalysis/HitAnalyzer/interface/SimTrackInfo.h"
+#include "Phase2Tracking/HitAnalyzer/interface/SimTrackInfo.h"
 // #include "DataFormats/DetId/interface/DetId.h"
 #include "SimDataFormats/Track/interface/SimTrack.h"
 

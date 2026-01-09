@@ -38,9 +38,9 @@
 #include "DataFormats/Math/interface/Point3D.h"
 #include "DataFormats/Math/interface/Vector3D.h"
 
-#include "UserAnalysis/HitAnalyzer/interface/SimTrackInfo.h"
-#include "UserAnalysis/HitAnalyzer/interface/SimHitInfo.h"
-#include "UserAnalysis/HitAnalyzer/interface/RecHitInfo.h"
+#include "Phase2Tracking/HitAnalyzer/interface/SimTrackInfo.h"
+#include "Phase2Tracking/HitAnalyzer/interface/SimHitInfo.h"
+#include "Phase2Tracking/HitAnalyzer/interface/RecHitInfo.h"
 
 #include "TTree.h"
 
