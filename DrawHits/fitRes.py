@@ -258,11 +258,19 @@ class FitHistogram:
             if xmin==None:
                 return result
 
-        fitPtr = self.hist.Fit("gaus","S0","",xmin,xmax)
+        fitFunc = ROOT.TF1("mygaus","gaus(0)",xmin,xmax)
+        fitFunc.SetParameter(0,self.hist.GetMaximum())
+        fitFunc.SetParameter(1,0.)
+        fitFunc.SetParLimits(1,-10.,10.)
+        fitFunc.SetParameter(2,self.hist.GetRMS())
+        
+        fitPtr = self.hist.Fit(fitFunc,"S0")
+        #fitPtr = self.hist.Fit("gaus","S0","",xmin,xmax)
         if ( not fitPtr.IsValid() ) or fitPtr.IsEmpty():
             return result
 
-        return fitPtr,self.hist.GetFunction("gaus")
+        #return fitPtr,self.hist.GetFunction("gaus")
+        return fitPtr,fitFunc
             
         
 class FitCanvas:
@@ -700,6 +708,7 @@ elif fitCanvas.histogram().GetDimension()==3:
                 allDbgObjects[isigma].append(dbgObjects)
                 fitPtr = None
                 fitFunc = None
+                print(htmp.GetName(),"Sum of weights",htmp.GetSumOfWeights())
                 if htmp.GetSumOfWeights()>100:
                     fitPtr,fitFunc = fhtmp.fitGaus(ROOT.TMath.Freq(-2.),ROOT.TMath.Freq(2.))
                     print(fitPtr,fitFunc)
