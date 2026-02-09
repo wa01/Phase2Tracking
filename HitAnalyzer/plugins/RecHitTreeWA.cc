@@ -135,9 +135,15 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
   event.getByToken(tokenLinks_, pixelSimLinks);
 
   // Get the SimHits
-  edm::Handle<edm::PSimHitContainer> simHitsRaw[2];
-  event.getByToken(tokenSimHitsB_, simHitsRaw[0]);
-  event.getByToken(tokenSimHitsE_, simHitsRaw[1]);
+  edm::Handle<edm::PSimHitContainer> simHitHandle;
+  // edm::Handle<edm::PSimHitContainer> simHitsRaw[2];
+  // event.getByToken(tokenSimHitsB_, simHitsRaw[0]);
+  // event.getByToken(tokenSimHitsE_, simHitsRaw[1]);
+  std::vector<const edm::PSimHitContainer*> simHitsRaw;
+  event.getByToken(tokenSimHitsB_, simHitHandle);
+  simHitsRaw.push_back(simHitHandle.product());
+  event.getByToken(tokenSimHitsE_, simHitHandle);
+  simHitsRaw.push_back(simHitHandle.product());
 
   // Get the SimTracks
   edm::Handle<edm::SimTrackContainer> simTracksRaw;
@@ -158,9 +164,12 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
   simTrackTree->Fill();
 
   simHitInfo_.setupEvent(tTopo,tkGeom,pixelSimLinks.product(),simHitsRaw,*rechits.product(),&simTracks);
-  for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
-    for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
-	 simhitIt != simHitsRaw[simhitidx]->end(); ++simhitIt) {
+  // for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
+  //   for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
+  // 	 simhitIt != simHitsRaw[simhitidx]->end(); ++simhitIt) {
+  // loop over both barrel and endcap hits
+  for (auto simhitsId=simHitsRaw.begin(); simhitsId!=simHitsRaw.end(); ++simhitsId ) {
+    for (auto simhitIt=(**simhitsId).begin(); simhitIt!=(**simhitsId).end(); ++simhitIt) {
       // Get the detector unit's id
       DetId detId(simhitIt->detUnitId());
       unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
@@ -204,7 +213,7 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
 
     // Loop over the rechits in the detector unit
     for (edmNew::DetSet<Phase2TrackerRecHit1D>::const_iterator rechitIt = DSViter->begin();
-	 rechitIt != DSViter->end(); ++rechitIt) {
+    	 rechitIt != DSViter->end(); ++rechitIt) {
       recHitInfo_.fillRecHitInfo(*rechitIt,rawid,geomDetUnit,&pixelSimLinks,simTracks,simHitsRaw,debugHitMatch_);
     }
   }

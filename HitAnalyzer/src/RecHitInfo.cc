@@ -110,7 +110,7 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
 				const GeomDetUnit* geomDetUnit,
 				edm::Handle<edm::DetSetVector<PixelDigiSimLink> >* pixelSimLinks,
 				std::map<unsigned int, SimTrack>& simTracks,
-				edm::Handle<edm::PSimHitContainer>* simHitsRaw,
+				const std::vector<const edm::PSimHitContainer*>& simHitsRaw,
 				bool debugHitMatch) {
   // get DetUnit
   DetId detId(rawid);
@@ -138,19 +138,19 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
     clusterSimTrackIds.insert(simTrackIds.begin(),simTrackIds.end());
   }
   // debug
-  if ( clusterSimTrackIds.size()==0 ) {
-    std::cout << "** RecHit without SimTrackIds on detId " << rawid << " layer " << layer
-	      << " module type " << (unsigned int)tkGeom->getDetectorType(detId) << std::endl;
-    for (unsigned int i(0); i < clustIt->size(); ++i) {
-      unsigned int channel(Phase2TrackerDigi::pixelToChannel(clustIt->firstRow() + i, clustIt->column()));
-      std::cout << " channel " << clustIt->firstRow()+i << " " << clustIt->column() << std::endl;
-      std::vector<unsigned int> simTrackIds_unselected(getSimTrackId(*pixelSimLinks, detId, channel));
-      std::cout << "  simTrackIds";
-      for ( auto istid=simTrackIds_unselected.begin();
-	    istid!=simTrackIds_unselected.end(); ++istid )  std::cout << " " << *istid;
-      std::cout << std::endl;
-    }
-  }
+  // if ( clusterSimTrackIds.size()==0 ) {
+  //   std::cout << "** RecHit without SimTrackIds on detId " << rawid << " layer " << layer
+  // 	      << " module type " << (unsigned int)tkGeom->getDetectorType(detId) << std::endl;
+  //   for (unsigned int i(0); i < clustIt->size(); ++i) {
+  //     unsigned int channel(Phase2TrackerDigi::pixelToChannel(clustIt->firstRow() + i, clustIt->column()));
+  //     std::cout << " channel " << clustIt->firstRow()+i << " " << clustIt->column() << std::endl;
+  //     std::vector<unsigned int> simTrackIds_unselected(getSimTrackId(*pixelSimLinks, detId, channel));
+  //     std::cout << "  simTrackIds";
+  //     for ( auto istid=simTrackIds_unselected.begin();
+  // 	    istid!=simTrackIds_unselected.end(); ++istid )  std::cout << " " << *istid;
+  //     std::cout << std::endl;
+  //   }
+  // }
   // debug
   // find the closest simhit
   // this is needed because otherwise you get cases with simhits and clusters being swapped
@@ -158,10 +158,13 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
   const PSimHit* simhit = 0;  // bad naming to avoid changing code below. This is the closest simhit in x
   float minx = 10000;
   std::vector<const PSimHit*> trackSimHits;
-  for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
-    for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
-	 simhitIt != simHitsRaw[simhitidx]->end();
-	 ++simhitIt) {
+  // for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
+  //   for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
+  // 	 simhitIt != simHitsRaw[simhitidx]->end();
+  // 	 ++simhitIt) {
+  
+  for (auto simhitsIt=simHitsRaw.begin(); simhitsIt!=simHitsRaw.end(); ++simhitsIt) {
+    for (auto simhitIt=(**simhitsIt).begin(); simhitIt!=(**simhitsIt).end(); ++simhitIt) {
       // check SimHit detId is the same with the RecHit
       if (rawid == simhitIt->detUnitId()) {
 	// auto it = std::lower_bound(clusterSimTrackIds.begin(), clusterSimTrackIds.end(), simhitIt->trackId());

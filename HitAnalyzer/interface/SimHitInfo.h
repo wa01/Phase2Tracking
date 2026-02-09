@@ -84,7 +84,7 @@ class SimHitInfo {
   
   std::vector<unsigned int> getSimTrackId(const DetId&, unsigned int);
   
-  void fillSimHitsPerDet(edm::Handle<edm::PSimHitContainer> *simHitsRaw);
+  void fillSimHitsPerDet(const std::vector<const edm::PSimHitContainer*>& simHitsRaw);
 
   void fillRecHitsPerDet(const Phase2TrackerRecHit1DCollectionNew& rechits);
 
@@ -100,7 +100,7 @@ class SimHitInfo {
 
   void setupEvent(const TrackerTopology* topo, const TrackerGeometry* geom,
 		  const edm::DetSetVector<PixelDigiSimLink>* links,
-		  edm::Handle<edm::PSimHitContainer> *simHitsRaw,
+		  const std::vector<const edm::PSimHitContainer*>& simHitsRaw,
 		  const Phase2TrackerRecHit1DCollectionNew& rechits,
 		  const TrackIdSimTrackMap* simTrackMap) {
     tTopo_ = topo;

@@ -53,15 +53,18 @@ std::vector<unsigned int> SimHitInfo::getSimTrackId(const DetId& detId, unsigned
   return retvec;
 };
 
-void SimHitInfo::fillSimHitsPerDet(edm::Handle<edm::PSimHitContainer> *simHitsRaw) {
+void SimHitInfo::fillSimHitsPerDet(const std::vector<const edm::PSimHitContainer*>& simHitsRaw) {
   //
   // fill map of SimHits / detId
   //
   simHitsPerDet_.clear();
-  for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
-    // std::cout << simhitidx << " " << simHitsRaw[simhitidx]->size() << std::endl;
-    for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
-	 simhitIt != simHitsRaw[simhitidx]->end(); ++simhitIt) {
+  // for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
+  //   // std::cout << simhitidx << " " << simHitsRaw[simhitidx]->size() << std::endl;
+  //   for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
+  //	 simhitIt != simHitsRaw[simhitidx]->end(); ++simhitIt) {
+  // loop over both barrel and endcap hits
+  for (auto simhitsIt=simHitsRaw.begin(); simhitsIt!=simHitsRaw.end(); ++simhitsIt) {
+    for (auto simhitIt=(**simhitsIt).begin(); simhitIt!=(**simhitsIt).end(); ++simhitIt) {
       const PSimHit* simhit(&*simhitIt);
       unsigned int rawid(simhit->detUnitId());
       DetSimHitsMap::iterator idet(simHitsPerDet_.find(rawid));
