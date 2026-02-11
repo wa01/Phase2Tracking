@@ -1,5 +1,5 @@
-#ifndef HITANALYZER_SIMHITINFO_H
-#define HITANALYZER_SIMHITINFO_H
+#ifndef HITANALYZER_COMMONHITINFO_H
+#define HITANALYZER_COMMONHITINFO_H
 
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
 
@@ -19,6 +19,8 @@
 typedef ROOT::Math::DisplacementVector2D<ROOT::Math::Cartesian2D<float> > XYVectorF;
 
 class CommonHitInfo {
+  
+ public:
 
   typedef std::map< unsigned int, std::vector<const PSimHit*> > DetSimHitsMap;
   typedef std::pair< unsigned int, std::vector<const PSimHit*> > DetSimHitsPair;
@@ -29,8 +31,6 @@ class CommonHitInfo {
   typedef std::vector<RecHitDistancePair> RecHitDistancePairs;
 
   typedef std::map<unsigned int, SimTrack> TrackIdSimTrackMap;
-  
- public:
 
   CommonHitInfo() {
     tTopo_ = 0;
@@ -59,6 +59,7 @@ class CommonHitInfo {
     tkGeom_ = geom;
     pixelSimLinks = links;
     simTracksById_ = simTrackMap;
+    //
     // fill SimHit map
     //
     fillSimHitsPerDet(simHitsRaw);
@@ -67,16 +68,25 @@ class CommonHitInfo {
     //
     fillRecHitsPerDet(rechits);
   }
+
+  const DetSimHitsMap& simHitsPerDet() {
+    return simHitsPerDet_;
+  }
+
+  const DetRecHitsMap& recHitsPerDet() {
+    return recHitsPerDet_;
+  }
   
- private:
+ protected:
   const TrackerTopology* tTopo_;
   const TrackerGeometry* tkGeom_;
   const edm::DetSetVector<PixelDigiSimLink>* pixelSimLinks;
+  const TrackIdSimTrackMap* simTracksById_;
 
+ private:
   DetSimHitsMap simHitsPerDet_;
   DetRecHitsMap recHitsPerDet_;
 
-  const TrackIdSimTrackMap* simTracksById_;
 };
 
 #endif

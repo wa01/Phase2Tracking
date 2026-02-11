@@ -202,35 +202,60 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
   simTrackTree->Fill();
 
   simHitInfo_.setupEvent(tTopo,tkGeom,pixelSimLinks.product(),shInfoSimHitsRaw,*rechits.product(),&simTracks);
-  // for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
-  //   for (edm::PSimHitContainer::const_iterator simhitIt(shInfoSimHitsRaw[simhitidx]->begin());
-  // 	 simhitIt != shInfoSimHitsRaw[simhitidx]->end(); ++simhitIt) {
-  // loop over both barrel and endcap hits
-  for (auto simhitsId=shInfoSimHitsRaw.begin(); simhitsId!=shInfoSimHitsRaw.end(); ++simhitsId ) {
-    for (auto simhitIt=(**simhitsId).begin(); simhitIt!=(**simhitsId).end(); ++simhitIt) {
-      // Get the detector unit's id
-      DetId detId(simhitIt->detUnitId());
-      unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
-      layer += tTopo->layer(detId);    
-      //hitInfo->Hit_ModuleType.push_back((unsigned short)(tkGeom->getDetectorType(detId)));
-      TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
-      // Restrict to Phase2 OT
-      if ( mType!=TrackerGeometry::ModuleType::Ph2PSP && 
-	   mType!=TrackerGeometry::ModuleType::Ph2PSS &&
-	   mType!=TrackerGeometry::ModuleType::Ph2SS )  continue;
+  for (auto detHitsIt=simHitInfo_.simHitsPerDet().begin(); detHitsIt!=simHitInfo_.simHitsPerDet().end(); ++detHitsIt ) {
+    DetId detId(detHitsIt->first);
+    unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
+    layer += tTopo->layer(detId);    
+    //hitInfo->Hit_ModuleType.push_back((unsigned short)(tkGeom->getDetectorType(detId)));
+    TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
+    // Restrict to Phase2 OT
+    if ( mType!=TrackerGeometry::ModuleType::Ph2PSP && 
+	 mType!=TrackerGeometry::ModuleType::Ph2PSS &&
+	 mType!=TrackerGeometry::ModuleType::Ph2SS )  continue;
 
-      // Get the geomdet
-      const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
-      if (!geomDetUnit) {
-	std::cout << "*** did not find geomDetUnit ***" << std::endl;
-	continue;
-      }
-
-      // std::cout << "Filling sim hit info" << std::endl;
-      simHitInfo_.fillSimHitInfo(*simhitIt);
-      
+    // Get the geomdet
+    const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
+    if (!geomDetUnit) {
+      std::cout << "*** did not find geomDetUnit ***" << std::endl;
+      continue;
     }
+    std::cout << "DetId " << detHitsIt->first << " " << detHitsIt->second.size() << std::endl << std::flush;
+    
+    for (auto simhitIt=detHitsIt->second.begin(); simhitIt!=detHitsIt->second.end(); ++simhitIt) {
+      // std::cout << "Filling sim hit info" << std::endl;
+      simHitInfo_.fillSimHitInfo(**simhitIt);
+    }
+    std::cout << "... done" << std::endl << std::flush;
   }
+  // // for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
+  // //   for (edm::PSimHitContainer::const_iterator simhitIt(shInfoSimHitsRaw[simhitidx]->begin());
+  // // 	 simhitIt != shInfoSimHitsRaw[simhitidx]->end(); ++simhitIt) {
+  // // loop over both barrel and endcap hits
+  // for (auto simhitsId=shInfoSimHitsRaw.begin(); simhitsId!=shInfoSimHitsRaw.end(); ++simhitsId ) {
+  //   for (auto simhitIt=(**simhitsId).begin(); simhitIt!=(**simhitsId).end(); ++simhitIt) {
+  //     // Get the detector unit's id
+  //     DetId detId(simhitIt->detUnitId());
+  //     unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
+  //     layer += tTopo->layer(detId);    
+  //     //hitInfo->Hit_ModuleType.push_back((unsigned short)(tkGeom->getDetectorType(detId)));
+  //     TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
+  //     // Restrict to Phase2 OT
+  //     if ( mType!=TrackerGeometry::ModuleType::Ph2PSP && 
+  // 	   mType!=TrackerGeometry::ModuleType::Ph2PSS &&
+  // 	   mType!=TrackerGeometry::ModuleType::Ph2SS )  continue;
+
+  //     // Get the geomdet
+  //     const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
+  //     if (!geomDetUnit) {
+  // 	std::cout << "*** did not find geomDetUnit ***" << std::endl;
+  // 	continue;
+  //     }
+
+  //     // std::cout << "Filling sim hit info" << std::endl;
+  //     simHitInfo_.fillSimHitInfo(*simhitIt);
+      
+  //   }
+  // }
   simHitTree->Fill();
 
   for (Phase2TrackerRecHit1DCollectionNew::const_iterator DSViter = rechits->begin();
@@ -288,4 +313,3 @@ void RecHitTreeWA::initEventStructure()
 }
 
 DEFINE_FWK_MODULE(RecHitTreeWA);
-

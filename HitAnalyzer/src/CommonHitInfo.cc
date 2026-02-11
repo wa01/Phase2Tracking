@@ -146,4 +146,3 @@ CommonHitInfo::matchRecHitOnDet(const PSimHit* simHit, const DetId& detId,
 	    });
   return matchedRecHits;
 };
-
