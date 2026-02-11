@@ -163,7 +163,10 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
   // 	 simhitIt != simHitsRaw[simhitidx]->end();
   // 	 ++simhitIt) {
   
+  // std::cout << "#hits =";
+  std::cout << clusterSimTrackIds.size() << " trackIds for cluster" << std::endl;
   for (auto simhitsIt=simHitsRaw.begin(); simhitsIt!=simHitsRaw.end(); ++simhitsIt) {
+    // std::cout << " " << (**simhitsIt).size();
     for (auto simhitIt=(**simhitsIt).begin(); simhitIt!=(**simhitsIt).end(); ++simhitIt) {
       // check SimHit detId is the same with the RecHit
       if (rawid == simhitIt->detUnitId()) {
@@ -179,6 +182,7 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
       }
     }
   }
+  std::cout << "  hasSimHit " << (simhit!=0) << std::endl;
   if ( debugHitMatch ) {
     if ( trackSimHits.size()==0 || trackSimHits.size()>1 ) {
       TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
@@ -204,17 +208,23 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
 		  << ", entry-exit (y) " << (**itsh).entryPoint().y() << " / " << (**itsh).exitPoint().y() << std::endl;
       }
       if ( trackSimHits.size()==0 ) {
+	std::cout << "--- clusterSimTrackIds " << clusterSimTrackIds.size()
+		  << "  clusterSize " << recHit.cluster()->size() << std::endl;
 	for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
 	  for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
 	       simhitIt != simHitsRaw[simhitidx]->end(); ++simhitIt) {
 	    // check SimHit detId is the same with the RecHit
 	    if (rawid == simhitIt->detUnitId()) {
+	      float shxMin = std::min(simhitIt->entryPoint().x(),simhitIt->exitPoint().x());
+	      float shxMax = std::max(simhitIt->entryPoint().x(),simhitIt->exitPoint().x());
+	      if ( ( localPosClu.x()>=shxMin ) && ( localPosClu.x()<=shxMax ) ) {
 	      std::cout << " SimHit: pabs = " << simhitIt->pabs()
 			<< " loss " << simhitIt->energyLoss() << ", pdgId " << simhitIt->particleType()
 			<< ", entry-exit (x) " << simhitIt->entryPoint().x()
 			<< " / " << simhitIt->exitPoint().x() << ", "
 			<< ", entry-exit (y) " << simhitIt->entryPoint().y()
 			<< " / " << simhitIt->exitPoint().y() << std::endl;
+	      }
 	    }
 	  }
 	}

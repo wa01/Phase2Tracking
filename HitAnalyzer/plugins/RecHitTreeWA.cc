@@ -66,6 +66,9 @@ class RecHitTreeWA : public edm::one::EDAnalyzer<edm::one::SharedResources> {
     const edm::EDGetTokenT<edm::PSimHitContainer> tokenSimHitsE_;
     const edm::EDGetTokenT<edm::SimTrackContainer> tokenSimTracks_;
 
+    std::vector<edm::EDGetTokenT<edm::PSimHitContainer>> shInfoSimHitTokens_;
+    std::vector<edm::EDGetTokenT<edm::PSimHitContainer>> rhInfoSimHitTokens_;
+
     const double simtrackminpt_;
 
     SimHitInfo simHitInfo_;
@@ -105,6 +108,26 @@ RecHitTreeWA::RecHitTreeWA(const edm::ParameterSet& cfg)
     simtrackminpt_(cfg.getParameter<double>("SimTrackMinPt")),
     debugHitMatch_(cfg.getParameter<bool>("debugHitMatch"))
 {
+  //
+  // SimHit collections for the SimHitInfo part
+  //
+  const edm::ParameterSet shInfoPSet(cfg.getParameter<edm::ParameterSet>("simHitInfo"));
+  const std::vector<edm::InputTag>
+    shInfoSimHitTags(shInfoPSet.getParameter<std::vector<edm::InputTag>>("simHits"));
+  for ( auto vpsetIt=shInfoSimHitTags.begin(); vpsetIt!=shInfoSimHitTags.end(); ++vpsetIt ) {
+    std::cout << "Getting shInfoSimHitToken" << std::endl;
+    shInfoSimHitTokens_.push_back(consumes<edm::PSimHitContainer>(*vpsetIt));
+  }
+  //
+  // RecHit collections for the RecHitInfo part
+  //
+  const edm::ParameterSet rhInfoPSet(cfg.getParameter<edm::ParameterSet>("recHitInfo"));
+  const std::vector<edm::InputTag>
+    rhInfoSimHitTags(rhInfoPSet.getParameter<std::vector<edm::InputTag>>("simHits"));
+  for ( auto vpsetIt=rhInfoSimHitTags.begin(); vpsetIt!=rhInfoSimHitTags.end(); ++vpsetIt ) {
+    std::cout << "Getting rhInfoSimHitToken" << std::endl;
+    rhInfoSimHitTokens_.push_back(consumes<edm::PSimHitContainer>(*vpsetIt));
+  }
   //recHitInfo_ = new RecHitInfo;
   //simTrackInfo = new SimTrackInfo;
   //simHitInfo_ = new SimHitInfo();
@@ -133,17 +156,32 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
   // Get the PixelDigiSimLinks
   edm::Handle<edm::DetSetVector<PixelDigiSimLink> > pixelSimLinks;
   event.getByToken(tokenLinks_, pixelSimLinks);
-
-  // Get the SimHits
+  //
+  // Get the SimHits for SimHitInfo
+  //
   edm::Handle<edm::PSimHitContainer> simHitHandle;
   // edm::Handle<edm::PSimHitContainer> simHitsRaw[2];
   // event.getByToken(tokenSimHitsB_, simHitsRaw[0]);
   // event.getByToken(tokenSimHitsE_, simHitsRaw[1]);
-  std::vector<const edm::PSimHitContainer*> simHitsRaw;
-  event.getByToken(tokenSimHitsB_, simHitHandle);
-  simHitsRaw.push_back(simHitHandle.product());
-  event.getByToken(tokenSimHitsE_, simHitHandle);
-  simHitsRaw.push_back(simHitHandle.product());
+  std::vector<const edm::PSimHitContainer*> shInfoSimHitsRaw;
+  for ( auto tokenIt=shInfoSimHitTokens_.begin(); tokenIt!=shInfoSimHitTokens_.end(); ++tokenIt ) {
+    event.getByToken(*tokenIt, simHitHandle);
+    shInfoSimHitsRaw.push_back(simHitHandle.product());
+  }
+  //
+  // Get the SimHits for RecHitInfo
+  //
+  // edm::Handle<edm::PSimHitContainer> simHitHandle;
+  std::vector<const edm::PSimHitContainer*> rhInfoSimHitsRaw;
+  for ( auto tokenIt=rhInfoSimHitTokens_.begin(); tokenIt!=rhInfoSimHitTokens_.end(); ++tokenIt ) {
+    event.getByToken(*tokenIt, simHitHandle);
+    rhInfoSimHitsRaw.push_back(simHitHandle.product());
+  }
+  
+  // event.getByToken(tokenSimHitsB_, simHitHandle);
+  // shInfoSimHitsRaw.push_back(simHitHandle.product());
+  // event.getByToken(tokenSimHitsE_, simHitHandle);
+  // shInfoSimHitsRaw.push_back(simHitHandle.product());
 
   // Get the SimTracks
   edm::Handle<edm::SimTrackContainer> simTracksRaw;
@@ -163,12 +201,12 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
   }
   simTrackTree->Fill();
 
-  simHitInfo_.setupEvent(tTopo,tkGeom,pixelSimLinks.product(),simHitsRaw,*rechits.product(),&simTracks);
+  simHitInfo_.setupEvent(tTopo,tkGeom,pixelSimLinks.product(),shInfoSimHitsRaw,*rechits.product(),&simTracks);
   // for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
-  //   for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
-  // 	 simhitIt != simHitsRaw[simhitidx]->end(); ++simhitIt) {
+  //   for (edm::PSimHitContainer::const_iterator simhitIt(shInfoSimHitsRaw[simhitidx]->begin());
+  // 	 simhitIt != shInfoSimHitsRaw[simhitidx]->end(); ++simhitIt) {
   // loop over both barrel and endcap hits
-  for (auto simhitsId=simHitsRaw.begin(); simhitsId!=simHitsRaw.end(); ++simhitsId ) {
+  for (auto simhitsId=shInfoSimHitsRaw.begin(); simhitsId!=shInfoSimHitsRaw.end(); ++simhitsId ) {
     for (auto simhitIt=(**simhitsId).begin(); simhitIt!=(**simhitsId).end(); ++simhitIt) {
       // Get the detector unit's id
       DetId detId(simhitIt->detUnitId());
@@ -214,7 +252,7 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
     // Loop over the rechits in the detector unit
     for (edmNew::DetSet<Phase2TrackerRecHit1D>::const_iterator rechitIt = DSViter->begin();
     	 rechitIt != DSViter->end(); ++rechitIt) {
-      recHitInfo_.fillRecHitInfo(*rechitIt,rawid,geomDetUnit,&pixelSimLinks,simTracks,simHitsRaw,debugHitMatch_);
+      recHitInfo_.fillRecHitInfo(*rechitIt,rawid,geomDetUnit,&pixelSimLinks,simTracks,rhInfoSimHitsRaw,debugHitMatch_);
     }
   }
   recHitTree->Fill();
