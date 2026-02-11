@@ -45,31 +45,31 @@ void RecHitInfo::setBranches(TTree& tree) {
   tree.Branch("nSimTracks",	&recHitData.nSimTracks);
 };
 
-std::vector<unsigned int> RecHitInfo::getSimTrackId(
-    edm::Handle<edm::DetSetVector<PixelDigiSimLink> >& pixelSimLinks,
-    const DetId& detId, unsigned int channel) {
-  std::vector<unsigned int> retvec;
-  edm::DetSetVector<PixelDigiSimLink>::const_iterator DSViter(pixelSimLinks->find(detId));
-  if (DSViter == pixelSimLinks->end())
-    return retvec;
-  for (edm::DetSet<PixelDigiSimLink>::const_iterator it = DSViter->data.begin(); it != DSViter->data.end(); ++it) {
-    if (channel == it->channel()) {
-      retvec.push_back(it->SimTrackId());
-    }
-  }
-  return retvec;
-}
+// std::vector<unsigned int> RecHitInfo::getSimTrackId(
+//     edm::Handle<edm::DetSetVector<PixelDigiSimLink> >& pixelSimLinks,
+//     const DetId& detId, unsigned int channel) {
+//   std::vector<unsigned int> retvec;
+//   edm::DetSetVector<PixelDigiSimLink>::const_iterator DSViter(pixelSimLinks->find(detId));
+//   if (DSViter == pixelSimLinks->end())
+//     return retvec;
+//   for (edm::DetSet<PixelDigiSimLink>::const_iterator it = DSViter->data.begin(); it != DSViter->data.end(); ++it) {
+//     if (channel == it->channel()) {
+//       retvec.push_back(it->SimTrackId());
+//     }
+//   }
+//   return retvec;
+// }
 
 void RecHitInfo::fillSimHitInfo(const PSimHit& simHit) {
   //
   // Get the detector unit's id
   //
   DetId detId(simHit.detUnitId());
-  unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
-  layer += tTopo->layer(detId);
-  TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
+  unsigned int layer = (tTopo_->side(detId) != 0) * 1000;  // don't split up endcap sides
+  layer += tTopo_->layer(detId);
+  TrackerGeometry::ModuleType mType = tkGeom_->getDetectorType(detId);
   // Get the geomdet
-  const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
+  const GeomDetUnit* geomDetUnit(tkGeom_->idToDetUnit(detId));
   if (!geomDetUnit) {
 	std::cout << "*** did not find geomDetUnit ***" << std::endl;
 	return;
@@ -108,14 +108,14 @@ void RecHitInfo::fillSimHitInfo(const PSimHit& simHit) {
 
 void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned int rawid,
 				const GeomDetUnit* geomDetUnit,
-				edm::Handle<edm::DetSetVector<PixelDigiSimLink> >* pixelSimLinks,
-				std::map<unsigned int, SimTrack>& simTracks,
+				// edm::Handle<edm::DetSetVector<PixelDigiSimLink> >* pixelSimLinks,
+				// std::map<unsigned int, SimTrack>& simTracks,
 				const std::vector<const edm::PSimHitContainer*>& simHitsRaw,
 				bool debugHitMatch) {
   // get DetUnit
   DetId detId(rawid);
-  unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
-  layer += tTopo->layer(detId);
+  unsigned int layer = (tTopo_->side(detId) != 0) * 1000;  // don't split up endcap sides
+  layer += tTopo_->layer(detId);
   // determine the position
   LocalPoint localPosClu = recHit.localPosition();
   Global3DPoint globalPosClu = geomDetUnit->surface().toGlobal(localPosClu);
@@ -128,11 +128,12 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
   std::set<unsigned int> clusterSimTrackIds;
   for (unsigned int i(0); i < clustIt->size(); ++i) {
     unsigned int channel(Phase2TrackerDigi::pixelToChannel(clustIt->firstRow() + i, clustIt->column()));
-    std::vector<unsigned int> simTrackIds_unselected(getSimTrackId(*pixelSimLinks, detId, channel));
+    // std::vector<unsigned int> simTrackIds_unselected(getSimTrackId(*pixelSimLinks, detId, channel));
+    std::vector<unsigned int> simTrackIds_unselected(getSimTrackId(detId, channel));
     std::vector<unsigned int> simTrackIds;
     for (auto istId : simTrackIds_unselected) {
-      std::map<unsigned int, SimTrack>::const_iterator istfind(simTracks.find(istId));
-      if (istfind != simTracks.end())
+      std::map<unsigned int, SimTrack>::const_iterator istfind(simTracksById_->find(istId));
+      if (istfind != simTracksById_->end())
 	simTrackIds.push_back(istId);
     }
     clusterSimTrackIds.insert(simTrackIds.begin(),simTrackIds.end());
@@ -140,7 +141,7 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
   // debug
   // if ( clusterSimTrackIds.size()==0 ) {
   //   std::cout << "** RecHit without SimTrackIds on detId " << rawid << " layer " << layer
-  // 	      << " module type " << (unsigned int)tkGeom->getDetectorType(detId) << std::endl;
+  // 	      << " module type " << (unsigned int)tkGeom_->getDetectorType(detId) << std::endl;
   //   for (unsigned int i(0); i < clustIt->size(); ++i) {
   //     unsigned int channel(Phase2TrackerDigi::pixelToChannel(clustIt->firstRow() + i, clustIt->column()));
   //     std::cout << " channel " << clustIt->firstRow()+i << " " << clustIt->column() << std::endl;
@@ -185,7 +186,7 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
   std::cout << "  hasSimHit " << (simhit!=0) << std::endl;
   if ( debugHitMatch ) {
     if ( trackSimHits.size()==0 || trackSimHits.size()>1 ) {
-      TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
+      TrackerGeometry::ModuleType mType = tkGeom_->getDetectorType(detId);
       std::cout << "RecHit on rawid " << rawid <<", layer " << layer
 		<< ", mType "<< (unsigned int)mType << std::endl;
       std::cout << "  localPos " << localPosClu.x() << " / " << localPosClu.y() << std::endl;
@@ -236,7 +237,7 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
   recHitData.Hit_cluster_global_y.push_back(globalPosClu.y());
   recHitData.Hit_cluster_global_z.push_back(globalPosClu.z());
   recHitData.Hit_layer.push_back(layer);
-  recHitData.Hit_ModuleType.push_back((unsigned short)(tkGeom->getDetectorType(detId)));
+  recHitData.Hit_ModuleType.push_back((unsigned short)(tkGeom_->getDetectorType(detId)));
   recHitData.Hit_cluster_size.push_back(clustIt->size());
   recHitData.Hit_cluster_SimTrack_size.push_back(clusterSimTrackIds.size());
   recHitData.Hit_cluster_local_x.push_back(localPosClu.x());
