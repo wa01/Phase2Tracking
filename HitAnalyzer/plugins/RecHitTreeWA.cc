@@ -225,7 +225,8 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
       std::cout << "*** did not find geomDetUnit ***" << std::endl;
       continue;
     }
-    // std::cout << "DetId " << detHitsIt->first << " " << detHitsIt->second.size() << std::endl << std::flush;
+    std::cout << "Found " << detHitsIt->second.size() << " SimHits on DetId " << detHitsIt->first
+	      << std::endl << std::flush;
     //
     // loop over SimHits on Det
     //
