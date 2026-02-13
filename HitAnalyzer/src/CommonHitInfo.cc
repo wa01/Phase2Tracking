@@ -102,17 +102,28 @@ CommonHitInfo::matchRecHitOnDet(const PSimHit* simHit, const DetId& detId,
   // float dxmin(1.e30);
   for ( std::vector<const Phase2TrackerRecHit1D*>::const_iterator irh=detRecHits.begin();
 	irh!=detRecHits.end(); ++irh ) {
+    // Get the cluster from the rechit and loop over channels
+    RecHitClusterMap::const_iterator icl(clustersByHit_.find(*irh));
+    const Phase2TrackerCluster1D* clusterPtr(0);
+    if ( icl==clustersByHit_.end() ) {
+      clusterPtr = &(*(**irh).cluster());
+      clustersByHit_.insert(std::pair<const Phase2TrackerRecHit1D*, const Phase2TrackerCluster1D*>(*irh,clusterPtr));
+    }
+    else {
+      clusterPtr = icl->second;
+    }
+    const Phase2TrackerCluster1D& cluster = *(**irh).cluster();
+    // std::cout << "CommonHitInfo      cluster size " << cluster.size() << std::endl;
     // std::cout << "CommonHitInfo    Checking RecHit at " << *irh
     // 	      << " 1st strip " << (**irh).cluster()->firstStrip()
     // 	      << " 1st row " << (**irh).cluster()->firstRow()
     // 	      << " columns "<< (**irh).cluster()->column()
     // 	      << " detid " << (**irh).geographicalId() << std::endl;
     bool matched(false);
-    // Get the cluster from the rechit and loop over channels
-    const Phase2TrackerCluster1D& cluster = *(**irh).cluster();
-    // std::cout << "CommonHitInfo      cluster size " << cluster.size() << std::endl;
     for (unsigned int i(0); i < cluster.size(); ++i) {
       // std::cout << "CommonHitInfo        channel " << i << std::endl;
+      // const Phase2TrackerCluster1D& cluster = *(**irh).cluster();
+      // // std::cout << "CommonHitInfo      cluster size " << cluster.size() << std::endl;
       // find SimTracks contributing to the channel
       unsigned int channel(Phase2TrackerDigi::pixelToChannel(cluster.firstRow() + i, cluster.column()));
       std::vector<unsigned int> simTrackIds = getSimTrackId(detId,channel);

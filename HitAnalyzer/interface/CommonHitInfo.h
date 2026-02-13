@@ -26,6 +26,7 @@ class CommonHitInfo {
   typedef std::pair< unsigned int, std::vector<const PSimHit*> > DetSimHitsPair;
   typedef std::map< unsigned int, std::vector<const Phase2TrackerRecHit1D*> > DetRecHitsMap;
   typedef std::pair< unsigned int, std::vector<const Phase2TrackerRecHit1D*> > DetRecHitsPair;
+  typedef std::map<const Phase2TrackerRecHit1D*, const Phase2TrackerCluster1D*> RecHitClusterMap;
 
   typedef std::pair<const Phase2TrackerRecHit1D*, float> RecHitDistancePair;
   typedef std::vector<RecHitDistancePair> RecHitDistancePairs;
@@ -67,6 +68,10 @@ class CommonHitInfo {
     // fill RecHit map (uses SimHit map!)
     //
     fillRecHitsPerDet(rechits);
+    //
+    // reset cluster map
+    //
+    clustersByHit_.clear();
   }
 
   const DetSimHitsMap& simHitsPerDet() {
@@ -86,6 +91,7 @@ class CommonHitInfo {
  private:
   DetSimHitsMap simHitsPerDet_;
   DetRecHitsMap recHitsPerDet_;
+  RecHitClusterMap clustersByHit_;
 
 };
 
