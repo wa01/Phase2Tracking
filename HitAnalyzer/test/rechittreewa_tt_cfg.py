@@ -18,7 +18,7 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T33', ''
 # Number of events (-1 = all)
 process.maxEvents = cms.untracked.PSet(
     #input = cms.untracked.int32(-1)
-    input = cms.untracked.int32(10)
+    input = cms.untracked.int32(2)
 )
 
 # Input file
