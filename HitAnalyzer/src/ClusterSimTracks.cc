@@ -4,7 +4,7 @@
 //
 // return SimTrack ids for a given DetId / channel
 //
-std::set<unsigned int> ClusterSimTracks::getSimTrackId(unsigned int channel) const {
+std::set<unsigned int> ClusterSimTracks::getSimTrackIds(unsigned int channel) const {
   std::set<unsigned int> result;
   edm::DetSetVector<PixelDigiSimLink>::const_iterator DSViter(pixelSimLinks_.find(detId_));
   if (DSViter == pixelSimLinks_.end())  return result;
@@ -37,11 +37,17 @@ bool ClusterSimTracks::simTrackInCluster(unsigned int simTrackId) {
     // get channel number
     unsigned int channel(Phase2TrackerDigi::pixelToChannel(cluster_.firstRow() + channelsChecked_, cluster_.column()));
     // get SimTrackIds for this channel
-    std::set<unsigned int> simTrackIds = getSimTrackId(channel);
+    std::set<unsigned int> simTrackIds = getSimTrackIds(channel);
     matched = std::find(simTrackIds.begin(),simTrackIds.end(),simTrackId)!=simTrackIds.end();
-    if ( matched ) break;
+    if ( matched ) {
+      std::cout << "ClusterSimTracks: break channel loop at channel " << channelsChecked_
+		<< " out of " << cluster_.size() << " for cluster at " << &cluster_ << std::endl;
+      break;
+    }
     simTrackIds_.insert(simTrackIds.begin(),simTrackIds.end());
   }
+  std::cout << "ClusterSimTracks: reached end of channel loop for cluster at " << &cluster_
+	    << " with size " << cluster_.size() << " ; matched = " << matched << std::endl;
+  
   return matched; 
 };
-

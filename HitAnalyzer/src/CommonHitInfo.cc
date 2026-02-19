@@ -1,5 +1,6 @@
 #include "Phase2Tracking/HitAnalyzer/interface/CommonHitInfo.h"
 #include "DataFormats/DetId/interface/DetId.h"
+#include "Phase2Tracking/HitAnalyzer/interface/ClusterSimTracks.h"
 
 // #include <iostream>
 
@@ -113,26 +114,29 @@ CommonHitInfo::matchRecHitOnDet(const PSimHit* simHit, const DetId& detId,
       clusterPtr = icl->second;
     }
     const Phase2TrackerCluster1D& cluster = *(**irh).cluster();
-    // std::cout << "CommonHitInfo      cluster size " << cluster.size() << std::endl;
-    // std::cout << "CommonHitInfo    Checking RecHit at " << *irh
-    // 	      << " 1st strip " << (**irh).cluster()->firstStrip()
-    // 	      << " 1st row " << (**irh).cluster()->firstRow()
-    // 	      << " columns "<< (**irh).cluster()->column()
-    // 	      << " detid " << (**irh).geographicalId() << std::endl;
-    bool matched(false);
-    for (unsigned int i(0); i < cluster.size(); ++i) {
-      // std::cout << "CommonHitInfo        channel " << i << std::endl;
-      // const Phase2TrackerCluster1D& cluster = *(**irh).cluster();
-      // // std::cout << "CommonHitInfo      cluster size " << cluster.size() << std::endl;
-      // find SimTracks contributing to the channel
-      unsigned int channel(Phase2TrackerDigi::pixelToChannel(cluster.firstRow() + i, cluster.column()));
-      std::vector<unsigned int> simTrackIds = getSimTrackId(detId,channel);
-      // // std::cout << "CommonHitInfo          " << simTrackIds.size() << " simTracks" << std::endl;
-      matched = std::find(simTrackIds.begin(),simTrackIds.end(),(*simHit).trackId())!=simTrackIds.end();
-      // if match was found: consider RecHit
-      // std::cout << "CommonHitInfo        matched : " << matched << std::endl;
-      if ( matched ) break;
-    }
+
+    ClusterSimTracks cSimTrackIds(cluster,detId,*pixelSimLinks);
+    bool matched = cSimTrackIds.simTrackInCluster(simHit->trackId());
+    // // std::cout << "CommonHitInfo      cluster size " << cluster.size() << std::endl;
+    // // std::cout << "CommonHitInfo    Checking RecHit at " << *irh
+    // // 	      << " 1st strip " << (**irh).cluster()->firstStrip()
+    // // 	      << " 1st row " << (**irh).cluster()->firstRow()
+    // // 	      << " columns "<< (**irh).cluster()->column()
+    // // 	      << " detid " << (**irh).geographicalId() << std::endl;
+    // bool matched(false);
+    // for (unsigned int i(0); i < cluster.size(); ++i) {
+    //   // std::cout << "CommonHitInfo        channel " << i << std::endl;
+    //   // const Phase2TrackerCluster1D& cluster = *(**irh).cluster();
+    //   // // std::cout << "CommonHitInfo      cluster size " << cluster.size() << std::endl;
+    //   // find SimTracks contributing to the channel
+    //   unsigned int channel(Phase2TrackerDigi::pixelToChannel(cluster.firstRow() + i, cluster.column()));
+    //   std::vector<unsigned int> simTrackIds = getSimTrackId(detId,channel);
+    //   // // std::cout << "CommonHitInfo          " << simTrackIds.size() << " simTracks" << std::endl;
+    //   matched = std::find(simTrackIds.begin(),simTrackIds.end(),(*simHit).trackId())!=simTrackIds.end();
+    //   // if match was found: consider RecHit
+    //   // std::cout << "CommonHitInfo        matched : " << matched << std::endl;
+    //   if ( matched ) break;
+    // }
     //
     // select closest RecHit
     //

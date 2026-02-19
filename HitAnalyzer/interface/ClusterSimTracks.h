@@ -12,10 +12,11 @@ class ClusterSimTracks {
   
  public:
 
- ClusterSimTracks(const Phase2TrackerCluster1D& cluster, const DetId& detId, const edm::DetSetVector<PixelDigiSimLink>& pixelSimLinks):
+ ClusterSimTracks(const Phase2TrackerCluster1D& cluster, const DetId& detId,
+		  const edm::DetSetVector<PixelDigiSimLink>& pixelSimLinks):
   cluster_(cluster), detId_(detId), pixelSimLinks_(pixelSimLinks), channelsChecked_(0) {};
 
-  std::set<unsigned int> getSimTrackId(unsigned int channel) const;
+  std::set<unsigned int> getSimTrackIds(unsigned int channel) const;
 
   bool listIsComplete() {
     //
