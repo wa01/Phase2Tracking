@@ -1,4 +1,5 @@
 #include "Phase2Tracking/HitAnalyzer/interface/RecHitInfo.h"
+#include "Phase2Tracking/HitAnalyzer/interface/ClusterSimTracks.h"
 #include "DataFormats/DetId/interface/DetId.h"
 #include "DataFormats/Phase2TrackerCluster/interface/Phase2TrackerCluster1D.h"
 #include "SimDataFormats/Track/interface/SimTrackContainer.h"
@@ -125,19 +126,20 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
   const Phase2TrackerCluster1D* clustIt = &*recHit.cluster();
 
   // Get all the simTracks that form the cluster
-  std::set<unsigned int> clusterSimTrackIds;
-  for (unsigned int i(0); i < clustIt->size(); ++i) {
-    unsigned int channel(Phase2TrackerDigi::pixelToChannel(clustIt->firstRow() + i, clustIt->column()));
-    // std::vector<unsigned int> simTrackIds_unselected(getSimTrackId(*pixelSimLinks, detId, channel));
-    std::vector<unsigned int> simTrackIds_unselected(getSimTrackId(detId, channel));
-    std::vector<unsigned int> simTrackIds;
-    for (auto istId : simTrackIds_unselected) {
-      std::map<unsigned int, SimTrack>::const_iterator istfind(simTracksById_->find(istId));
-      if (istfind != simTracksById_->end())
-	simTrackIds.push_back(istId);
-    }
-    clusterSimTrackIds.insert(simTrackIds.begin(),simTrackIds.end());
-  }
+  ClusterSimTracks cSimTrackIds(*clustIt,detId,*pixelSimLinks);
+  const std::set<unsigned int>& clusterSimTrackIds = cSimTrackIds.simTrackIds();
+  // for (unsigned int i(0); i < clustIt->size(); ++i) {
+  //   unsigned int channel(Phase2TrackerDigi::pixelToChannel(clustIt->firstRow() + i, clustIt->column()));
+  //   // std::vector<unsigned int> simTrackIds_unselected(getSimTrackId(*pixelSimLinks, detId, channel));
+  //   std::vector<unsigned int> simTrackIds_unselected(getSimTrackId(detId, channel));
+  //   std::vector<unsigned int> simTrackIds;
+  //   for (auto istId : simTrackIds_unselected) {
+  //     std::map<unsigned int, SimTrack>::const_iterator istfind(simTracksById_->find(istId));
+  //     if (istfind != simTracksById_->end())
+  // 	simTrackIds.push_back(istId);
+  //   }
+  //   clusterSimTrackIds.insert(simTrackIds.begin(),simTrackIds.end());
+  // }
   // debug
   // if ( clusterSimTrackIds.size()==0 ) {
   //   std::cout << "** RecHit without SimTrackIds on detId " << rawid << " layer " << layer

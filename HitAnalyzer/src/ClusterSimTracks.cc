@@ -4,7 +4,7 @@
 //
 // return SimTrack ids for a given DetId / channel
 //
-std::set<unsigned int> ClusterSimTracks::getSimTrackIds(unsigned int channel) const {
+std::set<unsigned int> ClusterSimTracks::simTrackIdsPerChannel(unsigned int channel) const {
   std::set<unsigned int> result;
   edm::DetSetVector<PixelDigiSimLink>::const_iterator DSViter(pixelSimLinks_.find(detId_));
   if (DSViter == pixelSimLinks_.end())  return result;
@@ -19,48 +19,30 @@ std::set<unsigned int> ClusterSimTracks::getSimTrackIds(unsigned int channel) co
 bool ClusterSimTracks::simTrackInCluster(unsigned int simTrackId) {
   //
   // Return true if <simTrackId> contributed to one or more channels of <cluster>
-  //   Keep a (partial) cache of SimTrackIds
   //
+  // caching handled by simTrackIds()
   //
-  // Start with existing list. Return immediately if result is positive.
-  //
-  std::cout << "ClusterSimTracks: called simTrackInCluster; currently at channel " << channelsChecked_ <<
-               " out of " << cluster_.size() << " for cluster at " << &cluster_ << std::endl;
-  bool matched = std::find(simTrackIds_.begin(),simTrackIds_.end(),simTrackId)!=simTrackIds_.end();
-  if ( matched )  std::cout << "ClusterSimTracks: found track in current list of " << channelsChecked_ <<
-		               " channels out of " << cluster_.size() << " for cluster at " << &cluster_ << std::endl;
-  else if ( channelsChecked_>0 )  std::cout << "ClusterSimTracks: did not find track in current list of " << channelsChecked_ <<
-		               " channels out of " << cluster_.size() << " for cluster at " << &cluster_ << std::endl;
-  //
-  // This is the final result if the list is complete
-  //
-  if ( listIsComplete() ) {
-    std::cout << "ClusterSimTracks: return result for complete channel list (" << cluster_.size() <<
-      " channels) for cluster at " << &cluster_ << " ; matched = " << matched << std::endl;
-    return matched;
-  }
-  //
-  // Otherwise: loop over missing channels
-  //
-  //
-  while ( channelsChecked_<cluster_.size() ) {
-    // get channel number
-    //unsigned int channel(Phase2TrackerDigi::pixelToChannel(cluster_.firstRow() + channelsChecked_, cluster_.column()));
-    unsigned int channel(Phase2TrackerDigi::pixelToChannel(cluster_.firstRow()+channelsChecked_, cluster_.column()));
-    // get SimTrackIds for this channel
-    std::set<unsigned int> simTrackIds = getSimTrackIds(channel);
-    matched = std::find(simTrackIds.begin(),simTrackIds.end(),simTrackId)!=simTrackIds.end();
-    simTrackIds_.insert(simTrackIds.begin(),simTrackIds.end());
-    channelsChecked_ += 1;
-    if ( matched ) {
-      // std::cout << "ClusterSimTracks: break channel loop at channel " << channelsChecked_
-      std::cout << "ClusterSimTracks: break channel loop at channel " << (channelsChecked_-1)
-		<< " out of " << cluster_.size() << " for cluster at " << &cluster_ << std::endl;
-      break;
-    }
-  }
-  std::cout << "ClusterSimTracks: reached end of loop for " << cluster_.size() <<
-    " channels for cluster at " << &cluster_ << " ; matched = " << matched << " " << listIsComplete() << std::endl;
+  const std::set<unsigned int>& trackIds = simTrackIds();
   
-  return matched; 
+  return std::find(trackIds.begin(),trackIds.end(),simTrackId)!=trackIds.end();
+};
+
+const std::set<unsigned int>& ClusterSimTracks::simTrackIds() {  
+  //
+  // List of all SimTrackIds associated to this cluster
+  //
+  if ( simTracksValid_ )  return simTrackIds_;
+  //
+  // Loop over all channels
+  //
+  for ( unsigned int ic=0; ic<cluster_.size(); ++ic ) {
+    // get channel number
+    unsigned int channel(Phase2TrackerDigi::pixelToChannel(cluster_.firstRow()+ic, cluster_.column()));
+    // get SimTrackIds for this channel
+    std::set<unsigned int> trackIds(simTrackIdsPerChannel(channel));
+    simTrackIds_.insert(trackIds.begin(),trackIds.end());
+  }
+
+  simTracksValid_ = true;
+  return simTrackIds_;
 };

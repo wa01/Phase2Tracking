@@ -14,35 +14,19 @@ class ClusterSimTracks {
 
  ClusterSimTracks(const Phase2TrackerCluster1D& cluster, const DetId& detId,
 		  const edm::DetSetVector<PixelDigiSimLink>& pixelSimLinks):
-  cluster_(cluster), detId_(detId), pixelSimLinks_(pixelSimLinks), channelsChecked_(0) {};
+  cluster_(cluster), detId_(detId), pixelSimLinks_(pixelSimLinks), simTracksValid_(false) {};
 
-  std::set<unsigned int> getSimTrackIds(unsigned int channel) const;
-
-  bool listIsComplete() {
-    //
-    // Return true if simTrackIds have been collected from all cluster channels
-    //
-    return channelsChecked_==cluster_.size();
-  };
+  std::set<unsigned int> simTrackIdsPerChannel(unsigned int channel) const;
 
   bool simTrackInCluster(unsigned int simTrackId);
   
-  const std::set<unsigned int>& simTrackIds() {
-    //
-    // List of all simTrackIds associated to cluster.
-    //   Only available if listIsComplete() is true !!!
-    //
-    if ( not listIsComplete() )
-      throw std::logic_error("ClusterSimTracks: trying to retrieve incomplete list of SimTrackIds");
-
-    return simTrackIds_;
-  };
+  const std::set<unsigned int>& simTrackIds();
   
  private:
   const Phase2TrackerCluster1D& cluster_;
   const DetId& detId_;
   const edm::DetSetVector<PixelDigiSimLink>& pixelSimLinks_;
-  unsigned short channelsChecked_;
+  bool simTracksValid_;
   std::set<unsigned int> simTrackIds_;
 };
 #endif
