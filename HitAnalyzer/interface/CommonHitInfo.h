@@ -8,6 +8,7 @@
 #include "SimDataFormats/TrackerDigiSimLink/interface/PixelDigiSimLink.h"
 #include "DataFormats/TrackerRecHit2D/interface/Phase2TrackerRecHit1D.h"
 #include "SimDataFormats/Track/interface/SimTrack.h"
+#include "Phase2Tracking/HitAnalyzer/interface/ClusterSimTracks.h"
 
 #include "DataFormats/Math/interface/Point3D.h"
 #include "DataFormats/Math/interface/Vector3D.h"
@@ -32,6 +33,8 @@ class CommonHitInfo {
   typedef std::vector<RecHitDistancePair> RecHitDistancePairs;
 
   typedef std::map<unsigned int, SimTrack> TrackIdSimTrackMap;
+
+  typedef std::map<const Phase2TrackerCluster1D*, ClusterSimTracks> ClusterSimTracksMap;
 
   CommonHitInfo() {
     tTopo_ = 0;
@@ -92,7 +95,7 @@ class CommonHitInfo {
   DetSimHitsMap simHitsPerDet_;
   DetRecHitsMap recHitsPerDet_;
   RecHitClusterMap clustersByHit_;
-
+  ClusterSimTracksMap cstByCluster_;
 };
 
 #endif

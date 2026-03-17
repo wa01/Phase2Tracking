@@ -17,8 +17,8 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T33', ''
 
 # Number of events (-1 = all)
 process.maxEvents = cms.untracked.PSet(
-    #input = cms.untracked.int32(-1)
-    input = cms.untracked.int32(2)
+    input = cms.untracked.int32(-1)
+    #input = cms.untracked.int32(2)
 )
 
 # Input file
@@ -31,8 +31,9 @@ process.source = cms.Source('PoolSource',
     #    '/store/relval/CMSSW_15_0_0/RelValTTbar_14TeV/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/061404ed-7c65-4f6e-88e9-b45a468f1cbe.root', \
     #    '/store/relval/CMSSW_15_0_0/RelValTTbar_14TeV/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/162e0007-7588-46d8-9c93-a2b4b243885e.root')
     fileNames = cms.untracked.vstring(
-        '/store/relval/CMSSW_15_0_0/RelValTTbar_14TeV/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/061404ed-7c65-4f6e-88e9-b45a468f1cbe.root', \
-        '/store/relval/CMSSW_15_0_0/RelValTTbar_14TeV/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/162e0007-7588-46d8-9c93-a2b4b243885e.root', \
+        'file:/eos/user/a/adamw/CMSAnalysis/DPG/Phase2Tracking/Data/061404ed-7c65-4f6e-88e9-b45a468f1cbe.root'
+    #    '/store/relval/CMSSW_15_0_0/RelValTTbar_14TeV/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/061404ed-7c65-4f6e-88e9-b45a468f1cbe.root', \
+    #    '/store/relval/CMSSW_15_0_0/RelValTTbar_14TeV/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/162e0007-7588-46d8-9c93-a2b4b243885e.root', \
     #    '/store/relval/CMSSW_15_0_0/RelValTTbar_14TeV/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/1bb480aa-0bad-439e-a6a4-a75780d0be9c.root', \
     #    '/store/relval/CMSSW_15_0_0/RelValTTbar_14TeV/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/3db44076-4bb3-415b-b3a9-feb742460636.root', \
     #    '/store/relval/CMSSW_15_0_0/RelValTTbar_14TeV/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/41d76683-9927-42e5-8c22-dfa056c56294.root', \
@@ -80,7 +81,7 @@ process.analysis = cms.EDAnalyzer('RecHitTreeWA',
     #MakeEtaPlots = cms.bool(False),
     #MinEta = cms.double(0.),
     #MaxEta = cms.double(10.)
-    debugHitMatch = cms.bool(True),
+    debugHitMatch = cms.bool(False),
     simHitInfo = cms.PSet(
         simHits = cms.VInputTag(
             cms.InputTag("g4SimHits", "TrackerHitsPixelBarrelLowTof"),

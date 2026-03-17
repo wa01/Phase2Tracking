@@ -16,7 +16,7 @@ std::set<unsigned int> ClusterSimTracks::simTrackIdsPerChannel(unsigned int chan
   return result;
 };
 
-bool ClusterSimTracks::simTrackInCluster(unsigned int simTrackId) {
+bool ClusterSimTracks::simTrackInCluster(unsigned int simTrackId) const {
   //
   // Return true if <simTrackId> contributed to one or more channels of <cluster>
   //
@@ -27,7 +27,7 @@ bool ClusterSimTracks::simTrackInCluster(unsigned int simTrackId) {
   return std::find(trackIds.begin(),trackIds.end(),simTrackId)!=trackIds.end();
 };
 
-const std::set<unsigned int>& ClusterSimTracks::simTrackIds() {  
+const std::set<unsigned int>& ClusterSimTracks::simTrackIds() const {  
   //
   // List of all SimTrackIds associated to this cluster
   //

@@ -190,7 +190,7 @@ void SimHitInfo::fillSimHitInfo(const PSimHit& simHit) {
   // Get the detector unit's id
   //
   unsigned int rawid(simHit.detUnitId());
-  std::cout << "  Filling SimHitInfo for hit on DetId " << rawid << std::endl;
+  // std::cout << "  Filling SimHitInfo for hit on DetId " << rawid << std::endl;
   DetId detId(rawid);
   unsigned int layer = (tTopo_->side(detId) != 0) * 1000;  // don't split up endcap sides
   layer += tTopo_->layer(detId);

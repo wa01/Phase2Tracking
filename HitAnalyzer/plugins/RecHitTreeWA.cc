@@ -272,11 +272,27 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
   recHitInfo_.setupEvent(tTopo,tkGeom,pixelSimLinks.product(),rhInfoSimHitsRaw,*rechits.product(),&simTracks);
   for (Phase2TrackerRecHit1DCollectionNew::const_iterator DSViter = rechits->begin();
        DSViter != rechits->end(); ++DSViter) {
+  // for (auto detHitsIt=recHitInfo_.recHitsPerDet().begin(); detHitsIt!=recHitInfo_.recHitsPerDet().end(); ++detHitsIt ) {
+  //   DetId detId(detHitsIt->first);
+  //   unsigned int rawid(detId.rawId());
+  //   unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
+  //   layer += tTopo->layer(detId);
+  //   TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
+  //   // Restrict to Phase2 OT
+  //   if ( mType!=TrackerGeometry::ModuleType::Ph2PSP && 
+  // 	 mType!=TrackerGeometry::ModuleType::Ph2PSS &&
+  // 	 mType!=TrackerGeometry::ModuleType::Ph2SS )  continue;    
+
     // Get the detector unit's id
     unsigned int rawid(DSViter->detId());
     DetId detId(rawid);
     unsigned int layer = (tTopo->side(detId) != 0) * 1000;  // don't split up endcap sides
     layer += tTopo->layer(detId);
+    TrackerGeometry::ModuleType mType = tkGeom->getDetectorType(detId);
+    // Restrict to Phase2 OT
+    if ( mType!=TrackerGeometry::ModuleType::Ph2PSP && 
+   	 mType!=TrackerGeometry::ModuleType::Ph2PSS &&
+   	 mType!=TrackerGeometry::ModuleType::Ph2SS )  continue;    
 
     // Get the geomdet
     const GeomDetUnit* geomDetUnit(tkGeom->idToDetUnit(detId));
@@ -286,9 +302,17 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
     // recHitInfo_.setTopology(tTopo);
     // recHitInfo_.setGeometry(tkGeom);
 
+    std::cout << "Found " << DSViter->size() << " RecHits on DetId " << rawid << std::endl << std::flush;
+    //
     // Loop over the rechits in the detector unit
+    //
     for (edmNew::DetSet<Phase2TrackerRecHit1D>::const_iterator rechitIt = DSViter->begin();
-    	 rechitIt != DSViter->end(); ++rechitIt) {
+     	 rechitIt != DSViter->end(); ++rechitIt) {
+    // //
+    // // loop over RecHits on Det
+    // //
+    // for (auto rechitIt=detHitsIt->second.begin(); rechitIt!=detHitsIt->second.end(); ++rechitIt) {
+      // std::cout << "Filling sim hit info" << std::endl;
       recHitInfo_.fillRecHitInfo(*rechitIt,rawid,geomDetUnit, // &pixelSimLinks,simTracks,
 				 rhInfoSimHitsRaw,debugHitMatch_);
     }

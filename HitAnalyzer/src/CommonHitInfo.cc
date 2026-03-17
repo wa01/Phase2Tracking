@@ -1,6 +1,5 @@
 #include "Phase2Tracking/HitAnalyzer/interface/CommonHitInfo.h"
 #include "DataFormats/DetId/interface/DetId.h"
-#include "Phase2Tracking/HitAnalyzer/interface/ClusterSimTracks.h"
 
 // #include <iostream>
 
@@ -25,7 +24,7 @@ void CommonHitInfo::fillSimHitsPerDet(const std::vector<const edm::PSimHitContai
   //
   simHitsPerDet_.clear();
   // for (unsigned int simhitidx = 0; simhitidx < 2; ++simhitidx) {  // loop over both barrel and endcap hits
-  //   // std::cout << simhitidx << " " << simHitsRaw[simhitidx]->size() << std::endl;
+  //   // std::cout<< simhitidx << " " << simHitsRaw[simhitidx]->size() << std::endl;
   //   for (edm::PSimHitContainer::const_iterator simhitIt(simHitsRaw[simhitidx]->begin());
   //	 simhitIt != simHitsRaw[simhitidx]->end(); ++simhitIt) {
   // loop over both barrel and endcap hits
@@ -98,8 +97,27 @@ CommonHitInfo::matchRecHitOnDet(const PSimHit* simHit, const DetId& detId,
   // 		<< simHit->localPosition().x() << " / " << simHit->localPosition().y() << std::endl;
   //  const Phase2TrackerRecHit1D* rechit(0);
   //  std::vector< const Phase2TrackerRecHit1D* rechit(0);
+  //
+  // prepare result
+  //
   CommonHitInfo::RecHitDistancePairs matchedRecHits;
-  
+  //
+  // restart cache of ClusterSimTracks objects with new detid (only useful
+  //   if SimHits on same Det are treated in sequence)
+  //
+  if ( cstByCluster_.size()>0 ) {
+    const ClusterSimTracks& cst = cstByCluster_.begin()->second;
+    // std::cout << "  Existing *detId = " << &cst.detId() << " " << cst.detId().rawId() <<
+    //   " / new *detId = " << &detId << " " << detId.rawId() << std::endl;
+    if ( !cst.sameDet(detId) ) {
+      // std::cout << "  Changed DetId" << std::endl;
+      cstByCluster_.clear();
+    }
+  }
+  // else {
+  //   std::cout << "  cstByCluster is empty" << std::endl;
+  // }
+    
   // float dxmin(1.e30);
   for ( std::vector<const Phase2TrackerRecHit1D*>::const_iterator irh=detRecHits.begin();
 	irh!=detRecHits.end(); ++irh ) {
@@ -115,8 +133,23 @@ CommonHitInfo::matchRecHitOnDet(const PSimHit* simHit, const DetId& detId,
     }
     const Phase2TrackerCluster1D& cluster = *(**irh).cluster();
 
-    ClusterSimTracks cSimTrackIds(cluster,detId,*pixelSimLinks);
-    bool matched = cSimTrackIds.simTrackInCluster(simHit->trackId());
+    const ClusterSimTracks* cst(0);
+    ClusterSimTracksMap::const_iterator cstit = cstByCluster_.find(&cluster);
+    // std::cout << "  #entries of cstByCluster_ = " << cstByCluster_.size() << std::endl;
+    // for ( auto it=cstByCluster_.begin(); it!=cstByCluster_.end(); ++it )
+    //   std::cout << "   cluster pointer = " << it->first << " cst pointer " << &(it->second) 
+    // 		<< " rawid " << (it->second).detId().rawId() << std::endl;
+    if ( cstit==cstByCluster_.end() ) {
+      // std::cout << "    Adding CST for cluster at " << &cluster << " on det " << detId << std::endl;
+      cstit =
+	cstByCluster_.insert({&cluster,ClusterSimTracks(cluster,detId,*pixelSimLinks)}).first;
+    }
+    // else {
+    //   std::cout << "    Reusing CST for cluster at " << &cluster << " on det " << detId << std::endl;
+    // }
+    cst = &(cstit->second);
+    // ClusterSimTracks cSimTrackIds(cluster,detId,*pixelSimLinks);
+    bool matched = cst->simTrackInCluster(simHit->trackId());
     // // std::cout << "CommonHitInfo      cluster size " << cluster.size() << std::endl;
     // // std::cout << "CommonHitInfo    Checking RecHit at " << *irh
     // // 	      << " 1st strip " << (**irh).cluster()->firstStrip()
@@ -161,3 +194,4 @@ CommonHitInfo::matchRecHitOnDet(const PSimHit* simHit, const DetId& detId,
 	    });
   return matchedRecHits;
 };
+

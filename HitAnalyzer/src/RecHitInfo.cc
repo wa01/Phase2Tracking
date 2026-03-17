@@ -167,7 +167,7 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
   // 	 ++simhitIt) {
   
   // std::cout << "#hits =";
-  std::cout << clusterSimTrackIds.size() << " trackIds for cluster" << std::endl;
+  // std::cout << clusterSimTrackIds.size() << " trackIds for cluster" << std::endl;
   for (auto simhitsIt=simHitsRaw.begin(); simhitsIt!=simHitsRaw.end(); ++simhitsIt) {
     // std::cout << " " << (**simhitsIt).size();
     for (auto simhitIt=(**simhitsIt).begin(); simhitIt!=(**simhitsIt).end(); ++simhitIt) {
@@ -185,7 +185,7 @@ void RecHitInfo::fillRecHitInfo(const Phase2TrackerRecHit1D& recHit, unsigned in
       }
     }
   }
-  std::cout << "  hasSimHit " << (simhit!=0) << std::endl;
+  // std::cout << "  hasSimHit " << (simhit!=0) << std::endl;
   if ( debugHitMatch ) {
     if ( trackSimHits.size()==0 || trackSimHits.size()>1 ) {
       TrackerGeometry::ModuleType mType = tkGeom_->getDetectorType(detId);
