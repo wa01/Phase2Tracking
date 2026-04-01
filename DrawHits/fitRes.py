@@ -209,6 +209,8 @@ class FitHistogram:
         yl = spline.Eval(xl)
         xh = spline.GetXmax()
         yh = spline.Eval(xh)
+        ymin = yl
+        ymax = yh
         if ymin>=ymax:
             print("findRootSpline: last value <= first value")
             return None
@@ -439,15 +441,16 @@ fwhmArrow = ROOT.TArrow()
 fwhmArrow.SetLineColor(2)
 fwhmArrow.SetLineWidth(2)
 quantLines = [ ]
-for i in range(len(args.quantile)):
+for i in range(len(args.quantile)+1):
     quantLine = ROOT.TLine()
-    quantLine.SetLineColor(4)
+    quantLine.SetLineColor(4-i)
     #quantLine.SetLineWidth(2)
-    quantLine.SetLineStyle(i+1)
+    #quantLine.SetLineStyle(i+1)
     quantLines.append(quantLine)
 #quantLine.SetLineWidth(2)
 if fitCanvas.histogram().GetDimension()==1 and ( not args.slices ):
     assert fitCanvas.histogram().GetDimension()==1
+    slices = [ fitCanvas.fhist ]
     #print(fitCanvas.fwhm())
     x1,x2,y = fitCanvas.fwhm()
     print("<x> = {:6.1f}um, dx = {:6.1f}um, sig = {:6.1f}um ( interval {:6.4f} - {:6.4f}cm )".format( \
@@ -467,9 +470,14 @@ if fitCanvas.histogram().GetDimension()==1 and ( not args.slices ):
             #print(sigma,sgn,p,qs[-1])
         quantiles.append(qs)
         if not ( None in qs ):
-            quantLines[isigma].DrawLine(qs[0],0.,qs[0],qlmax)
-            quantLines[0].DrawLine(qs[1],0.,qs[1],qlmax)
-            quantLines[isigma].DrawLine(qs[2],0.,qs[2],qlmax)
+            for iq in range(3):
+                il = 0 if iq==1 else isigma+1
+                h = slices[-1].hist
+                qlmax = h.GetBinContent(h.FindBin(qs[iq]))
+                quantLines[il].DrawLine(qs[iq],0.,qs[iq],qlmax)
+            #quantLines[isigma].DrawLine(qs[0],0.,qs[0],qlmax)
+            #quantLines[0].DrawLine(qs[1],0.,qs[1],qlmax)
+            #quantLines[isigma].DrawLine(qs[2],0.,qs[2],qlmax)
 
     fitCanvas.pad.Update()
 
