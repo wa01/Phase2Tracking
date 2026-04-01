@@ -95,6 +95,8 @@ def fitHistogram(mType,h):
     f2.SetParameter(5,5*f1.GetParameter(2))
     f2.SetParLimits(5,f1.GetParameter(2),10*f1.GetParameter(2))
     h.Fit(f2name)
+    func = h.GetFunction(f2name)
+    func.SetLineWidth(5)
     ROOT.gPad.SetLogy(1)
     ROOT.gPad.Update()
 
@@ -442,11 +444,13 @@ def drawHistoByDef(histos,hDef,logY=False,logZ=False,same=False):
                 histos[mType][2].GetYaxis().SetTitle(ytitle)
                 histos[mType][3] = ROOT.TEfficiency(histos[mType][1].GetValue(),histos[mType][0].GetValue())
                 histos[mType][3].SetMarkerStyle(20)
+                histos[mType][3].SetLineWidth(3)
                 histos[mType][3].Draw("same Z")
             else:
                 histos[mType][0].SetTitle(hTitle)
                 histos[mType][0].GetXaxis().SetTitle(xtitle)
                 histos[mType][0].GetYaxis().SetTitle(ytitle)
+                histos[mType][0].SetLineWidth(3)
                 histos[mType][0].Draw("same" if same else "")
             fitFunc = hDef.getParameter('fit')
             if fitFunc!=None:
@@ -674,6 +678,25 @@ for cName in allHDefs.canvasNames():
         fillHistoByDef(simHitTree,allHDefs.byCanvas[cName][hName],extraCuts,allHistos[cName][hName])
         allObjects.append(drawHistoByDef(allHistos[cName][hName],allHDefs.byCanvas[cName][hName], \
                                              logY=args.logY,logZ=args.logZ,same=same))
+        #!#
+        print(allHDefs.byCanvas[cName][hName])
+        print(allHDefs.byCanvas[cName][hName].name)
+        hdef = allHDefs.byCanvas[cName][hName]
+        fitHisto = False
+        for fr in fitResiduals:
+            if fnmatch(hdef.name,fr):
+                fitHisto = True
+                break
+        if fitHisto:
+            objects = allObjects[-1]
+            cnv = objects['cnv']
+            # fit and redraw each panel
+            ic = 0
+            for mType in range(23,26):
+                ic += 1
+                cnv.cd(ic)
+                f = fitHistogram(mType,objects['histos'][mType][0])
+        #!#
         same = True
     if args.output!=None:
         c = allObjects[-1]['cnv']
@@ -690,3 +713,22 @@ for cName in allHDefs.canvasNames():
 #    yMin = min([ x.GetMinimum() for x in cHistos
 #sys.exit()
 
+#!# allObjects = [ ]
+#!# for hdef in allHDefs.allDefinitions.values():
+#!#     #
+#!#     # draw histograms according to definition
+#!#     #
+#!#     histos = fillHistoByDef(simHitTree,hdef,extraCuts)
+#!#     allObjects.append(drawHistoByDef(histos,hdef))
+#!#     #
+#!#     # perform fit of resolution histogram
+#!#     #
+#!#     if hdef.name in fitResiduals:
+#!#         objects = allObjects[-1]
+#!#         cnv = objects['cnv']
+#!#         # fit and redraw each panel
+#!#         ic = 0
+#!#         for mType in range(23,26):
+#!#             ic += 1
+#!#             cnv.cd(ic)
+#!#             f = fitHistogram(mType,objects['histos'][mType][0])
