@@ -225,8 +225,8 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
       std::cout << "*** did not find geomDetUnit ***" << std::endl;
       continue;
     }
-    std::cout << "Found " << detHitsIt->second.size() << " SimHits on DetId " << detHitsIt->first
-	      << std::endl << std::flush;
+    // std::cout << "Found " << detHitsIt->second.size() << " SimHits on DetId " << detHitsIt->first
+    // 	      << std::endl << std::flush;
     //
     // loop over SimHits on Det
     //
@@ -302,7 +302,7 @@ void RecHitTreeWA::analyze(const edm::Event& event, const edm::EventSetup& event
     // recHitInfo_.setTopology(tTopo);
     // recHitInfo_.setGeometry(tkGeom);
 
-    std::cout << "Found " << DSViter->size() << " RecHits on DetId " << rawid << std::endl << std::flush;
+    // std::cout << "Found " << DSViter->size() << " RecHits on DetId " << rawid << std::endl << std::flush;
     //
     // Loop over the rechits in the detector unit
     //
