@@ -399,7 +399,8 @@ def defineMeanWidthHistograms(h,nby,ymin,ymax,nbz,zmin,zmax,isigma=None,sigma=No
 
     
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument('--moduleType', '-m', help='module type', type=int, choices=[23,24,25], default=23)
+#parser.add_argument('--moduleType', '-m', help='module type', type=int, choices=[23,24,25], default=23)
+parser.add_argument('--moduleTypes', '-m', help='comma-separated list of module types', type=str, default="23,24,25")
 parser.add_argument('--fwhm', help='determining FWHM', action='store_true', default=False)
 parser.add_argument('--slices', '-s', help='fit in slices in y', action='store_true', default=False)
 parser.add_argument('--quantile', '-q', help='calculate quantiles corresponding to +- x sigma (can be repeated)', \
@@ -413,6 +414,10 @@ parser.add_argument('--formats', help='comma-separated list of extensions for ou
                         type=str, default="pdf,png")
 parser.add_argument('file', help='input file', type=str, nargs=1, default=None)
 args = parser.parse_args()
+
+moduleTypes = sorted(set([ int(x) for x in args.moduleTypes.split(",") ]))
+assert moduleTypes[0]>=23 and moduleTypes[-1]<=25
+moduleType = moduleTypes[0]
 
 tf = ROOT.TFile(args.file[0])
 tf.ls()
@@ -436,7 +441,9 @@ canvases = [ ]
 slices = [ ]
 
 mainCnv.Draw()
-fitCanvas = FitCanvas(mainCnv,args.moduleType)
+fitCanvases = { x:FitCanvas(mainCnv,x) for x in moduleTypes }
+fitCanvas = fitCanvases[moduleType]
+#fitCanvas = FitCanvas(mainCnv,moduleType)
 fwhmArrow = ROOT.TArrow()
 fwhmArrow.SetLineColor(2)
 fwhmArrow.SetLineWidth(2)
@@ -449,37 +456,44 @@ for i in range(len(args.quantile)+1):
     quantLines.append(quantLine)
 #quantLine.SetLineWidth(2)
 if fitCanvas.histogram().GetDimension()==1 and ( not args.slices ):
-    assert fitCanvas.histogram().GetDimension()==1
-    slices = [ fitCanvas.fhist ]
-    #print(fitCanvas.fwhm())
-    x1,x2,y = fitCanvas.fwhm()
-    print("<x> = {:6.1f}um, dx = {:6.1f}um, sig = {:6.1f}um ( interval {:6.4f} - {:6.4f}cm )".format( \
-            10000*(x1+x2)/2.,10000*(x2-x1),10000*(x2-x1)/2/sqrt(2*log(2)),x1,x2))
+    for im in moduleTypes:
+        print("Module type",im)
+        fc = fitCanvases[im]
+        assert fc.histogram().GetDimension()==1
+        slices = [ fc.fhist ]
+        #print(fc.fwhm())
+        x1,x2,y = fc.fwhm()
+        print(" FWHM: <x> = {:6.1f}um, dx = {:6.1f}um, sig = {:6.1f}um ( interval {:6.4f} - {:6.4f}cm )".format( \
+                10000*(x1+x2)/2.,10000*(x2-x1),10000*(x2-x1)/2/sqrt(2*log(2)),x1,x2))
 
-    fitCanvas.pad.cd()
-    fwhmArrow.DrawArrow(x1,y,x2,y,0.005,"<>")
-    
-    quantiles = [ ]
-    qlmax = slices[-1].hist.GetMaximum()/10.
-    for isigma,sigma in enumerate(args.quantile):
-        qs = [ ]
-        for sgn in [-1,0,1]:
-            p = ROOT.TMath.Freq(sgn*sigma)
-            #qs.append(slices[-1].quantile(p))
-            qs.append(slices[-1].findRootSpline(p))
-            #print(sigma,sgn,p,qs[-1])
-        quantiles.append(qs)
-        if not ( None in qs ):
-            for iq in range(3):
-                il = 0 if iq==1 else isigma+1
-                h = slices[-1].hist
-                qlmax = h.GetBinContent(h.FindBin(qs[iq]))
-                quantLines[il].DrawLine(qs[iq],0.,qs[iq],qlmax)
-            #quantLines[isigma].DrawLine(qs[0],0.,qs[0],qlmax)
-            #quantLines[0].DrawLine(qs[1],0.,qs[1],qlmax)
-            #quantLines[isigma].DrawLine(qs[2],0.,qs[2],qlmax)
+        fc.pad.cd()
+        fwhmArrow.DrawArrow(x1,y,x2,y,0.005,"<>")
 
-    fitCanvas.pad.Update()
+        quantiles = [ ]
+        qlmax = slices[-1].hist.GetMaximum()/10.
+        for isigma,sigma in enumerate(args.quantile):
+            qs = [ ]
+            for sgn in [-1,0,1]:
+                p = ROOT.TMath.Freq(sgn*sigma)
+                #qs.append(slices[-1].quantile(p))
+                qs.append(slices[-1].findRootSpline(p))
+                #print(sigma,sgn,p,qs[-1])
+            quantiles.append(qs)
+            if not ( None in qs ):
+                for iq in range(3):
+                    il = 0 if iq==1 else isigma+1
+                    h = slices[-1].hist
+                    qlmax = h.GetBinContent(h.FindBin(qs[iq]))
+                    quantLines[il].DrawLine(qs[iq],0.,qs[iq],qlmax)
+                line = " from sigma = {:3.1f} quantile: ".format(sigma)
+                line += "median = {:6.1f}um, half-width/sigma = {:6.1f}um".format(10000*qs[1], \
+                                                                                  10000*(qs[2]-qs[0])/2/sigma)
+                print(line)                                                                                             
+                #quantLines[isigma].DrawLine(qs[0],0.,qs[0],qlmax)
+                #quantLines[0].DrawLine(qs[1],0.,qs[1],qlmax)
+                #quantLines[isigma].DrawLine(qs[2],0.,qs[2],qlmax)
+
+        fc.pad.Update()
 
 elif fitCanvas.histogram().GetDimension()==2 and args.slices:
     hist2D = fitCanvas.histogram()
@@ -617,7 +631,7 @@ elif fitCanvas.histogram().GetDimension()==3:
     while nrow*ncol<nDbg:
         ncol += 1
     savePad = ROOT.gPad
-    cDbgName = "cResDbg_mT"+str(args.moduleType)
+    cDbgName = "cResDbg_mT"+str(moduleType)
     allDbgObjects['canvas'] = ROOT.TCanvas(cDbgName,cDbgName,min(1500,ncol*250),min(1500,nrow*250))
     allDbgObjects['canvas'].Divide(nrow,ncol)
     iDbgPad = 0
@@ -666,8 +680,8 @@ elif fitCanvas.histogram().GetDimension()==3:
                 z1 = htmp.GetZaxis().GetBinLowEdge(iz+1)
                 z2 = z1 + htmp.GetZaxis().GetBinWidth(iz+1)
 
-                hResName = "hResDbg_mT"+str(args.moduleType)+"_y{:02d}_z{:02d}".format(iy+1,iz+1)
-                hResTitle = "residual mType "+str(args.moduleType)
+                hResName = "hResDbg_mT"+str(moduleType)+"_y{:02d}_z{:02d}".format(iy+1,iz+1)
+                hResTitle = "residual mType "+str(moduleType)
                 if nby>1:
                     hResTitle += " {:6.3f}<y<{:6.3f}".format(y1,y2)
                 if nbz>1:
@@ -759,7 +773,7 @@ elif fitCanvas.histogram().GetDimension()==3:
     # create from histogram name (remove version number last "_", split of last two digits (mod. type)
     cName = "c"+"_".join(h.GetName()[1:].split("_")[:-1])
     cName = cName[:-2] + "_mT" + cName[-2:] + "_MeanWidth"
-    cName = "cResMeanWidth_mT"+str(args.moduleType)
+    cName = "cResMeanWidth_mT"+str(moduleType)
     
     c = ROOT.TCanvas(cName,h.GetTitle()+" (mean/width summary)",500*nsigma,1000)
     c.Divide(nsigma+1,2)
