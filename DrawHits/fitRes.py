@@ -351,6 +351,22 @@ def setHistogramMinMax(histo,limits,margins=0.05):
         
     return (vmin,vmax)
 
+def defineWidthVsSigma(h,sigmas):
+    hwName = h.GetName()+"Qw1D"
+    hwTitle = h.GetTitle()+" (half-width from quantiles)"
+    hwAxis1Title = "quantiles in units of #sigmas"
+    hwAxis2Title = "half width from quantiles"
+    hhalfwidth = ROOT.TH1F(hwName,hwTitle,len(sigmas),-0.5,len(sigmas)-0.5)
+    hhalfwidth.SetStats(0)
+    hhalfwidth.SetMinimum(0.)
+    hhalfwidth.GetXaxis().SetTitle(hwAxis1Title)
+    hhalfwidth.GetYaxis().SetTitle(hwAxis2Title)
+    xaxis = hhalfwidth.GetXaxis()
+    for i,s in enumerate(sigmas):
+        xaxis.SetBinLabel(i+1,"{:3.1f}#sigma".format(s))
+
+    return hhalfwidth
+
 def defineMeanWidthHistograms(h,nby,ymin,ymax,nbz,zmin,zmax,isigma=None,sigma=None):
     if isigma!=None:
         y1 = ROOT.TMath.Freq(-sigma)
@@ -456,9 +472,11 @@ for i in range(len(args.quantile)+1):
     quantLines.append(quantLine)
 #quantLine.SetLineWidth(2)
 if fitCanvas.histogram().GetDimension()==1 and ( not args.slices ):
+    summaries = [ ]
     for im in moduleTypes:
         print("Module type",im)
         fc = fitCanvases[im]
+        print(type(fc))
         assert fc.histogram().GetDimension()==1
         slices = [ fc.fhist ]
         #print(fc.fwhm())
@@ -469,6 +487,11 @@ if fitCanvas.histogram().GetDimension()==1 and ( not args.slices ):
         fc.pad.cd()
         fwhmArrow.DrawArrow(x1,y,x2,y,0.005,"<>")
 
+        #
+        # define summary histograms
+        #
+        summaries.append(defineWidthVsSigma(fc.histogram(),args.quantile))
+
         quantiles = [ ]
         qlmax = slices[-1].hist.GetMaximum()/10.
         for isigma,sigma in enumerate(args.quantile):
@@ -477,6 +500,7 @@ if fitCanvas.histogram().GetDimension()==1 and ( not args.slices ):
                 p = ROOT.TMath.Freq(sgn*sigma)
                 #qs.append(slices[-1].quantile(p))
                 qs.append(slices[-1].findRootSpline(p))
+                print(sigma,sgn,type(slices[-1]))
                 #print(sigma,sgn,p,qs[-1])
             quantiles.append(qs)
             if not ( None in qs ):
@@ -488,12 +512,33 @@ if fitCanvas.histogram().GetDimension()==1 and ( not args.slices ):
                 line = " from sigma = {:3.1f} quantile: ".format(sigma)
                 line += "median = {:6.1f}um, half-width/sigma = {:6.1f}um".format(10000*qs[1], \
                                                                                   10000*(qs[2]-qs[0])/2/sigma)
-                print(line)                                                                                             
+                print(line)
+                summaries[-1].SetBinContent(isigma+1,10000*(qs[2]-qs[0])/2/sigma)
                 #quantLines[isigma].DrawLine(qs[0],0.,qs[0],qlmax)
                 #quantLines[0].DrawLine(qs[1],0.,qs[1],qlmax)
                 #quantLines[isigma].DrawLine(qs[2],0.,qs[2],qlmax)
+            else:
+                print("(At least) one quantile computation failed: sigma =",sigma," p =",ROOT.TMath.Freq(-sigma),qs)
 
         fc.pad.Update()
+
+    nmod = len(moduleTypes)
+    cName = "c"+"_".join(h.GetName()[1:].split("_")[:-1])
+    cName = cName[:-2] + "_mT" + cName[-2:] + "_Widths"
+    cName = "cResWidths_mT"+str(moduleType)
+    c = ROOT.TCanvas(cName,h.GetTitle()+" (width summary)",500*nmod,500)
+    c.Divide(nmod,1)
+    # set common maximum for all plots
+    hmax = max([ x.GetMaximum() for x in summaries ])
+    for i in range(nmod):
+        c.cd(i+1)
+        #setHistogramMinMax(summaries[i],(-250,250),margins=0.05)
+        summaries[i].SetMaximum(hmax*1.05)
+        summaries[i].Draw("HIST")
+        ROOT.gPad.Update()
+    c.Update()
+    if args.output!=None:
+        saveCanvas(c,args.file[0],args.output,outputFormats)
 
 elif fitCanvas.histogram().GetDimension()==2 and args.slices:
     hist2D = fitCanvas.histogram()
@@ -771,10 +816,10 @@ elif fitCanvas.histogram().GetDimension()==3:
 
     nsigma = len(args.quantile)
     # create from histogram name (remove version number last "_", split of last two digits (mod. type)
+
     cName = "c"+"_".join(h.GetName()[1:].split("_")[:-1])
     cName = cName[:-2] + "_mT" + cName[-2:] + "_MeanWidth"
     cName = "cResMeanWidth_mT"+str(moduleType)
-    
     c = ROOT.TCanvas(cName,h.GetTitle()+" (mean/width summary)",500*nsigma,1000)
     c.Divide(nsigma+1,2)
     for i in range(nsigma+1):
