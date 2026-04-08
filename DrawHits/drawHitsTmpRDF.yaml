@@ -27,7 +27,7 @@ variables:
    localPosYMod15: 'floatMod(100*localPosY,15)/10'
    globRho2: 'globalDir.fCoordinates.fX*globalDir.fCoordinates.fX+globalDir.fCoordinates.fY*globalDir.fCoordinates.fY'
    globR2: 'globRho2+globalDir.fCoordinates.fZ*globalDir.fCoordinates.fZ'
-   globPt: 'pabs*sqrt(sqrt(globRho2/globR2))'
+   globPt: 'pabs*sqrt(globRho2/globR2)'
    detNormalT: 'detNormal.fCoordinates.fX*detNormal.fCoordinates.fX+detNormal.fCoordinates.fY*detNormal.fCoordinates.fY'
 #
 # definitions of canvases and histograms

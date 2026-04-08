@@ -1,0 +1,302 @@
+
+#
+# sensor dimensions:
+#
+# 2S: 10 x 10 cm2; 2 x 1016 strips at 90 μm x 5 cm
+# PS: 5 x 10 cm2; 2 x 960 strips at 100 μm x 2.5 cm
+# PSp: 5 x 10 cm2; 32 x 960 pixel at 100 μm x 1.5 mm
+
+#
+# definitions of new variables
+#
+variables:
+   pathX: 'path.fCoordinates.fX'
+   pathY: 'path.fCoordinates.fY'
+   pathZ: 'path.fCoordinates.fZ'
+   dxdz: 'pathX/pathZ'
+   alpha: 'atan2(abs(pathX),abs(pathZ))/3.1415*180'
+   localPosX: 'localPos.fCoordinates.fX'
+   localPosY: 'localPos.fCoordinates.fY'
+   rhLocalPosX: 'rhLocalPos.fCoordinates.fX'
+   rhLocalPosY: 'rhLocalPos.fCoordinates.fY'
+   rhLocalErrX: 'rhLocalErr.fCoordinates.fX'
+   rhLocalErrY: 'rhLocalErr.fCoordinates.fY'
+   localPosXMod90: 'floatMod(10000*localPos.fCoordinates.fX,90)'
+   localPosXMod100: 'floatMod(10000*localPos.fCoordinates.fX,100)'
+   localPosYMod500: 'floatMod(10*localPosY,50)/10.'
+   localPosYMod250: 'floatMod(10*localPosY,25)/10.' 
+   localPosYMod15: 'floatMod(100*localPosY,15)/10'
+   globRho2: 'globalDir.fCoordinates.fX*globalDir.fCoordinates.fX+globalDir.fCoordinates.fY*globalDir.fCoordinates.fY'
+   globR2: 'globRho2+globalDir.fCoordinates.fZ*globalDir.fCoordinates.fZ'
+   globPt: 'pabs*sqrt(globRho2/globR2)'
+   detNormalT: 'detNormal.fCoordinates.fX*detNormal.fCoordinates.fX+detNormal.fCoordinates.fY*detNormal.fCoordinates.fY'
+#
+# histogram section
+#
+histograms:
+  #
+  #
+  #
+  effAlphaLoose:
+     baseCuts: 'tof<12.5&&pabs>0.3'
+     effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+     histogramTitle: 'Efficiency vs. alpha(xz) tight'
+     variable: 'atan2(abs(path.x()),abs(path.z()))/3.1415*180'
+     xMax: 100.0
+     xMin: 0
+     xNbins: 100
+     xTitle: 'alpha(xz) [deg]'
+     yMax: 1.05
+     yMin: 0.5
+     yTitle: 'efficiency'
+  #
+  #
+  #
+  effAlphaTight:
+     baseCuts: 'tof<12.5&&pabs>0.3'
+     effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.1'
+     histogramTitle: 'Efficiency vs. alpha(xz) loose'
+     variable: 'atan2(abs(path.x()),abs(path.z()))/3.1415*180'
+     xMax: 100.0
+     xMin: 0
+     xNbins: 100
+     xTitle: 'alpha(xz) [deg]'
+     yMax: 1.05
+     yMin: 0.5
+     yTitle: 'efficiency'
+  #
+  #
+  #
+  effVsModX:
+     baseCuts: 'tof<12.5&&pabs>0.3'
+     effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+     yMin: 0
+     yMax: 1.05
+     mType23:
+        histogramTitle: 'Efficiency vs. x % 100 #mu m'
+        variable: 'floatMod(10000*localPos.x(),100)'
+        xTitle: 'x modulo 100 #mu m [#mu m]'
+        xNbins: 220
+        xMax: 105
+        xMin: -5
+     mType24:
+        histogramTitle: 'Efficiency vs. x % 100 #mu m'
+        variable: 'localPosXMod100'
+        xTitle: 'x modulo 100 #mu m [#mu m]'
+        xNbins: 220
+        xMax: 105
+        xMin: -5
+     mType25:
+        histogramTitle: 'Efficiency vs. x % 90 #mu m'
+        variable: 'localPosXMod90'
+        xTitle: 'x modulo 90 #mu m [#mu m]'
+        xNbins: 200
+        xMax: 95
+        xMin: -5
+
+  effVsModX1:
+     baseCuts: 'tof<12.5&&pabs>0.3&&globPt>0.5&&hasRecHit>0'
+     effCuts: 'clusterSize==1'
+     yMin: 0
+     yMax: 1.05
+     mType23:
+        histogramTitle: 'Efficiency vs. x % 100 #mu m'
+        variable: 'localPosXMod100'
+        xTitle: 'x modulo 100 #mu m [#mu m]'
+        xNbins: 220
+        xMax: 105
+        xMin: -5
+     mType24:
+        histogramTitle: 'Efficiency vs. x % 100 #mu m'
+        variable: 'localPosXMod100'
+        xTitle: 'x modulo 100 #mu m [#mu m]'
+        xNbins: 220
+        xMax: 105
+        xMin: -5
+     mType25:
+        histogramTitle: 'Efficiency vs. x % 90 #mu m'
+        variable: 'localPosXMod90'
+        xTitle: 'x modulo 90 #mu m [#mu m]'
+        xNbins: 200
+        xMax: 95
+        xMin: -5
+
+  effVsModX2:
+     baseCuts: 'tof<12.5&&pabs>0.3&&globPt>0.5&&hasRecHit>0'
+     effCuts: 'clusterSize==2'
+     yMin: 0
+     yMax: 1.05
+     mType23:
+        histogramTitle: 'Efficiency vs. x % 100 #mu m'
+        variable: 'localPosXMod100'
+        xTitle: 'x modulo 100 #mu m [#mu m]'
+        xNbins: 220
+        xMax: 105
+        xMin: -5
+     mType24:
+        histogramTitle: 'Efficiency vs. x % 100 #mu m'
+        variable: 'localPosXMod100'
+        xTitle: 'x modulo 100 #mu m [#mu m]'
+        xNbins: 220
+        xMax: 105
+        xMin: -5
+     mType25:
+        histogramTitle: 'Efficiency vs. x % 90 #mu m'
+        variable: 'localPosXMod90'
+        xTitle: 'x modulo 90 #mu m [#mu m]'
+        xNbins: 200
+        xMax: 95
+        xMin: -5
+
+  effVsModX3p:
+     baseCuts: 'tof<12.5&&pabs>0.3&&globPt>0.5&&hasRecHit>0'
+     effCuts: 'clusterSize>2'
+     yMin: 0
+     yMax: 1.05
+     mType23:
+        histogramTitle: 'Efficiency vs. x % 100 #mu m'
+        variable: 'localPosXMod100'
+        xTitle: 'x modulo 100 #mu m [#mu m]'
+        xNbins: 220
+        xMax: 105
+        xMin: -5
+     mType24:
+        histogramTitle: 'Efficiency vs. x % 100 #mu m'
+        variable: 'localPosXMod100'
+        xTitle: 'x modulo 100 #mu m [#mu m]'
+        xNbins: 220
+        xMax: 105
+        xMin: -5
+     mType25:
+        histogramTitle: 'Efficiency vs. x % 90 #mu m'
+        variable: 'localPosXMod90'
+        xTitle: 'x modulo 90 #mu m [#mu m]'
+        xNbins: 200
+        xMax: 95
+        xMin: -5
+
+  effVsMod2DX1:
+     baseCuts: 'tof<12.5&&pabs>0.3&&globPt>0.5&&hasRecHit>0'
+     effCuts: 'clusterSize==1'
+     yNbins: 80
+     yMin: -1.
+     yMax: 1.
+     mType23:
+        histogramTitle: 'Efficiency vs. x % 100 #mum and dx/dz'
+        variable: 'dxdz:localPosXMod100'
+        xTitle: 'x modulo 100 #mu m [#mu m]'
+        xNbins: 220
+        xMax: 105
+        xMin: -5
+     mType24:
+        histogramTitle: 'Efficiency vs. x % 100 #mum and dx/dz'
+        variable: 'dxdz:localPosXMod100'
+        xTitle: 'x modulo 100 #mu m [#mu m]'
+        xNbins: 220
+        xMax: 105
+        xMin: -5
+     mType25:
+        histogramTitle: 'Efficiency vs. x % 90 #mum'
+        variable: 'dxdz:localPosXMod90'
+        xTitle: 'x modulo 90 #mu m [#mu m]'
+        xNbins: 200
+        xMax: 95
+        xMin: -5
+
+  effVsMod2DX2:
+     baseCuts: 'tof<12.5&&pabs>0.3&&globPt>0.5&&hasRecHit>0'
+     effCuts: 'clusterSize==2'
+     yNbins: 80
+     yMin: -1.
+     yMax: 1.
+     mType23:
+        histogramTitle: 'Efficiency vs. x % 100 #mum and dx/dz'
+        variable: 'dxdz:localPosXMod100'
+        xTitle: 'x modulo 100 #mu m [#mu m]'
+        xNbins: 220
+        xMax: 105
+        xMin: -5
+     mType24:
+        histogramTitle: 'Efficiency vs. x % 100 #mum and dx/dz'
+        variable: 'dxdz:localPosXMod100'
+        xTitle: 'x modulo 100 #mu m [#mu m]'
+        xNbins: 220
+        xMax: 105
+        xMin: -5
+     mType25:
+        histogramTitle: 'Efficiency vs. x % 90 #mum'
+        variable: 'dxdz:localPosXMod90'
+        xTitle: 'x modulo 90 #mu m [#mu m]'
+        xNbins: 200
+        xMax: 95
+        xMin: -5
+
+
+  #
+  #
+  #
+  effVsModY:
+     baseCuts: 'tof<12.5&&pabs>0.3'
+     effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+     yMin: 0
+     yMax: 1.05
+     mType23:
+        histogramTitle: 'Efficiency vs. y % 1.5 mm'
+        variable: 'floatMod(100*localPos.y(),15)/10.'
+        xTitle: 'y modulo 1.5mm [mm]'
+        xNbins: 400
+        xMax: 1.75
+        xMin: -0.25
+     mType24:
+        histogramTitle: 'Efficiency vs. y % 2.5 cm'
+        variable: 'floatMod(10*localPos.y(),25)/10.'
+        xTitle: 'y modulo 2.5cm [cm]'
+        xNbins: 600
+        xMax: 2.75
+        xMin: -0.25
+     mType25:
+        histogramTitle: 'Efficiency vs. y % 5 cm'
+        variable: 'floatMod(10*localPos.y(),50)/10.'
+        xTitle: 'y modulo 5cm [cm]'
+        xNbins: 550
+        xMax: 5.25
+        xMin: -0.25
+  #
+  #
+  #
+  effX:
+     baseCuts: 'tof<12.5&&pabs>0.3'
+     effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+     histogramTitle: 'Efficiency 1D'
+     variable: 'localPos.x()'
+     xTitle: 'local x [cm]'
+     yMax: 1.05
+     yMin: 0.8
+     yTitle: 'efficiency'
+     mType23:
+        xMax: 5.5
+        xMin: -5.5
+        xNbins: 550
+     mType24:
+        xMax: 5.0
+        xMin: -5.0
+        xNbins: 250
+     mType25:
+        xMax: 5
+        xMin: -5
+        xNbins: 250
+  #
+  #
+  #
+  effY:
+     variable: 'localPos.y()'
+     baseCuts: 'tof<12.5&&pabs>0.3'
+     effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+     histogramTitle: 'Efficiency Y 1D'
+     xTitle: 'local y [cm]'
+     xNbins: 550
+     xMax: 5.5
+     xMin: -5.5
+     yTitle: 'efficiency'
+     yMax: 1.05
+     yMin: 0.8
