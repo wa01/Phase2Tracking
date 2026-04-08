@@ -31,7 +31,17 @@ process.source = cms.Source('PoolSource',
     #    '/store/relval/CMSSW_15_0_0/RelValTTbar_14TeV/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/061404ed-7c65-4f6e-88e9-b45a468f1cbe.root', \
     #    '/store/relval/CMSSW_15_0_0/RelValTTbar_14TeV/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/162e0007-7588-46d8-9c93-a2b4b243885e.root')
     fileNames = cms.untracked.vstring(
-        'file:/eos/user/a/adamw/CMSAnalysis/DPG/Phase2Tracking/Data/061404ed-7c65-4f6e-88e9-b45a468f1cbe.root'
+        '/store/relval/CMSSW_15_1_0/RelValTTbar_14TeV/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/002a6949-6471-46fd-8c44-1f09e7717c8f.root', \
+    '/store/relval/CMSSW_15_1_0/RelValTTbar_14TeV/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/0e60c3b1-0c21-41d2-94de-435382ae2b44.root', \
+    '/store/relval/CMSSW_15_1_0/RelValTTbar_14TeV/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/3342a947-891b-41b1-9ed1-dc0a79e52e2c.root', \
+    '/store/relval/CMSSW_15_1_0/RelValTTbar_14TeV/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/43fa9e06-8d30-423d-a656-7a136aa58dc6.root', \
+    '/store/relval/CMSSW_15_1_0/RelValTTbar_14TeV/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/93b9335c-5bb3-46a9-9851-3a982b4df225.root', \
+    '/store/relval/CMSSW_15_1_0/RelValTTbar_14TeV/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/9f157d02-3a77-4ed3-a64b-013ab978ad3d.root', \
+    '/store/relval/CMSSW_15_1_0/RelValTTbar_14TeV/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/a9b19378-c427-4f38-8cc9-0a6c7212bbd7.root', \
+    '/store/relval/CMSSW_15_1_0/RelValTTbar_14TeV/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/ab55d910-204b-451d-862d-2a2c35af456a.root', \
+    '/store/relval/CMSSW_15_1_0/RelValTTbar_14TeV/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/ddebeaf9-afd7-478f-8803-cc1c66bbc7d1.root', \
+    '/store/relval/CMSSW_15_1_0/RelValTTbar_14TeV/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/f00daee7-b0bd-47ab-96fe-dfc16c78f923.root' #, \
+    #    'file:/eos/user/a/adamw/CMSAnalysis/DPG/Phase2Tracking/Data/061404ed-7c65-4f6e-88e9-b45a468f1cbe.root'
     #    '/store/relval/CMSSW_15_0_0/RelValTTbar_14TeV/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/061404ed-7c65-4f6e-88e9-b45a468f1cbe.root', \
     #    '/store/relval/CMSSW_15_0_0/RelValTTbar_14TeV/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/162e0007-7588-46d8-9c93-a2b4b243885e.root', \
     #    '/store/relval/CMSSW_15_0_0/RelValTTbar_14TeV/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/1bb480aa-0bad-439e-a6a4-a75780d0be9c.root', \
@@ -105,5 +115,6 @@ process.rechits_step = cms.Path(process.siPhase2RecHits)
 process.analyze_step = cms.Path(process.analysis)
 
 process.schedule = cms.Schedule(process.rechits_step, process.analyze_step)
+
 
 
