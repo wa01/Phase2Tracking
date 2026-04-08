@@ -591,7 +591,7 @@ if args.zone=="barrel":
 elif args.zone=="endcap":
     zoneCuts = "detNormalT<0.01"
 elif args.zone=="tilted":
-    zoneCuts = "detNormalT>0.05&&detNormalT<0.095"
+    zoneCuts = "detNormalT>0.05&&detNormalT<0.95"
 else:
     zoneCuts = ""
 args.cuts = cutString(args.cuts,zoneCuts)
