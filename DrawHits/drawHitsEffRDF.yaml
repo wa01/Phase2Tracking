@@ -39,7 +39,7 @@ histograms:
   #
   effAlphaLoose:
      baseCuts: 'tof<12.5&&pabs>0.3'
-     effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+     effCuts: 'hasRecHit>0&&abs(localPosX-rhLocalPosX)<0.0075'
      histogramTitle: 'Efficiency vs. alpha(xz) tight'
      variable: 'atan2(abs(path.x()),abs(path.z()))/3.1415*180'
      xMax: 100.0
@@ -54,7 +54,7 @@ histograms:
   #
   effAlphaTight:
      baseCuts: 'tof<12.5&&pabs>0.3'
-     effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.1'
+     effCuts: 'hasRecHit>0&&abs(localPosX-rhLocalPosX)<0.1'
      histogramTitle: 'Efficiency vs. alpha(xz) loose'
      variable: 'atan2(abs(path.x()),abs(path.z()))/3.1415*180'
      xMax: 100.0
@@ -69,12 +69,12 @@ histograms:
   #
   effVsModX:
      baseCuts: 'tof<12.5&&pabs>0.3'
-     effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+     effCuts: 'hasRecHit>0&&abs(localPosX-rhLocalPosX)<0.0075'
      yMin: 0
      yMax: 1.05
      mType23:
         histogramTitle: 'Efficiency vs. x % 100 #mum'
-        variable: 'floatMod(10000*localPos.x(),100)'
+        variable: 'localPosXMod100'
         xTitle: 'x modulo 100 #mum [#mum]'
         xNbins: 220
         xMax: 105
@@ -271,26 +271,26 @@ histograms:
   #
   effVsModY:
      baseCuts: 'tof<12.5&&pabs>0.3'
-     effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+     effCuts: 'hasRecHit>0&&abs(localPosX-rhLocalPosX)<0.0075'
      yMin: 0
      yMax: 1.05
      mType23:
         histogramTitle: 'Efficiency vs. y % 1.5 mm'
-        variable: 'floatMod(100*localPos.y(),15)/10.'
+        variable: 'localPosYMod15'
         xTitle: 'y modulo 1.5mm [mm]'
         xNbins: 400
         xMax: 1.75
         xMin: -0.25
      mType24:
         histogramTitle: 'Efficiency vs. y % 2.5 cm'
-        variable: 'floatMod(10*localPos.y(),25)/10.'
+        variable: 'localPosYMod250'
         xTitle: 'y modulo 2.5cm [cm]'
         xNbins: 600
         xMax: 2.75
         xMin: -0.25
      mType25:
         histogramTitle: 'Efficiency vs. y % 5 cm'
-        variable: 'floatMod(10*localPos.y(),50)/10.'
+        variable: 'localPosYMod500'
         xTitle: 'y modulo 5cm [cm]'
         xNbins: 550
         xMax: 5.25
@@ -300,9 +300,9 @@ histograms:
   #
   effX:
      baseCuts: 'tof<12.5&&pabs>0.3'
-     effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+     effCuts: 'hasRecHit>0&&abs(localPosX-rhLocalPosX)<0.0075'
      histogramTitle: 'Efficiency 1D'
-     variable: 'localPos.x()'
+     variable: 'localPosX'
      xTitle: 'local x [cm]'
      yMax: 1.05
      yMin: 0.8
@@ -325,7 +325,7 @@ histograms:
   effY:
      variable: 'localPos.y()'
      baseCuts: 'tof<12.5&&pabs>0.3'
-     effCuts: 'hasRecHit>0&&abs(localPos.x()-rhLocalPos.x())<0.0075'
+     effCuts: 'hasRecHit>0&&abs(localPosX-rhLocalPosX)<0.0075'
      histogramTitle: 'Efficiency Y 1D'
      xTitle: 'local y [cm]'
      xNbins: 550
