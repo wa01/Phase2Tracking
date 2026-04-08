@@ -519,6 +519,7 @@ if fitCanvas.histogram().GetDimension()==1 and ( not args.slices ):
                 #quantLines[isigma].DrawLine(qs[2],0.,qs[2],qlmax)
             else:
                 print("(At least) one quantile computation failed: sigma =",sigma," p =",ROOT.TMath.Freq(-sigma),qs)
+                print("  ",slices[-1].hist.GetSumOfWeights(),slices[-1].hist.GetMaximum())
 
         fc.pad.Update()
 
