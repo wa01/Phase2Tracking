@@ -78,6 +78,7 @@ def divideRatios(cnv,nx,ny,widthRatios,heightRatios,canvasTopMargin=0.,canvasLef
     return result
 
 def fitHistogram(mType,h):
+    assert h.GetDimension()==1
     f1name = "f1"+str(mType)
     f1 = ROOT.TF1(f1name,"gaus(0)")
     f1.SetParameter(0,h.GetMaximum())
