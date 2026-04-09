@@ -37,30 +37,30 @@ histograms:
   #
   #
   #
-  effAlphaLoose:
+  effAlphaTight:
      baseCuts: 'tof<12.5&&pabs>0.3'
      effCuts: 'hasRecHit>0&&abs(localPosX-rhLocalPosX)<0.0075'
      histogramTitle: 'Efficiency vs. alpha(xz) tight'
-     variable: 'atan2(abs(path.x()),abs(path.z()))/3.1415*180'
+     variable: 'alpha'
      xMax: 100.0
      xMin: 0
      xNbins: 100
-     xTitle: 'alpha(xz) [deg]'
+     xTitle: '#alpha(xz) from path [deg]'
      yMax: 1.05
      yMin: 0.5
      yTitle: 'efficiency'
   #
   #
   #
-  effAlphaTight:
+  effAlphaLoose:
      baseCuts: 'tof<12.5&&pabs>0.3'
      effCuts: 'hasRecHit>0&&abs(localPosX-rhLocalPosX)<0.1'
      histogramTitle: 'Efficiency vs. alpha(xz) loose'
-     variable: 'atan2(abs(path.x()),abs(path.z()))/3.1415*180'
+     variable: 'alpha'
      xMax: 100.0
      xMin: 0
      xNbins: 100
-     xTitle: 'alpha(xz) [deg]'
+     xTitle: '#alpha(xz) from path [deg]'
      yMax: 1.05
      yMin: 0.5
      yTitle: 'efficiency'
@@ -301,7 +301,7 @@ histograms:
   effX:
      baseCuts: 'tof<12.5&&pabs>0.3'
      effCuts: 'hasRecHit>0&&abs(localPosX-rhLocalPosX)<0.0075'
-     histogramTitle: 'Efficiency 1D'
+     histogramTitle: 'Efficiency X 1D'
      variable: 'localPosX'
      xTitle: 'local x [cm]'
      yMax: 1.05
@@ -323,14 +323,57 @@ histograms:
   #
   #
   effY:
-     variable: 'localPos.y()'
      baseCuts: 'tof<12.5&&pabs>0.3'
      effCuts: 'hasRecHit>0&&abs(localPosX-rhLocalPosX)<0.0075'
      histogramTitle: 'Efficiency Y 1D'
+     variable: 'localPosY'
      xTitle: 'local y [cm]'
-     xNbins: 550
-     xMax: 5.5
-     xMin: -5.5
      yTitle: 'efficiency'
      yMax: 1.05
      yMin: 0.8
+     mType23:
+        xMax: 3
+        xMin: -3
+        xNbins: 120
+     mType24:
+        xMax: 3.0
+        xMin: -3.0
+        xNbins: 120
+     mType25:
+        xMax: 5.5
+        xMin: -5.5
+        xNbins: 220
+
+  #
+  #
+  #
+  effXY:
+     baseCuts: 'tof<12.5&&pabs>0.3'
+     effCuts: 'hasRecHit>0&&abs(localPosX-rhLocalPosX)<0.0075'
+     histogramTitle: 'Efficiency XY 2D'
+     variable: 'localPosY:localPosX'
+     xTitle: 'local x [cm]'
+     yTitle: 'local y [cm]'
+     zMax: 1.0
+     zMin: 0.5
+     mType23:
+        xMax: 5.5
+        xMin: -5.5
+        xNbins: 55
+        yMax: 3
+        yMin: -3
+        yNbins: 24
+     mType24:
+        xMax: 5.0
+        xMin: -5.0
+        xNbins: 50
+        yMax: 3.0
+        yMin: -3.0
+        yNbins: 40
+     mType25:
+        xMax: 5
+        xMin: -5
+        xNbins: 50
+        yMax: 6
+        yMin: -6
+        yNbins: 40
