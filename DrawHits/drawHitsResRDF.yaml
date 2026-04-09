@@ -15,7 +15,7 @@ variables:
    rhLocalErrY: 'rhLocalErr.fCoordinates.fY'
    globRho2: 'globalDir.fCoordinates.fX*globalDir.fCoordinates.fX+globalDir.fCoordinates.fY*globalDir.fCoordinates.fY'
    globR2: 'globRho2+globalDir.fCoordinates.fZ*globalDir.fCoordinates.fZ'
-   globPt: 'pabs*sqrt(sqrt(globRho2/globR2))'
+   globPt: 'pabs*sqrt(globRho2/globR2)'
    detNormalT: 'detNormal.fCoordinates.fX*detNormal.fCoordinates.fX+detNormal.fCoordinates.fY*detNormal.fCoordinates.fY'
 #
 #
@@ -51,6 +51,15 @@ histograms:
      xMax: 5
      xMin: -5
      fit: 'gaus'
+     logY: true
+  pullY:
+     histogramTitle: 'pulls (y)'
+     variable: '(localPosY-rhLocalPosY)/rhLocalErrY'
+     baseCuts: 'tof<12.5&&hasRecHit>0'
+     xTitle: 'pull local y'
+     xNbins: 200
+     xMax: 5
+     xMin: -5
      logY: true
 #
 #
@@ -102,6 +111,7 @@ histograms:
      xNbins: 300
      xMax: 0.075
      xMin: -0.075
+     fit: 'gaus'
      logY: true
 #
 #
@@ -133,18 +143,6 @@ histograms:
      yMin: -1.05
      yMax: 1.05
      logZ: true
-#
-#
-#
-  resY:
-     histogramTitle: 'pulls (y)'
-     variable: '(localPosY-rhLocalPosY)/rhLocalErrY'
-     baseCuts: 'tof<12.5&&hasRecHit>0'
-     xTitle: 'pull local y'
-     xNbins: 200
-     xMax: 5
-     xMin: -5
-     logY: true
 #
 #
 #
