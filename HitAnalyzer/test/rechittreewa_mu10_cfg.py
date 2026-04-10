@@ -17,19 +17,23 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T33', ''
 
 # Number of events (-1 = all)
 process.maxEvents = cms.untracked.PSet(
-    #input = cms.untracked.int32(-1)
-    input = cms.untracked.int32(10)
+    input = cms.untracked.int32(-1)
+    #input = cms.untracked.int32(10)
 )
-
+# Dataset: /RelValSingleMuPt10/CMSSW_15_1_0-150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/GEN-SIM-RECO
 # Input file
 process.source = cms.Source('PoolSource',
     fileNames = cms.untracked.vstring( \
-        '/store/relval/CMSSW_15_0_0/RelValSingleMuPt10/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/0b0d313e-56e1-4e64-aa58-8a2e61767bf5.root', \
-        '/store/relval/CMSSW_15_0_0/RelValSingleMuPt10/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/66c7ce91-878a-449b-b0fb-1cb8d3084116.root', \
-        '/store/relval/CMSSW_15_0_0/RelValSingleMuPt10/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/6cd776e0-dd34-48c4-81cc-844435564ea5.root', \
-        '/store/relval/CMSSW_15_0_0/RelValSingleMuPt10/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/94a5b755-f778-4861-a83d-94eb46c18acb.root', \
-        '/store/relval/CMSSW_15_0_0/RelValSingleMuPt10/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/a146954f-f6be-46bc-95e8-dd1016306930.root', \
-        '/store/relval/CMSSW_15_0_0/RelValSingleMuPt10/GEN-SIM-RECO/141X_mcRun4_realistic_v3_STD_RegeneratedGS_Run4D110_noPU-v2/2580000/f459a343-5615-46f5-9ebc-f07e87c3db8e.root')
+      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/0166e3ce-e26d-483c-8226-cac472af699c.root', \
+      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/0562962b-66c8-488b-89d5-6df21d71f0b6.root', \
+      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/319ecc54-5d83-4e72-8d4a-3f73563e6d37.root', \
+      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/34e25999-54a2-4134-8703-241898703fed.root', \
+      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/37360339-d4dc-4270-85d1-8b89448a6504.root', \
+      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/49967669-571d-4a2b-aca2-6a148ebdb729.root', \
+      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/a88d679b-a909-47a4-8006-2455d1db2d5c.root', \
+      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/ae60ec5b-9009-4a17-8bcb-760c22430149.root', \
+      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/f931e711-1c11-47ce-9de3-49bd3966438d.root'
+      )
 )
 
 # Output
@@ -58,7 +62,7 @@ process.analysis = cms.EDAnalyzer('RecHitTreeWA',
     #MakeEtaPlots = cms.bool(False),
     #MinEta = cms.double(0.),
     #MaxEta = cms.double(10.)
-   debugHitMatch = cms.bool(True),
+   debugHitMatch = cms.bool(False),
     simHitInfo = cms.PSet(
         simHits = cms.VInputTag(
             cms.InputTag("g4SimHits", "TrackerHitsPixelBarrelLowTof"),
