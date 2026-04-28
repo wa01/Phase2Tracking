@@ -181,8 +181,9 @@ class FitHistogram:
         '''
         result = self.intersects(prob,cumulative=True,norm=True,direction=1)
         #print(prob,result)
-        assert len(result)<2
-
+        if len(result)>1:
+            result = None
+            
         return result[0] if result else None
 
     def findRootSpline(self,value,eps=0.001):
