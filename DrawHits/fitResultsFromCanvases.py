@@ -124,8 +124,8 @@ for d in args.directories:
                 allFnGens.add(fngen)
                 assert not fngen in dnResults
                 dnResults[fngen] = results
-print(allFnGens)
-sys.exit()
+#print(allFnGens)
+#sys.exit()
 
 mTypes = range(23,26)
 parNames = [ 'mean', 'width' ]
@@ -153,7 +153,7 @@ if args.csv!=None:
 
         for fnGen in sorted(allFnGens):
             row = len(hdrRow1)*[ '' ]
-            row[0] = fnGen
+            row[0] = "_".join(fnGen)
             idx = 1
             for ipn in range(len(parNames)):
                 for im in range(len(mTypes)):
@@ -187,71 +187,87 @@ cnvs = { }
 frames = [ ]
 legs = [ ]
 graphs = { }
-for fnGen in sorted(allFnGens):
-    cnvs[fnGen] = { x:{ } for x in parNames }
-    graphs[fnGen] = { x:{ } for x in parNames }
+fnRoots = set( [ x[0] for x in allFnGens ] )
+fnZones = set( [ x[1] for x in allFnGens ] )
+for fnRoot in sorted(fnRoots):
+    cnvs[fnRoot] = { x:{ } for x in parNames }
+    graphs[fnRoot] = { x:{ } for x in parNames }
     for ipn,pn in enumerate(parNames):
-        cnv = ROOT.TCanvas(fnGen+"-"+pn,fnGen+"-"+pn,600,600)
+        cnv = ROOT.TCanvas(fnRoot+"-"+pn,fnRoot+"-"+pn,600,600)
         cnv.SetBottomMargin(0.15)
-        cnvs[fnGen][pn] = cnv
-        graphs[fnGen][pn] = { x:{ } for x in mTypes }
-        frames.append(ROOT.TH1F("h"+fnGen[1:]+"-"+pn,"h"+fnGen[1:]+"-"+pn,nDns,-0.5,nDns-0.5))
+        cnvs[fnRoot][pn] = cnv
+        graphs[fnRoot][pn] = { }
+        for fnZone in fnZones:
+            graphs[fnRoot][pn][fnZone] = { }
+            for mt in mTypes:
+                graphs[fnRoot][pn][fnZone][mt] = { }
+        #graphs[fnRoot][pn] = { x:{ } for x in mTypes }
+        frames.append(ROOT.TH1F("h"+fnRoot[1:]+"-"+pn,"h"+fnRoot[1:]+"-"+pn,nDns,-0.5,nDns-0.5))
         if pn=='mean':
             #frames.append(cnv.DrawFrame(-0.5,-1,nDns-0.5,1))
-            if "pull" in fnGen.lower():
+            if "pull" in fnRoot.lower():
                 frames[-1].GetYaxis().SetTitle('mean (pull)')
-            elif "res" in fnGen.lower():
+            elif "res" in fnRoot.lower():
                 frames[-1].GetYaxis().SetTitle('mean (residual) #mm')
         elif pn=='width':
             #frames.append(cnv.DrawFrame(-0.5,0,nDns-0.5,100))
-            if "pull" in fnGen.lower():
+            if "pull" in fnRoot.lower():
                 frames[-1].GetYaxis().SetTitle('sigma (pull)')
-            elif "res" in fnGen.lower():
+            elif "res" in fnRoot.lower():
                 frames[-1].GetYaxis().SetTitle('sigma (residual) #mm')
         for idn,dn in enumerate(dns):
             frames[-1].GetXaxis().SetBinLabel(idn+1,dn)
         frames[-1].GetXaxis().SetLabelSize(0.05)
         ymin,ymax = 1.e30,-1.e30
-        color = MyColors()
-        for im,mt in enumerate(mTypes):
-            graph = ROOT.TGraphErrors()
-            graph.SetName("g"+fnGen[1:]+"-"+pn+"-"+str(mt))
-            graph.SetTitle("g"+fnGen[1:]+"-"+pn+"-"+str(mt))
-            graph.SetLineWidth(2)
-            ic = color.next()
-            graph.SetLineColor(ic)
-            graph.SetMarkerStyle(im+20)
-            graph.SetMarkerColor(ic)
-            graphs[fnGen][pn][mt] = graph
-            for idn,dn in enumerate(dns):
-                dnResults = allResults[dn]
-                if fnGen in dnResults:
-                    fnResults = dnResults[fnGen]
-                    v,e = fnResults[im][ipn]
-                    if "res" in fnGen.lower():
-                        v *= 10000
-                        e *= 10000
-                    graph.AddPointError(idn,v,0.,e)
-                    ymin = min(ymin,v-e)
-                    ymax = max(ymax,v+e)
+        lstyle = MyColors([1,2,3])
+        marker = 20
+        for iz,fnZone in enumerate(sorted(fnZones)):
+            istyle = lstyle.next()
+            color = MyColors()
+            for im,mt in enumerate(mTypes):
+                graph = ROOT.TGraphErrors()
+                graph.SetName("g"+fnZone+"-"+pn+"-"+str(mt))
+                graph.SetTitle("g"+fnZone+"-"+pn+"-"+str(mt))
+                graph.SetLineWidth(2)
+                ic = color.next()
+                graph.SetLineColor(ic)
+                graph.SetLineStyle(istyle)
+                graph.SetMarkerStyle(marker)
+                marker += 1
+                graph.SetMarkerColor(ic)
+                graphs[fnRoot][pn][fnZone][mt] = graph
+                fnGen = ( fnRoot, fnZone )
+                for idn,dn in enumerate(dns):
+                    dnResults = allResults[dn]
+                    if fnGen in dnResults:
+                        fnResults = dnResults[fnGen]
+                        v,e = fnResults[im][ipn]
+                        if "res" in fnRoot.lower():
+                            v *= 10000
+                            e *= 10000
+                        graph.AddPointError(idn+nDns*iz/50,v,0.,e)
+                        ymin = min(ymin,v-e)
+                        ymax = max(ymax,v+e)
         if pn=='mean':
             dy = ymax - ymin
-            ymin -= dy*1.01
-            ymax += dy*1.04
+            ymin -= dy*0.05
+            ymax += dy*0.15
         elif pn=='width':
             ymin = 0.
-            ymax *= 1.10
+            ymax *= 1.15
         frames[-1].SetMinimum(ymin)
         frames[-1].SetMaximum(ymax)
         frames[-1].Draw()
-        leg = ROOT.TLegend(0.15,0.85,0.90,0.90)
-        leg.SetNColumns(3)
+        leg = ROOT.TLegend(0.15,0.80,0.90,0.90)
+        leg.SetNColumns(4)
         leg.SetBorderSize(0)
         leg.SetFillStyle(0)
         legs.append(leg)
-        for mt in mTypes:
-            leg.AddEntry(graphs[fnGen][pn][mt],"mType "+str(mt),"LP")
-            graphs[fnGen][pn][mt].Draw("PL")
+        for fnZone in sorted(fnZones):
+            leg.AddEntry("",fnZone,"")
+            for mt in mTypes:
+                leg.AddEntry(graphs[fnRoot][pn][fnZone][mt],"mType "+str(mt),"LP")
+                graphs[fnRoot][pn][fnZone][mt].Draw("PL")
         leg.Draw()
         cnv.Update()
         if args.output!=None:
