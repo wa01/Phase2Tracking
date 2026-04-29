@@ -1,3 +1,7 @@
+#
+# use canvases produced by drawHitsRDF to summarize means and widths for 1D residual or pull histograms
+#   by detector zone, module type, and algorithm
+#
 import sys,os
 import ROOT
 from FitHistogram import FitHistogram
@@ -67,7 +71,7 @@ def processPad(pad,algo='prefit'):
                 result.append((f.GetParameter(i),f.GetParError(i)))
         case 'fwhm':
             xmin,xmax,y = fitHisto.fwhm()
-            result = [ ( (xmax-xmin)/2., 0. ), ( (xmax-xmin)/2/sqrt(2*log(2.)), 0. ) ]
+            result = [ ( (xmax+xmin)/2., 0. ), ( (xmax-xmin)/2/sqrt(2*log(2.)), 0. ) ]
 
         case 'q1sig':
             result = fromQuantiles(fitHisto,1)
@@ -118,14 +122,24 @@ parser.add_argument('--csv', help='csv output file', type=str, default=None)
 parser.add_argument('--output', '-o', help='output directory for graphic output', type=str, default=None)
 parser.add_argument('--formats', '-f', help='comma-separated list of extensions for output files', \
                         type=str, default="pdf,png")
-parser.add_argument('--algorithm', '-a', help='algorithm used for fit results', type=str, \
-                        choices=[ 'prefit', 'gaus', 'fwhm', 'q1sig', 'q2sig', 'q3sig' ], default='prefit' )
+parser.add_argument('--mtypes', help='comma-separated list of module types', \
+                        type=str, default="23,24,25")
+parser.add_argument('--names', help='comma-separated list of patterns to match file names', \
+                        type=str, default="*")
+parser.add_argument('--algorithms', '-a', help='comma-separated list of algorithms used for fit results', \
+                        type=str, default='prefit' )
 parser.add_argument('directories', help='directories with stored canvases in root format', type=str, nargs='+')
 args = parser.parse_args()
 if args.output!=None:
     assert os.path.isdir(args.output)
 zones = [ x.strip() for x in args.zones.split(",") ]
-
+reqFNames = [ x.strip() for x in args.names.split(",") ]
+reqMTypes = [ int(x.strip()) for x in args.mtypes.split(",") ]
+allAlgos = [ 'prefit', 'gaus', 'fwhm', 'q1sig', 'q2sig', 'q3sig' ]
+reqAlgos = [ ]
+for a in [ x.strip().lower() for x in args.algorithms.split(",") ]:
+    assert a in allAlgos
+    reqAlgos.append(a)
 
 ROOT.gStyle.SetOptStat(0)
 allResults = { }
@@ -144,6 +158,8 @@ for d in args.directories:
             fname,fext = os.path.splitext(f)
             if fext!=".root":
                 continue
+            if not any([ fnmatch(fname,x) for x in reqFNames ]):
+                continue
             fields = fname.split("_")
             fngen = ( fields[0],"_".join(fields[2:]) )
             if not any([ fnmatch(fngen[1],x) for x in zones ]):
@@ -152,75 +168,78 @@ for d in args.directories:
                 assert fields[1]==fncode
             else:
                 fncode = fields[1]
-            results = processFile(os.path.join(root,f),args.algorithm)
-            nNone = sum([ x==None for x in results ])
-            if nNone>0 and nNone<3:
-                print("***",fname,results)
-            #assert nNone==0 or nNone==3
-            if nNone==0:
-                #fngen = "_".join(fields[:1]+fields[2:])
-                fngen = ( fields[0],"_".join(fields[2:]) )
-                allFnGens.add(fngen)
-                assert not fngen in dnResults
-                dnResults[fngen] = results
+            dnResults[fngen] = { }
+            for algo in reqAlgos:
+                results = processFile(os.path.join(root,f),algo)
+                nNone = sum([ x==None for x in results ])
+                if nNone>0 and nNone<3:
+                    print("***",fname,results)
+                #assert nNone==0 or nNone==3
+                if nNone==0:
+                    #fngen = "_".join(fields[:1]+fields[2:])
+                    fngen = ( fields[0],"_".join(fields[2:]) )
+                    allFnGens.add(fngen)
+                    #assert not fngen in dnResults
+                    dnResults[fngen][algo] = results
 #print(allFnGens)
 #sys.exit()
 
-mTypes = range(23,26)
+allMTypes = range(23,26)
+mTypes = reqMTypes
 parNames = [ 'mean', 'width' ]
 dns = sorted(allResults.keys())
 nDns = len(dns)
 
-if args.csv!=None:
-    with open("tmpFitResults.csv","wt") as csvFile:
-        csvWriter = csv.writer(csvFile)
+#!# if args.csv!=None:
+#!#     with open("tmpFitResults.csv","wt") as csvFile:
+#!#         csvWriter = csv.writer(csvFile)
 
-        hdrRow1 = [ 'Canvas' ]
-        hdrRow2 = [ '' ]
-        hdrRow3 = [ '' ]
-        for pn in parNames:
-            hdrRow1.append(pn)
-            hdrRow1.extend((nDns*len(mTypes)-1)*[''])
-            for mtype in mTypes:
-                hdrRow2.append("mType "+str(mtype))
-                hdrRow2.extend((nDns-1)*[''])
-                for dn in dns:
-                    hdrRow3.append(dn)
-        csvWriter.writerow(hdrRow1)
-        csvWriter.writerow(hdrRow2)
-        csvWriter.writerow(hdrRow3)
+#!#         hdrRow1 = [ 'Canvas' ]
+#!#         hdrRow2 = [ '' ]
+#!#         hdrRow3 = [ '' ]
+#!#         for pn in parNames:
+#!#             hdrRow1.append(pn)
+#!#             hdrRow1.extend((nDns*len(mTypes)-1)*[''])
+#!#             for mtype in mTypes:
+#!#                 hdrRow2.append("mType "+str(mtype))
+#!#                 hdrRow2.extend((nDns-1)*[''])
+#!#                 for dn in dns:
+#!#                     hdrRow3.append(dn)
+#!#         csvWriter.writerow(hdrRow1)
+#!#         csvWriter.writerow(hdrRow2)
+#!#         csvWriter.writerow(hdrRow3)
 
-        for fnGen in sorted(allFnGens):
-            row = len(hdrRow1)*[ '' ]
-            row[0] = "_".join(fnGen)
-            idx = 1
-            for ipn in range(len(parNames)):
-                for im in range(len(mTypes)):
-                    for idn,dn in enumerate(dns):
-                        dnResults = allResults[dn]
-                        if fnGen in dnResults:
-                            fnResults = dnResults[fnGen]
-                            if fnGen=='cPullXW1_barrel':
-                                print(ipn,im,idn,dn)
-                                print(" ",fnResults[im][ipn])
-                            idx = 1 + idn + im*len(dns) + ipn*len(dns)*len(mTypes)
-                            v = fnResults[im][ipn][0]
-                            r = "{:4g}".format(v)
-                            if "pull" in fnGen.lower():
-                                if parNames[ipn]=='mean':
-                                    r = '{:7.3f}'.format(v)
-                                elif parNames[ipn]=='width':
-                                    r = '{:7.3f}'.format(v)
-                            if "res" in fnGen.lower():
-                                if parNames[ipn]=='mean':
-                                    r = '{:7.2f}'.format(10000*v)
-                                elif parNames[ipn]=='width':
-                                    r = '{:7.2f}'.format(10000*v)
-                            #row[idx] = str(fnResults[im][ipn][0])
-                            row[idx] = r
-            csvWriter.writerow(row)
+#!#         for fnGen in sorted(allFnGens):
+#!#             row = len(hdrRow1)*[ '' ]
+#!#             row[0] = "_".join(fnGen)
+#!#             idx = 1
+#!#             for ipn in range(len(parNames)):
+#!#                 for im in range(len(mTypes)):
+#!#                     for idn,dn in enumerate(dns):
+#!#                         dnResults = allResults[dn]
+#!#                         if fnGen in dnResults:
+#!#                             fnResults = dnResults[fnGen]
+#!#                             if fnGen=='cPullXW1_barrel':
+#!#                                 print(ipn,im,idn,dn)
+#!#                                 print(" ",fnResults[im][ipn])
+#!#                             idx = 1 + idn + im*len(dns) + ipn*len(dns)*len(mTypes)
+#!#                             v = fnResults[im][ipn][0]
+#!#                             r = "{:4g}".format(v)
+#!#                             if "pull" in fnGen.lower():
+#!#                                 if parNames[ipn]=='mean':
+#!#                                     r = '{:7.3f}'.format(v)
+#!#                                 elif parNames[ipn]=='width':
+#!#                                     r = '{:7.3f}'.format(v)
+#!#                             if "res" in fnGen.lower():
+#!#                                 if parNames[ipn]=='mean':
+#!#                                     r = '{:7.2f}'.format(10000*v)
+#!#                                 elif parNames[ipn]=='width':
+#!#                                     r = '{:7.2f}'.format(10000*v)
+#!#                             #row[idx] = str(fnResults[im][ipn][0])
+#!#                             row[idx] = r
+#!#             csvWriter.writerow(row)
 
-        csvFile.close()
+#!#         csvFile.close()
 
 cnvs = { }
 frames = [ ]
@@ -232,7 +251,7 @@ for fnRoot in sorted(fnRoots):
     cnvs[fnRoot] = { x:{ } for x in parNames }
     graphs[fnRoot] = { x:{ } for x in parNames }
     for ipn,pn in enumerate(parNames):
-        cnvName = fnRoot+"-"+pn+"-"+args.algorithm
+        cnvName = fnRoot+"-"+pn
         cnv = ROOT.TCanvas(cnvName,cnvName,600,600)
         cnv.SetBottomMargin(0.15)
         cnvs[fnRoot][pn] = cnv
@@ -241,8 +260,11 @@ for fnRoot in sorted(fnRoots):
             graphs[fnRoot][pn][fnZone] = { }
             for mt in mTypes:
                 graphs[fnRoot][pn][fnZone][mt] = { }
+                for a in reqAlgos:
+                    graphs[fnRoot][pn][fnZone][a] = { }
+                    
         #graphs[fnRoot][pn] = { x:{ } for x in mTypes }
-        frames.append(ROOT.TH1F("h"+fnRoot[1:]+"-"+pn,fnRoot[1:]+"-"+pn+" ("+args.algorithm+")",nDns,-0.5,nDns-0.5))
+        frames.append(ROOT.TH1F("h"+fnRoot[1:]+"-"+pn,fnRoot[1:]+"-"+pn,nDns,-0.5,nDns-0.5))
         if pn=='mean':
             #frames.append(cnv.DrawFrame(-0.5,-1,nDns-0.5,1))
             if "pull" in fnRoot.lower():
@@ -264,31 +286,35 @@ for fnRoot in sorted(fnRoots):
         for iz,fnZone in enumerate(sorted(fnZones)):
             istyle = lstyle.next()
             color = MyColors()
+            style = iz + 1
             for im,mt in enumerate(mTypes):
-                graph = ROOT.TGraphErrors()
-                graph.SetName("g"+fnZone+"-"+pn+"-"+str(mt))
-                graph.SetTitle("g"+fnZone+"-"+pn+"-"+str(mt))
-                graph.SetLineWidth(2)
                 ic = color.next()
-                graph.SetLineColor(ic)
-                graph.SetLineStyle(istyle)
-                graph.SetMarkerStyle(marker)
-                marker += 1
-                graph.SetMarkerColor(ic)
-                graphs[fnRoot][pn][fnZone][mt] = graph
-                fnGen = ( fnRoot, fnZone )
-                for idn,dn in enumerate(dns):
-                    dnResults = allResults[dn]
-                    if fnGen in dnResults:
-                        fnResults = dnResults[fnGen]
-                        if fnResults[im][ipn]!=None:
-                            v,e = fnResults[im][ipn]
-                            if "res" in fnRoot.lower():
-                                v *= 10000
-                                e *= 10000
-                            graph.AddPointError(idn+nDns*iz/50,v,0.,e)
-                            ymin = min(ymin,v-e)
-                            ymax = max(ymax,v+e)
+                for ia,algo in enumerate(reqAlgos):
+                    marker = ia + 20
+                    graph = ROOT.TGraphErrors()
+                    graph.SetName("g"+fnZone+"-"+pn+"-"+str(mt)+"-"+algo)
+                    graph.SetTitle("g"+fnZone+"-"+pn+"-"+str(mt)+"-"+algo)
+                    graph.SetLineWidth(2)
+                    #ic = color.next()
+                    graph.SetLineColor(ic)
+                    graph.SetLineStyle(istyle)
+                    graph.SetMarkerStyle(marker)
+                    #marker += 1
+                    graph.SetMarkerColor(ic)
+                    graphs[fnRoot][pn][fnZone][mt][algo] = graph
+                    fnGen = ( fnRoot, fnZone )
+                    for idn,dn in enumerate(dns):
+                        dnResults = allResults[dn]
+                        if fnGen in dnResults:
+                            fnResults = dnResults[fnGen]
+                            if ( algo in fnResults ) and fnResults[algo][im][ipn]!=None:
+                                v,e = fnResults[algo][im][ipn]
+                                if "res" in fnRoot.lower():
+                                    v *= 10000
+                                    e *= 10000
+                                graph.AddPointError(idn+nDns*iz/50,v,0.,e)
+                                ymin = min(ymin,v-e)
+                                ymax = max(ymax,v+e)
         if pn=='mean':
             dy = ymax - ymin
             ymin -= dy*0.05
@@ -299,16 +325,21 @@ for fnRoot in sorted(fnRoots):
         frames[-1].SetMinimum(ymin)
         frames[-1].SetMaximum(ymax)
         frames[-1].Draw()
-        leg = ROOT.TLegend(0.15,0.80,0.90,0.90)
+        leg = ROOT.TLegend(0.10,0.80,0.90,0.90)
         leg.SetNColumns(4)
         leg.SetBorderSize(0)
         leg.SetFillStyle(0)
         legs.append(leg)
         for fnZone in sorted(fnZones):
-            leg.AddEntry("",fnZone,"")
-            for mt in mTypes:
-                leg.AddEntry(graphs[fnRoot][pn][fnZone][mt],"mType "+str(mt),"LP")
-                graphs[fnRoot][pn][fnZone][mt].Draw("PL")
+            for algo in  reqAlgos:
+                leg.AddEntry("",fnZone+" "+algo,"")
+                for mt in allMTypes:
+                    if mt in mTypes:
+                        leg.AddEntry(graphs[fnRoot][pn][fnZone][mt][algo],"mType "+str(mt),"LP")
+                        graphs[fnRoot][pn][fnZone][mt][algo].Draw("PL")
+                    else:
+                        leg.AddEntry("","        ","")
+                        
         leg.Draw()
         cnv.Update()
         if args.output!=None:
