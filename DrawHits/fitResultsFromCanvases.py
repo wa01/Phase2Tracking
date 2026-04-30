@@ -34,6 +34,7 @@ def fromQuantiles(fitHisto,isig):
     for sgn in [ -1, 0, 1 ]:
         xqs.append(fitHisto.quantile(ROOT.TMath.Freq(sgn*isig)))
     if None in xqs:
+        print("Quantiles failed!!!")
         return None
 
     return [ ( xqs[1], 0. ), ( (xqs[2]-xqs[0])/2./isig, 0. ) ]
@@ -108,10 +109,15 @@ def processFile(rootfile,algo='prefit'):
     assert len(pads)==3
 
     results = [ ]
+    #ctmp = ROOT.TCanvas("ctmp","ctmp",1200,800)
     for p in pads:
-        #print("Processing pad in",rootfile)
+        print("Processing pad in",rootfile,p.GetName(),"with algo",algo)
+        #p.Draw()
+        #ctmp.Update()
         result = processPad(p,algo)
         results.append(result)
+        print(result)
+    #input("Enter")
 
     return results
 
@@ -128,6 +134,7 @@ parser.add_argument('--names', help='comma-separated list of patterns to match f
                         type=str, default="*")
 parser.add_argument('--algorithms', '-a', help='comma-separated list of algorithms used for fit results', \
                         type=str, default='prefit' )
+parser.add_argument('--verbose', '-v', help='verbose output', action=store_true, default=False)
 parser.add_argument('directories', help='directories with stored canvases in root format', type=str, nargs='+')
 args = parser.parse_args()
 if args.output!=None:
@@ -171,6 +178,7 @@ for d in args.directories:
             dnResults[fngen] = { }
             for algo in reqAlgos:
                 results = processFile(os.path.join(root,f),algo)
+                print("processFile",os.path.join(root,f),algo,results)
                 nNone = sum([ x==None for x in results ])
                 if nNone>0 and nNone<3:
                     print("***",fname,results)
@@ -181,8 +189,19 @@ for d in args.directories:
                     allFnGens.add(fngen)
                     #assert not fngen in dnResults
                     dnResults[fngen][algo] = results
+                    print("Algo =",algo)
+
+if args.verbose:
+    for dn in allResults:
+        print(dn)
+        for fngen in allResults[dn]:
+            print("  fngen",fngen,type(allResults[dn]))
+            for algo in allResults[dn][fngen]:
+                print("    ",algo)
+                for ir,r in enumerate(allResults[dn][fngen][algo]):
+                    print("      ",ir,r)
+#print(dnResults)
 #print(allFnGens)
-#sys.exit()
 
 allMTypes = range(23,26)
 mTypes = reqMTypes
@@ -258,10 +277,10 @@ for fnRoot in sorted(fnRoots):
         graphs[fnRoot][pn] = { }
         for fnZone in fnZones:
             graphs[fnRoot][pn][fnZone] = { }
-            for mt in mTypes:
+            for mt in reqMTypes:
                 graphs[fnRoot][pn][fnZone][mt] = { }
                 for a in reqAlgos:
-                    graphs[fnRoot][pn][fnZone][a] = { }
+                    graphs[fnRoot][pn][fnZone][mt][a] = { }
                     
         #graphs[fnRoot][pn] = { x:{ } for x in mTypes }
         frames.append(ROOT.TH1F("h"+fnRoot[1:]+"-"+pn,fnRoot[1:]+"-"+pn,nDns,-0.5,nDns-0.5))
@@ -282,15 +301,18 @@ for fnRoot in sorted(fnRoots):
         frames[-1].GetXaxis().SetLabelSize(0.05)
         ymin,ymax = 1.e30,-1.e30
         lstyle = MyColors([1,2,3])
-        marker = 20
         for iz,fnZone in enumerate(sorted(fnZones)):
             istyle = lstyle.next()
-            color = MyColors()
+            mstyle = MyColors(list(range(20,28)))
             style = iz + 1
-            for im,mt in enumerate(mTypes):
-                ic = color.next()
+            for im,mt in enumerate(allMTypes):
+                if not mt in reqMTypes:
+                    continue
+                color = MyColors()
+                marker = mstyle.next()
                 for ia,algo in enumerate(reqAlgos):
-                    marker = ia + 20
+                    ic = color.next()
+                    #marker = ia + 20
                     graph = ROOT.TGraphErrors()
                     graph.SetName("g"+fnZone+"-"+pn+"-"+str(mt)+"-"+algo)
                     graph.SetTitle("g"+fnZone+"-"+pn+"-"+str(mt)+"-"+algo)
@@ -309,10 +331,16 @@ for fnRoot in sorted(fnRoots):
                             fnResults = dnResults[fnGen]
                             if ( algo in fnResults ) and fnResults[algo][im][ipn]!=None:
                                 v,e = fnResults[algo][im][ipn]
+                                print("Results",fnRoot,pn,fnZone,mt,algo,dn,v)
+                                print("  ",algo,fnResults[algo])
+                                print("  ",algo,im,fnResults[algo][im])
                                 if "res" in fnRoot.lower():
                                     v *= 10000
                                     e *= 10000
                                 graph.AddPointError(idn+nDns*iz/50,v,0.,e)
+                                #if graph.GetName().startswith("gendcap-width-25-q") and \
+                                #   graph.GetName().endswith("sig"):
+                                #    print("+++",graph.GetName(),fnRoot,pn,fnZone,mt,algo,dn,v)
                                 ymin = min(ymin,v-e)
                                 ymax = max(ymax,v+e)
         if pn=='mean':
@@ -320,26 +348,29 @@ for fnRoot in sorted(fnRoots):
             ymin -= dy*0.05
             ymax += dy*0.15
         elif pn=='width':
-            ymin = 0.
+            ymin -= (ymax-ymin)*0.05
             ymax *= 1.15
         frames[-1].SetMinimum(ymin)
         frames[-1].SetMaximum(ymax)
         frames[-1].Draw()
-        leg = ROOT.TLegend(0.10,0.80,0.90,0.90)
+        legArguments = [ ]
+        for fnZone in sorted(fnZones):
+            for algo in  reqAlgos:
+                legArguments.append(("",fnZone+" "+algo,""))
+                for mt in allMTypes:
+                    if mt in mTypes:
+                        legArguments.append((graphs[fnRoot][pn][fnZone][mt][algo],"mType "+str(mt),"LP"))
+                        graphs[fnRoot][pn][fnZone][mt][algo].Draw("PL")
+                    else:
+                        legArguments.append(("","        ",""))
+
+        leg = ROOT.TLegend(0.10,0.90-0.02*len(legArguments)/4,0.90,0.90)
         leg.SetNColumns(4)
         leg.SetBorderSize(0)
         leg.SetFillStyle(0)
         legs.append(leg)
-        for fnZone in sorted(fnZones):
-            for algo in  reqAlgos:
-                leg.AddEntry("",fnZone+" "+algo,"")
-                for mt in allMTypes:
-                    if mt in mTypes:
-                        leg.AddEntry(graphs[fnRoot][pn][fnZone][mt][algo],"mType "+str(mt),"LP")
-                        graphs[fnRoot][pn][fnZone][mt][algo].Draw("PL")
-                    else:
-                        leg.AddEntry("","        ","")
-                        
+        for largs in legArguments:
+            leg.AddEntry(*largs)
         leg.Draw()
         cnv.Update()
         if args.output!=None:
