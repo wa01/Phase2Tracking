@@ -134,7 +134,7 @@ parser.add_argument('--names', help='comma-separated list of patterns to match f
                         type=str, default="*")
 parser.add_argument('--algorithms', '-a', help='comma-separated list of algorithms used for fit results', \
                         type=str, default='prefit' )
-parser.add_argument('--verbose', '-v', help='verbose output', action=store_true, default=False)
+parser.add_argument('--verbose', '-v', help='verbose output', action='store_true', default=False)
 parser.add_argument('directories', help='directories with stored canvases in root format', type=str, nargs='+')
 args = parser.parse_args()
 if args.output!=None:
@@ -178,18 +178,18 @@ for d in args.directories:
             dnResults[fngen] = { }
             for algo in reqAlgos:
                 results = processFile(os.path.join(root,f),algo)
-                print("processFile",os.path.join(root,f),algo,results)
+                #print("processFile",os.path.join(root,f),algo,results)
                 nNone = sum([ x==None for x in results ])
                 if nNone>0 and nNone<3:
-                    print("***",fname,results)
+                    print("*** 1 or 2 invalide results",fname,results)
                 #assert nNone==0 or nNone==3
-                if nNone==0:
-                    #fngen = "_".join(fields[:1]+fields[2:])
-                    fngen = ( fields[0],"_".join(fields[2:]) )
-                    allFnGens.add(fngen)
-                    #assert not fngen in dnResults
-                    dnResults[fngen][algo] = results
-                    print("Algo =",algo)
+                #!#if nNone==0:
+                #fngen = "_".join(fields[:1]+fields[2:])
+                fngen = ( fields[0],"_".join(fields[2:]) )
+                allFnGens.add(fngen)
+                #assert not fngen in dnResults
+                dnResults[fngen][algo] = results
+                print("Algo =",algo)
 
 if args.verbose:
     for dn in allResults:
@@ -329,7 +329,7 @@ for fnRoot in sorted(fnRoots):
                         dnResults = allResults[dn]
                         if fnGen in dnResults:
                             fnResults = dnResults[fnGen]
-                            if ( algo in fnResults ) and fnResults[algo][im][ipn]!=None:
+                            if ( algo in fnResults ) and fnResults[algo][im]!=None:
                                 v,e = fnResults[algo][im][ipn]
                                 print("Results",fnRoot,pn,fnZone,mt,algo,dn,v)
                                 print("  ",algo,fnResults[algo])

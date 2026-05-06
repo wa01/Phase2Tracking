@@ -1,7 +1,8 @@
 import ROOT
 
 class FitHistogram:
-
+    ''' Helper class to extract various quantities from a 1D histogram
+    '''
     def interpolate(y,y1,y2,x1=0.,x2=1.):
         ''' Linear interpolation between two points (x1,y1) and (x2,y2) 
             to yield x corresponding to the target value y.
@@ -9,6 +10,8 @@ class FitHistogram:
         return x1 + (y-y1)/(y2-y1)*(x2-x1)
         
     def __init__(self,histogram):
+        ''' Store input histogram and prepare caches for various intermediate quantities
+        '''
         self.hist = histogram
         self.graph_ = None
         self.cumulativeGraph_ = None
@@ -128,46 +131,14 @@ class FitHistogram:
         # use first intersection with upward slope
         #
         xups = self.intersects(y,cumulative=False,direction=1)
-        print("xups",xups)
+        #print("xups",xups)
         xlow = xups[0] if xups else None
         #
         # use last intersection with downward slope
         #
         xdowns = self.intersects(y,cumulative=False,direction=-1)
-        print("xdowns",xdowns)
+        #print("xdowns",xdowns)
         xhigh = xdowns[-1] if xdowns else None
-        #dx = self.hist.GetBinWidth(1)
-        ###
-        ## preset result (low / high x values)
-        ##
-        #xlow = None
-        #xhigh = None
-        ##
-        ## loop over pairs of adjacent histogram bins
-        ##
-        #x1 = self.hist.GetBinLowEdge(1)
-        #y1 = self.hist.GetBinContent(1)
-        #for i in range(2,self.hist.GetNbinsX()):
-        #    # check if target value between contents of neighbouring bins
-        #    x2 = self.hist.GetBinLowEdge(i)
-        #    y2 = self.hist.GetBinContent(i)
-        #    first = None
-        #    if y>=y1 and y<y2:
-        #        first = True
-        #    elif y<=y1 and y>y2:
-        #        first = False
-        #
-        #    if first!=None:
-        #        # calculate interpolated x value
-        #        x = FitHistogram.interpolate(y,y1,y2,x1,x2)
-        #        # store lowest and highest x corresponding to y
-        #        if first and xlow==None:
-        #            xlow = x
-        #        elif not first:
-        #            xhigh = x
-        #    # move to next bin
-        #    x1 = x2
-        #    y1 = y2
 
         #
         # require result ( assumes that first and last bins are < ymax/2 ) and
@@ -179,6 +150,33 @@ class FitHistogram:
     def quantile(self,prob):
         ''' Return x-value to quantile q. 
         '''
+        #
+        # basic check - refuse to calculate quantile for probabilities beyond 1st / last non-empty bin
+        #
+        # use tail probability
+        #
+        nb = self.hist.GetNbinsX()
+        sumw = self.hist.GetSumOfWeights()
+        if prob<=0.5:
+            # check first non-empty bin from low -> high
+            cmax = prob*sumw
+            rng = range(1,nb+1)
+        else:
+            # check first non-empty bin from high -> low
+            cmax = (1-prob)*sumw
+            rng = range(nb,0,-1)
+        # find first non-empty bin
+        for ib in rng:
+            c = self.hist.GetBinContent(ib)
+            if c>1.e-10:
+                # return invalid result if first bin exceeds the threshold
+                if c>cmax:
+                    #print("<<<",self.hist.GetName(),prob,nb,cmax,range,ib,c)
+                    return None
+                break
+        #
+        # now determine quantile
+        #
         result = self.intersects(prob,cumulative=True,norm=True,direction=1)
         #print(prob,result)
         if len(result)>1:
@@ -257,7 +255,7 @@ class FitHistogram:
             xmax = self.findRootSpline(prob2)
             if xmin==None:
                 return result
-
+        
         fitFunc = ROOT.TF1("mygaus","gaus(0)",xmin,xmax)
         fitFunc.SetParameter(0,self.hist.GetMaximum())
         fitFunc.SetParameter(1,0.)
@@ -273,3 +271,168 @@ class FitHistogram:
         return fitPtr,fitFunc
             
         
+if __name__=="__main__":
+    #
+    # test of fitting for my canvases
+    #
+    import sys
+    from math import sqrt,log
+    from fnmatch import fnmatch
+    import argparse
+    
+    def fromQuantiles(fitHisto,isig):
+        xqs = [ ]
+        for sgn in [ -1, 0, 1 ]:
+            xqs.append(fitHisto.quantile(ROOT.TMath.Freq(sgn*isig)))
+        if None in xqs:
+            return None
+        return [ ( xqs[1], 0. ), ( (xqs[2]-xqs[0])/2./isig, 0. ) ]
+    
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('--list', '-l', help='list pads / histograms', action='store_true', default=False)
+    parser.add_argument('--algorithms', '-a', help='comma-separated list of algorithms used for fit results', \
+                            type=str, default='prefit' )
+    parser.add_argument('--padName', help='pad name (fnmatch pattern)', type=str, default='*')
+    parser.add_argument('--histogramName', help='histogram name (fnmatch pattern)', type=str, default='*')
+    parser.add_argument('file', help='root file', type=str, nargs=1)
+    args = parser.parse_args()
+    
+    #
+    # select pad and histogram
+    #
+    mainPads = [ ]
+    tf = ROOT.TFile(args.file[0])
+
+    for k in tf.GetListOfKeys():
+        oName = k.GetName()
+        o = tf.Get(oName)
+        if o.InheritsFrom(ROOT.TVirtualPad.Class()):
+            mainPads.append(o)
+    assert len(mainPads)==1
+
+    selectedPads = [ ]
+    for p in mainPads[0].GetListOfPrimitives():
+        oName = p.GetName()
+        if args.list or fnmatch(oName,args.padName):
+            selectedPads.append(p)
+    if not args.list:
+        assert len(selectedPads)==1
+
+    selectedHistograms = [ ]
+    for p in selectedPads:
+        if args.list:
+            print("Pad ",p.GetName(),":")
+        for o in p.GetListOfPrimitives():
+            if o.InheritsFrom(ROOT.TH1.Class()) and o.GetDimension()==1:
+                oName = o.GetName()
+                if args.list:
+                    print("  Histogram 1D ",oName,type(o))
+                if fnmatch(oName,args.histogramName):
+                    selectedHistograms.append(o)
+
+    if args.list:
+        sys.exit(0)
+
+    selPad = selectedPads[0]
+    
+    assert len(selectedHistograms)==1
+
+    ROOT.gROOT.cd()
+    cnv = ROOT.TCanvas("c","c",800,800)
+    if selPad.GetLogy():
+        cnv.SetLogy(1)
+    padHisto = selectedHistograms[0].Clone()
+    fitHisto = FitHistogram(padHisto)
+    padHisto.SetLineWidth(1)
+    padHisto.SetMarkerStyle(20)
+    padHisto.Draw("LP")
+    cnv.SetGridx(1)
+    cnv.SetGridy(1)
+    cnv.Update()
+    tf.Close()
+    
+    result = None
+    fitHisto = FitHistogram(padHisto)
+
+
+    #
+    # FWHM
+    #
+    xmin,xmax,y = fitHisto.fwhm()
+    result = [ ( (xmax+xmin)/2., 0. ), ( (xmax-xmin)/2/sqrt(2*log(2.)), 0. ) ]
+    print("FWHM",[ x[0] for x in result ])
+    fwhmArrow = ROOT.TArrow()
+    fwhmArrow.SetLineColor(2)
+    fwhmArrow.SetLineWidth(3)
+    fwhmArrow.DrawArrow(xmin,y,xmax,y,0.005,"<>")
+    #
+    # prefit
+    #
+    gaus = None
+    for f in padHisto.GetListOfFunctions():
+        if f.GetName()=="gaus":
+            assert gaus==None
+            gaus = f
+            #gaus = f.Clone()
+            n = gaus.GetNpar()
+            assert n==3
+            result = [ ]
+            for i in range(1,3):
+                result.append((gaus.GetParameter(i),gaus.GetParError(i)))
+            gaus.SetLineColor(ROOT.kCyan)
+            #gaus.Draw()
+    print("Prefit",[ x[0] for x in result ])
+    #
+    # gaus fit
+    #
+    fitPtr,fitFunc = fitHisto.fitGaus()
+    result = [ ]
+    if fitPtr!=None:
+        for i in range(1,3):
+            result.append((fitPtr.Parameter(i),fitPtr.ParError(i)))
+    if fitFunc!=None:
+        print(fitFunc.GetParameter(0),fitFunc.GetParameter(1),fitFunc.GetParameter(2))
+        fitFunc.SetLineColor(ROOT.kMagenta)
+        fitFunc.SetLineWidth(3)
+        fitFunc.Draw("same")
+    print("Gaus fit",[ x[0] for x in result ])
+    #
+    # quantiles (1 sigma equivalent)
+    #
+    quantLines = [ ]
+    quantColors = [ ROOT.kBlack, ROOT.kBlue, 8, ROOT.kRed ]
+    for i in range(4):
+        quantLine = ROOT.TLine()
+        #quantLine.SetLineColor(4-i)
+        quantLine.SetLineColor(quantColors[i])
+        #quantLine.SetLineColor(4-i)
+        quantLine.SetLineWidth(3)
+        quantLine.SetLineStyle(2)
+        #quantLine.SetLineStyle(i+1)
+        quantLines.append(quantLine)
+    for isigma,sigma in enumerate([1,2,3]):
+        qs = [ ]
+        for sgn in [-1,0,1]:
+            p = ROOT.TMath.Freq(sgn*sigma)
+            qs.append(fitHisto.findRootSpline(p))
+            #print(sigma,sgn,type(fitHisto))
+            #print(sigma,sgn,p,qs[-1])
+        #print(isigma,sigma,qs)
+        result = fromQuantiles(fitHisto,sigma)
+        if result!=None:
+            print("Sig",sigma,[ x[0] if x!=None else None for x in result ])
+        else:
+            print("Sig",result)
+
+        for iq in range(3):
+            il = 0 if iq==1 else isigma+1
+            qlmax = padHisto.GetBinContent(padHisto.FindBin(qs[iq]))
+            quantLines[il].DrawLine(qs[iq],0.,qs[iq],qlmax)
+            #if iq==0:
+            #    line = " from sigma = {:3.1f} quantile: ".format(sigma)
+            #    line += "median = {:6.1f}um, half-width/sigma = {:6.1f}um".format(10000*qs[1], \
+            #            10000*(qs[2]-qs[0])/2/sigma)
+            #    print(line)
+
+    cnv.Update()
+    
