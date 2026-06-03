@@ -272,7 +272,7 @@ def createHistoByDef(rdfWrapper,hDef,extraCuts):
                 model = (hName+"_2",hName+"_2",nbx,xmin,xmax)
                 histos[mType][1] = rdfWrapper().Histo1D(model,varMask)
             #sys.exit()
-        elif isProfile:
+        elif is1D and isProfile:
             ymin = hDef.getParameter('yMin',mType)
             ymax = hDef.getParameter('yMax',mType)
             v2,v1 = variable.split(":")
@@ -286,7 +286,7 @@ def createHistoByDef(rdfWrapper,hDef,extraCuts):
             #histos[mType] = [ rdf.Profile1D((hName+"_1",hName+"_1",nbx,xmin,xmax,ymin,ymax,'S'), \
             #                                v1+"["+cutString(extraCuts,hDef.getParameter('baseCuts',mType),"moduleType=="+str(mType))+"]",v2), \
             #                                None, None, None ]
-        elif is2D:
+        elif is2D and not isProfile:
             nby = hDef.getParameter('yNbins',mType)
             ymin = hDef.getParameter('yMin',mType)
             ymax = hDef.getParameter('yMax',mType)
@@ -306,6 +306,30 @@ def createHistoByDef(rdfWrapper,hDef,extraCuts):
                 varMask2 = rdfWrapper.defineVarMask(v2,cuts)
                 model = (hName+"_2",hName+"_2",nbx,xmin,xmax,nby,ymin,ymax)
                 histos[mType][1] = rdfWrapper().Histo2D(model,varMask1,varMask2)
+        elif is2D and isProfile:
+            zmin = hDef.getParameter('zMin',mType)
+            zmax = hDef.getParameter('zMax',mType)
+            nby = hDef.getParameter('yNbins',mType)
+            ymin = hDef.getParameter('yMin',mType)
+            ymax = hDef.getParameter('yMax',mType)
+            v3,v2,v1 = variable.split(":")
+            cuts = cutString(extraCuts,hDef.getParameter('baseCuts',mType),"moduleType=="+str(mType))
+#!#            rdf,varMask1 = varMaskCombs(rdf,v1,cuts)
+            varMask1 = rdfWrapper.defineVarMask(v1,cuts)
+#!#            rdf,varMask2 = varMaskCombs(rdf,v2,cuts)
+            varMask2 = rdfWrapper.defineVarMask(v2,cuts)
+            varMask3 = rdfWrapper.defineVarMask(v3,cuts)
+            model = (hName+"_1",hName+"_1",nbx,xmin,xmax,nby,ymin,ymax)
+            histos[mType] = [ rdfWrapper().Profile2D(model,varMask1,varMask2,varMask3), None, None, None ]
+            assert effCuts==None
+            #if effCuts!=None:
+            #    cuts = cutString(extraCuts,hDef.getParameter('baseCuts',mType),"moduleType=="+str(mType),effCuts)
+#!#         #       rdf,varMask1 = varMaskCombs(rdf,v1,cuts)
+            #    varMask1 = rdfWrapper.defineVarMask(v1,cuts)
+#!#         #       rdf,varMask2 = varMaskCombs(rdf,v2,cuts)
+            #    varMask2 = rdfWrapper.defineVarMask(v2,cuts)
+            #    model = (hName+"_2",hName+"_2",nbx,xmin,xmax,nby,ymin,ymax)
+            #    histos[mType][1] = rdfWrapper().Histo2D(model,varMask1,varMask2)
         elif is3D:
             nby = hDef.getParameter('yNbins',mType)
             ymin = hDef.getParameter('yMin',mType)
@@ -366,16 +390,23 @@ def fillHistoByDef(tree,hDef,extraCuts,histos):
             else:
                 # always keep final histogram in 4th position
                 histos[mType][3] = histos[mType][0]
-        elif isProfile:
+        elif is1D and isProfile:
             # always keep final histogram in 4th position
             histos[mType][3] = histos[mType][0]
-        elif is2D:
+        elif is2D and ( not isProfile ):
             if effCuts!=None:
                 # always keep final histogram in 4th position
                 histos[mType][3] = histos[mType][1].Divide(histos[mType][0].GetValue())
             else:
                 # always keep final histogram in 4th position
                 histos[mType][3] = histos[mType][0]
+        elif is2D and isProfile:
+            #if effCuts!=None:
+            #    # always keep final histogram in 4th position
+            #    histos[mType][3] = histos[mType][1].Divide(histos[mType][0].GetValue())
+            #else:
+            # always keep final histogram in 4th position
+            histos[mType][3] = histos[mType][0]
         elif is3D:
             # always keep final histogram in 4th position
             histos[mType][3] = histos[mType][0]
@@ -456,7 +487,7 @@ def drawHistoByDef(histos,hDef,logY=False,logZ=False,same=False):
             fitFunc = hDef.getParameter('fit')
             if fitFunc!=None:
                 histos[mType][0].Fit(fitFunc,"Q","same")
-        elif isProfile:
+        elif is1D and isProfile:
             histos[mType][0].SetTitle(hTitle)
             histos[mType][0].GetXaxis().SetTitle(xtitle)
             histos[mType][0].GetYaxis().SetTitle(ytitle)
@@ -464,7 +495,7 @@ def drawHistoByDef(histos,hDef,logY=False,logZ=False,same=False):
             #histos[mType][0].SetFillColor(ROOT.TColor.GetColorBright(ROOT.kGray))
             #histos[mType][0].SetFillColor(ROOT.kGray)
             histos[mType][0].Draw("same" if same else "")
-        elif is2D:
+        elif is2D and ( not isProfile ):
             assert not same
             zmin = hDef.getParameter('zMin',mType) if hDef.getParameter('zMin',mType)!=None else 0.
             zmax = hDef.getParameter('zMax',mType) if hDef.getParameter('zMax',mType)!=None else 1.05
@@ -480,6 +511,22 @@ def drawHistoByDef(histos,hDef,logY=False,logZ=False,same=False):
                 histos[mType][0].GetXaxis().SetTitle(xtitle)
                 histos[mType][0].GetYaxis().SetTitle(ytitle)
                 histos[mType][0].Draw("ZCOL")
+        elif is2D and isProfile:
+            assert not same
+            zmin = hDef.getParameter('zMin',mType) if hDef.getParameter('zMin',mType)!=None else 0.
+            zmax = hDef.getParameter('zMax',mType) if hDef.getParameter('zMax',mType)!=None else 1.05
+            #if effCuts!=None:
+            #    histos[mType][1].SetTitle(hTitle)
+            #    histos[mType][1].GetXaxis().SetTitle(xtitle)
+            #    histos[mType][1].GetYaxis().SetTitle(ytitle)
+            #    histos[mType][1].SetMinimum(zmin)
+            #    histos[mType][1].SetMaximum(zmax)
+            #    histos[mType][1].Draw("ZCOL")
+            #else:
+            histos[mType][0].SetTitle(hTitle)
+            histos[mType][0].GetXaxis().SetTitle(xtitle)
+            histos[mType][0].GetYaxis().SetTitle(ytitle)
+            histos[mType][0].Draw("ZCOL")
         elif is3D:
             assert not same
             zmin = hDef.getParameter('zMin',mType) if hDef.getParameter('zMin',mType)!=None else 0.

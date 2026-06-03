@@ -252,3 +252,33 @@ histograms:
      xMin: -0.5
      logY: true
      
+  width3DVsDxDzModX:
+     histogramTitle: 'cluster width'
+     baseCuts: 'tof<12.5&&hasRecHit>0'
+     zTitle: 'cluster width'
+     #zNbins: 6
+     zMin: 0.5
+     zMax: 6.5
+     xTitle: 'local dx/dz'
+     xNbins: 21
+     xMin: -1.05
+     xMax: 1.05
+     profile: true
+     mType23:
+        variable: 'clusterSize:localPosXMod100:dxdz'
+        yTitle: 'x modulo 100 #mum [#mum]'
+        yNbins: 20
+        yMin: 0
+        yMax: 100
+     mType24:
+        variable: 'clusterSize:localPosXMod100:dxdz'
+        yTitle: 'x modulo 100 #mum [#mum]'
+        yNbins: 20
+        yMin: 0
+        yMax: 100
+     mType25:
+        variable: 'clusterSize:localPosXMod90:dxdz'
+        yTitle: 'x modulo 90 #mum [#mum]'
+        yNbins: 18
+        yMin: 0
+        yMax: 90
