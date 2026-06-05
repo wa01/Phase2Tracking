@@ -526,6 +526,8 @@ def drawHistoByDef(histos,hDef,logY=False,logZ=False,same=False):
             histos[mType][0].SetTitle(hTitle)
             histos[mType][0].GetXaxis().SetTitle(xtitle)
             histos[mType][0].GetYaxis().SetTitle(ytitle)
+            if zmin!=None:  histos[mType][0].SetMinimum(zmin)
+            if zmax!=None:  histos[mType][0].SetMaximum(zmax)
             histos[mType][0].Draw("ZCOL")
         elif is3D:
             assert not same

@@ -289,22 +289,26 @@ for fnRoot in sorted(fnRoots):
             if "pull" in fnRoot.lower():
                 frames[-1].GetYaxis().SetTitle('mean (pull)')
             elif "res" in fnRoot.lower():
-                frames[-1].GetYaxis().SetTitle('mean (residual) #mm')
+                frames[-1].GetYaxis().SetTitle('mean (residual) #mum')
         elif pn=='width':
             #frames.append(cnv.DrawFrame(-0.5,0,nDns-0.5,100))
             if "pull" in fnRoot.lower():
                 frames[-1].GetYaxis().SetTitle('sigma (pull)')
             elif "res" in fnRoot.lower():
-                frames[-1].GetYaxis().SetTitle('sigma (residual) #mm')
+                frames[-1].GetYaxis().SetTitle('sigma (residual) #mum')
         for idn,dn in enumerate(dns):
             frames[-1].GetXaxis().SetBinLabel(idn+1,dn)
         frames[-1].GetXaxis().SetLabelSize(0.05)
         ymin,ymax = 1.e30,-1.e30
         lstyle = MyColors([1,2,3])
+        mstyles = [ MyColors([20,21,22]), MyColors([24,25,26]), MyColors([23,29,33]), MyColors([32,30,28]) ]
+        nmstyles = len(mstyles)
+        nleg = 0
         for iz,fnZone in enumerate(sorted(fnZones)):
             istyle = lstyle.next()
-            mstyle = MyColors(list(range(20,28)))
+            #mstyle = MyColors(list(range(20,28)))
             style = iz + 1
+            mstyle = mstyles[iz%nmstyles]
             for im,mt in enumerate(allMTypes):
                 if not mt in reqMTypes:
                     continue
@@ -313,6 +317,7 @@ for fnRoot in sorted(fnRoots):
                 for ia,algo in enumerate(reqAlgos):
                     ic = color.next()
                     #marker = ia + 20
+                    nleg += 1
                     graph = ROOT.TGraphErrors()
                     graph.SetName("g"+fnZone+"-"+pn+"-"+str(mt)+"-"+algo)
                     graph.SetTitle("g"+fnZone+"-"+pn+"-"+str(mt)+"-"+algo)
@@ -345,8 +350,12 @@ for fnRoot in sorted(fnRoots):
                                 ymax = max(ymax,v+e)
         if pn=='mean':
             dy = ymax - ymin
+            legMin = 0.90-0.02*nleg/3
+            print("*",ymin,ymax,dy,nleg,legMin)
+            print("  ",legMin*dy-0.05*dy,dy*(1-legMin),(legMin*dy-0.05*dy)/dy*(1-legMin))
             ymin -= dy*0.05
             ymax += dy*0.15
+            
         elif pn=='width':
             ymin -= (ymax-ymin)*0.05
             ymax *= 1.15
@@ -364,7 +373,7 @@ for fnRoot in sorted(fnRoots):
                     else:
                         legArguments.append(("","        ",""))
 
-        leg = ROOT.TLegend(0.10,0.90-0.02*len(legArguments)/4,0.90,0.90)
+        leg = ROOT.TLegend(0.10,0.90-0.02*len(legArguments)/3,0.90,0.90)
         leg.SetNColumns(4)
         leg.SetBorderSize(0)
         leg.SetFillStyle(0)
