@@ -23,6 +23,119 @@ def clusterEndPoints(xPos,tanTrack,tanLorentz,stripWidth,thickness):
 
     return (x1,x2)
 
+#def lineParameters(dx,tanLorentz,stripWidth,thickness):
+#    result = ( None, None )
+#    if 
+
+#def drawLines(dx,tanLorentz,stripWidth,thickness,xmin,ymin,xmax,ymax):
+#    #
+#    #
+#    #
+#    for is in [ 1, -1 ]:
+#        i = 0 if is==1 else -1
+#        while True:
+#            endY = False
+#            for js in [ 1, -1 ]:
+#                j = 0 if js==1 else -1
+#                x0,dx = lineParameters(dx,tanLorentz,stripWidth,thickness)
+            
+def line_rectangle_intersections(k, d, xmin, ymin, xmax, ymax, tol=1e-12):
+    """
+    From ChatGPT
+    Intersections of y = k*x + d with the border of the rectangle
+    xmin <= x <= xmax, ymin <= y <= ymax.
+
+    Returns a list of (x, y) tuples.
+    """
+
+    pts = []
+
+    # Left edge: x = xmin
+    y = k * xmin + d
+    if ymin - tol <= y <= ymax + tol:
+        pts.append((xmin, y))
+
+    # Right edge: x = xmax
+    y = k * xmax + d
+    if ymin - tol <= y <= ymax + tol:
+        pts.append((xmax, y))
+
+    # Bottom edge: y = ymin
+    if abs(k) > tol:
+        x = (ymin - d) / k
+        if xmin - tol <= x <= xmax + tol:
+            pts.append((x, ymin))
+
+    # Top edge: y = ymax
+    if abs(k) > tol:
+        x = (ymax - d) / k
+        if xmin - tol <= x <= xmax + tol:
+            pts.append((x, ymax))
+
+    # Remove duplicates (corner intersections)
+    unique = []
+    for p in pts:
+        if not any(abs(p[0] - q[0]) < tol and abs(p[1] - q[1]) < tol
+                   for q in unique):
+            unique.append(p)
+
+    return unique
+
+def lineParameters(stripIndex1,stripIndex2,stripWidth,thickness,tanLorentz,order):
+    ''' Returns slopes and y0s of lines defined by beginning and end of charge deposit.
+        Coordinates are tan(track angle) (x) and position w.r.t. strip(y)beginning of charge deposit on lower edge
+        of strip stripIndex1 (counting from 0), and end of deposit on lower edge of strip stripIndex2
+        Arguments:
+          stripIndex1 ... index of strip defining beginning deposit (lower edge, indices starts at 0)
+          stripIndex2 ... index of strip defining end of deposit (lower edge, indices starts at 0)
+          stripWidth ....... width of a strip
+          thickness ........ (active) thickness of sensor
+          tanLorentz ....... tan of Lorentz angle
+          order ............ sign(tan(track angle)-tanLorentz)
+    '''
+    assert order==-1 or order==1
+
+    if order==1:
+        return [ ( -thickness/2., stripIndex2*stripWidth ), \
+                 ( thickness/2., stripIndex1*stripWidth-thickness*tanLorentz ) ]
+    else:
+        return [ ( -thickness/2., stripIndex1*stripWidth ), \
+                 ( thickness/2., stripIndex2*stripWidth-thickness*tanLorentz ) ]
+        
+    
+def drawLines(stripWidth,thickness,tanLorentz,order,xmin,ymin,xmax,ymax):
+    #
+    #
+    #
+    #
+    results = [ ]
+    for isd in [ 1, -1 ]:
+        i0 = 0 if isd==1 else -1
+        while True:
+            for jsd in [ 1, -1 ]:
+                j0 = 0 if jsd==1 else -1
+                while True:
+                    thisResult = [ ]
+                    lpars = lineParameters(i0,i0+j0,stripWidth,thickness,tanLorentz,order)
+                    print(isd,i0,jsd,j0,lpars)
+                    intersections1 = line_rectangle_intersections(*lpars[0],xmin,ymin,xmax,ymax)
+                    print("-",intersections1)
+                    if len(intersections1)==2:
+                        thisResult.append(intersections1)
+                    intersections2 = line_rectangle_intersections(*lpars[1],xmin,ymin,xmax,ymax)
+                    print("-",intersections2)
+                    if len(intersections2)==2:
+                        thisResult.append(intersections2)
+                    print("--",len(thisResult))
+                    if thisResult and abs(j0)<3:
+                        results.extend(thisResult)
+                        j0 += jsd
+                    else:
+                        break
+                return results
+            i0 += isd
+            return results
+    
 
 if __name__=="__main__":
     from array import array
@@ -93,4 +206,15 @@ if __name__=="__main__":
 
     cnvC = ROOT.TCanvas("cSize","cSize",600,600)
     hc.Draw("zcol")
+    print(args.stripWidth,args.thickness,tanAlpha,1, \
+                    hc.GetXaxis().GetXmin(),hc.GetYaxis().GetXmin(),
+                    hc.GetXaxis().GetXmax(),hc.GetYaxis().GetXmax())
+    limits = drawLines(args.stripWidth,args.thickness,tanAlpha,1, \
+                        hc.GetXaxis().GetXmin(),hc.GetYaxis().GetXmin(),
+                        hc.GetXaxis().GetXmax(),hc.GetYaxis().GetXmax())
+    line = ROOT.TLine()
+    line.SetLineColor(1)
+    line.SetLineWidth(2)
+    for p1,p2 in limits:
+        line.DrawLine(*p1,*p2)
     cnvC.Update()
