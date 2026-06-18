@@ -81,61 +81,69 @@ def line_rectangle_intersections(k, d, xmin, ymin, xmax, ymax, tol=1e-12):
 
     return unique
 
-def lineParameters(stripIndex1,stripIndex2,stripWidth,thickness,tanLorentz,order):
-    ''' Returns slopes and y0s of lines defined by beginning and end of charge deposit.
-        Coordinates are tan(track angle) (x) and position w.r.t. strip(y)beginning of charge deposit on lower edge
-        of strip stripIndex1 (counting from 0), and end of deposit on lower edge of strip stripIndex2
+def lineParameters(stripNumber,stripIndex,stripWidth,thickness,tanLorentz,order,deltaPos=0):
+    ''' Returns slopes and y0s of lines defined by beginning and end of charge deposit on a strip boundary.
+        Coordinates are tan(track angle) (x) and position w.r.t. strip(y)
+        Problem factorizes (parameters depend only on the number of either the first or the last strip).
         Arguments:
-          stripIndex1 ... index of strip defining beginning deposit (lower edge, indices starts at 0)
-          stripIndex2 ... index of strip defining end of deposit (lower edge, indices starts at 0)
+          stripNumber ... number of the strip defining begin or end (lower strip edge, indices starts at 0)
+          stripIndex .... index defining whether the first strip (0) or the last strip (1) to be used
           stripWidth ....... width of a strip
           thickness ........ (active) thickness of sensor
           tanLorentz ....... tan of Lorentz angle
           order ............ sign(tan(track angle)-tanLorentz)
     '''
-    assert order==-1 or order==1
+    assert order==-1 or order==1 
+    assert stripIndex==0 or stripIndex==1
 
-    if order==1:
-        return [ ( -thickness/2., stripIndex2*stripWidth ), \
-                 ( thickness/2., stripIndex1*stripWidth-thickness*tanLorentz ) ]
+    print("deltaPos = ",deltaPos*thickness/2)
+    if stripIndex==0:
+        if order==1:
+            k = thickness/2.
+            return ( k, stripNumber*stripWidth-thickness*tanLorentz-deltaPos )
+        else:
+            k = -thickness/2.
+            return ( k, stripNumber*stripWidth-deltaPos )
     else:
-        return [ ( -thickness/2., stripIndex1*stripWidth ), \
-                 ( thickness/2., stripIndex2*stripWidth-thickness*tanLorentz ) ]
+        if order==1:
+            k = -thickness/2.
+            return ( k, stripNumber*stripWidth-deltaPos )
+        else:
+            k = thickness/2.
+            return ( k, stripNumber*stripWidth-thickness*tanLorentz-deltaPos )
         
     
-def drawLines(stripWidth,thickness,tanLorentz,order,xmin,ymin,xmax,ymax):
+def drawLines(stripWidth,thickness,tanLorentz,order,xmin,ymin,xmax,ymax,deltaPos=0):
     #
     #
     #
     #
     results = [ ]
-    for isd in [ 1, -1 ]:
-        i0 = 0 if isd==1 else -1
-        while True:
-            for jsd in [ 1, -1 ]:
-                j0 = 0 if jsd==1 else -1
-                while True:
-                    thisResult = [ ]
-                    lpars = lineParameters(i0,i0+j0,stripWidth,thickness,tanLorentz,order)
-                    print(isd,i0,jsd,j0,lpars)
-                    intersections1 = line_rectangle_intersections(*lpars[0],xmin,ymin,xmax,ymax)
-                    print("-",intersections1)
-                    if len(intersections1)==2:
-                        thisResult.append(intersections1)
-                    intersections2 = line_rectangle_intersections(*lpars[1],xmin,ymin,xmax,ymax)
-                    print("-",intersections2)
-                    if len(intersections2)==2:
-                        thisResult.append(intersections2)
-                    print("--",len(thisResult))
-                    if thisResult and abs(j0)<3:
-                        results.extend(thisResult)
-                        j0 += jsd
-                    else:
-                        break
-                return results
-            i0 += isd
-            return results
-    
+    #
+    # scan in positive and negative direction in x ( tan(track angle) )
+    #
+    for idir in [ 1, -1 ]:
+        #
+        # lines defined by start strip or end strip
+        #
+        for iend in [ 0, 1 ]:
+            # strip number to start with
+            i0 = 0 if idir==1 else -1
+            #
+            # loop until lines are outside plot area
+            #
+            while True:
+                lpars = lineParameters(i0,iend,stripWidth,thickness,tanLorentz,order,deltaPos)
+                print(idir,iend,i0,lpars)
+                intersections = line_rectangle_intersections(*lpars,xmin,ymin,xmax,ymax)
+                print("-",intersections)
+                if len(intersections)==2:
+                    results.append(intersections)
+                    i0 += idir
+                else:
+                    break
+    print("# results = ",len(results))
+    return results
 
 if __name__=="__main__":
     from array import array
@@ -212,9 +220,21 @@ if __name__=="__main__":
     limits = drawLines(args.stripWidth,args.thickness,tanAlpha,1, \
                         hc.GetXaxis().GetXmin(),hc.GetYaxis().GetXmin(),
                         hc.GetXaxis().GetXmax(),hc.GetYaxis().GetXmax())
-    line = ROOT.TLine()
-    line.SetLineColor(1)
-    line.SetLineWidth(2)
+    line0 = ROOT.TLine()
+    line0.SetLineColor(1)
+    line0.SetLineWidth(2)
     for p1,p2 in limits:
-        line.DrawLine(*p1,*p2)
+        line0.DrawLine(*p1,*p2)
+    print(args.stripWidth,args.thickness,tanAlpha,1, \
+                    hc.GetXaxis().GetXmin(),hc.GetYaxis().GetXmin(),
+                    hc.GetXaxis().GetXmax(),hc.GetYaxis().GetXmax())
+    limits = drawLines(args.stripWidth,args.thickness,tanAlpha,1, \
+                        hc.GetXaxis().GetXmin(),hc.GetYaxis().GetXmin(),
+                        hc.GetXaxis().GetXmax(),hc.GetYaxis().GetXmax())
+    line1 = ROOT.TLine()
+    line1.SetLineColor(2)
+    line1.SetLineStyle(2)
+    line1.SetLineWidth(2)
+    for p1,p2 in limits:
+        line1.DrawLine(*p1,*p2)
     cnvC.Update()
