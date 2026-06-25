@@ -16,6 +16,7 @@ variables:
    alpha: 'atan2(abs(pathX),abs(pathZ))/3.1415*180'
    localPosX: 'localPos.fCoordinates.fX'
    localPosY: 'localPos.fCoordinates.fY'
+   localPosZ: 'localPos.fCoordinates.fZ'
    rhLocalPosX: 'rhLocalPos.fCoordinates.fX'
    rhLocalPosY: 'rhLocalPos.fCoordinates.fY'
    rhLocalErrX: 'rhLocalErr.fCoordinates.fX'
@@ -56,6 +57,28 @@ histograms:
      xNbins: 200
      xMax: 2000
      xMin: 0
+#
+#
+#
+  pathZ:
+     histogramTitle: 'path (z)'
+     variable: '10000*abs(pathZ)'
+     baseCuts: 'tof<12.5&&pabs>0.3'
+     xTitle: 'SimHit path (z [#mum])'
+     xNbins: 200
+     xMax: 400
+     xMin: 0
+#
+#
+#
+  posZ:
+     histogramTitle: 'local pos (z)'
+     variable: '10000*abs(localPosZ)'
+     baseCuts: 'tof<12.5&&pabs>0.3'
+     xTitle: 'SimHit local position (z [#mum])'
+     xNbins: 200
+     xMax: 100
+     xMin: -100
 #
 #
 #
