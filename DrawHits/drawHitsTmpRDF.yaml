@@ -17,6 +17,8 @@ variables:
    localPosX: 'localPos.fCoordinates.fX'
    localPosY: 'localPos.fCoordinates.fY'
    localPosZ: 'localPos.fCoordinates.fZ'
+   localEntryZ: 'localEntry.fCoordinates.fZ'
+   localExitZ: 'localExit.fCoordinates.fZ'
    rhLocalPosX: 'rhLocalPos.fCoordinates.fX'
    rhLocalPosY: 'rhLocalPos.fCoordinates.fY'
    rhLocalErrX: 'rhLocalErr.fCoordinates.fX'
@@ -73,12 +75,78 @@ histograms:
 #
   posZ:
      histogramTitle: 'local pos (z)'
-     variable: '10000*abs(localPosZ)'
+     variable: '10000*localPosZ'
      baseCuts: 'tof<12.5&&pabs>0.3'
      xTitle: 'SimHit local position (z [#mum])'
      xNbins: 200
      xMax: 100
      xMin: -100
+#
+#
+#
+  entryExitZMinus:
+     histogramTitle: 'local entry+exit (z)'
+     variable: '10000*(localEntryZ+localExitZ)'
+     baseCuts: 'tof<12.5&&pabs>0.3&&localEntryZ<0'
+     xTitle: 'SimHit local entry+exit position (z [#mum])'
+     xNbins: 200
+     xMax: 40
+     xMin: -40
+#
+#
+#
+  entryExitZPlus:
+     histogramTitle: 'local entry+exit (z)'
+     variable: '10000*(localEntryZ+localExitZ)'
+     baseCuts: 'tof<12.5&&pabs>0.3&&localEntryZ>0'
+     xTitle: 'SimHit local entry+exit position (z [#mum])'
+     xNbins: 200
+     xMax: 40
+     xMin: -40
+#
+#
+#
+  entryZMinus:
+     histogramTitle: 'local entry (z)'
+     variable: '10000*localEntryZ'
+     baseCuts: 'tof<12.5&&pabs>0.3&&localEntryZ<0'
+     xTitle: 'SimHit local entry position (z [#mum])'
+     xNbins: 200
+     xMax: 200
+     xMin: -200
+#
+#
+#
+  exitZMinus:
+     histogramTitle: 'local exit (z)'
+     variable: '10000*localExitZ'
+     baseCuts: 'tof<12.5&&pabs>0.3&&localEntryZ<0'
+     xTitle: 'SimHit local exit position (z [#mum])'
+     xNbins: 200
+     xMax: 200
+     xMin: -200
+#
+#
+#
+  entryZPlus:
+     histogramTitle: 'local entry (z)'
+     variable: '10000*localEntryZ'
+     baseCuts: 'tof<12.5&&pabs>0.3&&localEntryZ>0'
+     xTitle: 'SimHit local entry position (z [#mum])'
+     xNbins: 200
+     xMax: 200
+     xMin: -200
+#
+#
+#
+  exitZPlus:
+     histogramTitle: 'local exit (z)'
+     variable: '10000*localExitZ'
+     baseCuts: 'tof<12.5&&pabs>0.3&&localEntryZ>0'
+     xTitle: 'SimHit local exit position (z [#mum])'
+     xNbins: 200
+     xMax: 200
+     xMin: -200
 #
 #
 #

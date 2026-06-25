@@ -5,10 +5,10 @@ from expectedClusterSize import clusterEndPoints,drawLines
 def expSize(xs,pars):
     tanTrack = xs[0]
     posx = xs[1]
-    stripWidth = 90
-    thickness = 200
     tanLorentz = pars[0]
     deltaX = pars[1]
+    stripWidth = pars[2]
+    thickness = pars[3]
     
     dt = thickness*tanTrack
     x1,x2 = clusterEndPoints(posx+deltaX,tanTrack,tanLorentz,stripWidth,thickness)
@@ -51,7 +51,7 @@ def getHisto(fn,cnvName,ipad):
 
     return h
 
-def scanFCN(h,tanAlphaRef,stripWidth,lowest=None,nlowest=50):
+def scanFCN(h,tanAlphaRef,stripWidth,thickness,lowest=None,nlowest=50):
     hp = ROOT.TH2F("hp","hp",100,tanAlphaRef-0.40,tanAlphaRef+0.40,int(stripWidth+0.5),-stripWidth/2,stripWidth/2)
     xaxis = hp.GetXaxis()
     yaxis = hp.GetYaxis()
@@ -62,7 +62,7 @@ def scanFCN(h,tanAlphaRef,stripWidth,lowest=None,nlowest=50):
         for iby in range(hp.GetNbinsY()):
             y = yaxis.GetBinCenter(iby+1)
             ibin = hp.GetBin(ibx+1,iby+1)
-            c = chi2(h,[x,y])
+            c = chi2(h,[x,y,stripWidth,thickness])
             if lowest!=None:
                 if cmin==None:
                     cmin = c
@@ -85,11 +85,13 @@ if __name__=="__main__":
     import argparse
 
     modTypeToCanvas = { 23 : 1, 24 : 2, 25 : 3 }
+    modTypeToWidth = { 23 : 100, 24 : 100, 25 : 90 }
     
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('--thickness', '-t', help="sensor thickness (in um)", type=float, default=200.)
+    parser.add_argument('--thickness', '-t', help="sensor thickness (in um)", type=float, default=290.)
     #parser.add_argument('--nbPosX', help="number of bins for position", type=int, default=180)
-    parser.add_argument('--stripWidth', '-w', help="strip width (in um)", type=float, default=90.)
+    parser.add_argument('--stripWidth', '-w', help="strip width (in um), default from modType", \
+                            type=float, default=None)
     parser.add_argument('--refTanLorentzAngle',  help="tan Lorentz angle / B[T]", type=float, default=0.07)
     parser.add_argument('--bfield', '-b', help='B field [T]', type=float, default=3.8)
     #parser.add_argument('--nbTanLambda', help="number of bins for tan(#lambda)", type=int, default=201)
@@ -109,6 +111,9 @@ if __name__=="__main__":
     canvasNumber = modTypeToCanvas[args.modType]
     assert canvasNumber>=1 and canvasNumber<=3
 
+    if args.stripWidth==None:
+        args.stripWidth = modTypeToWidth[args.modType]
+    
     outFile = None
     if args.outputDir!=None:
         outFile = args.outputDir
@@ -146,7 +151,7 @@ if __name__=="__main__":
     
     cnv = ROOT.TCanvas("c","c",600,600)
     lowest = [ ]
-    hp = scanFCN(h,tanAlpha,args.stripWidth,lowest,50)
+    hp = scanFCN(h,tanAlpha,args.stripWidth,args.thickness,lowest,50)
     #for ix,x in enumerate(lowest):
     #    print(ix,x)
     hp.SetTitle("approximated #chi^{2};tan(Lorentz angle);x-shift [#mum]")

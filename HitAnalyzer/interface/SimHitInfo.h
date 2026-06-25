@@ -38,6 +38,8 @@ class SimHitInfo : public CommonHitInfo {
     std::vector<ROOT::Math::XYZVectorF> localDir;
     std::vector<ROOT::Math::XYZVectorF> globalDir;
     std::vector<ROOT::Math::XYZVectorF> path;
+    /* std::vector<ROOT::Math::XYZPointF> localEntry; */
+    /* std::vector<ROOT::Math::XYZPointF> localExit; */
     std::vector<float> theta;
     std::vector<float> phi;
     std::vector<float> pabs;

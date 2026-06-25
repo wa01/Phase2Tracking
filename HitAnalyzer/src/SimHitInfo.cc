@@ -12,6 +12,8 @@ void SimHitInfo::setBranches(TTree& tree) {
   tree.Branch("localDir",&simHitData.localDir);
   tree.Branch("globalDir",&simHitData.globalDir);
   tree.Branch("path",&simHitData.path);
+  // tree.Branch("localEntry",&simHitData.localEntry);
+  // tree.Branch("localExit",&simHitData.localExit);
   tree.Branch("theta",&simHitData.theta);
   tree.Branch("phi",&simHitData.phi);
   tree.Branch("pabs",&simHitData.pabs);
@@ -217,6 +219,12 @@ void SimHitInfo::fillSimHitInfo(const PSimHit& simHit) {
 			      simHit.exitPoint().y()-simHit.entryPoint().y(),
 			      simHit.exitPoint().z()-simHit.entryPoint().z());
   simHitData.path.push_back(path);
+  // ROOT::Math::XYZPointF localEntry(simHit.entryPoint().x(),simHit.entryPoint().y(),simHit.entryPoint().z());
+  // simHitData.localEntry.push_back(localEntry);
+  // ROOT::Math::XYZPointF localExit(simHit.exitPoint().x(),simHit.exitPoint().y(),simHit.exitPoint().z());
+  // simHitData.localExit.push_back(localExit);
+  // // std::cout << "z entry / exit " << int(layer) << " " << int(mType) << " "
+  // //	    << simHitData.localEntry.back().z() << " " << simHitData.localExit.back().z() << std::endl;
   simHitData.theta.push_back(simHit.thetaAtEntry());
   simHitData.phi.push_back(simHit.phiAtEntry());
   simHitData.pabs.push_back(simHit.pabs());
@@ -328,6 +336,8 @@ void SimHitInfo::clear() {
   simHitData.localDir.clear();
   simHitData.globalDir.clear();
   simHitData.path.clear();
+  // simHitData.localEntry.clear();
+  // simHitData.localExit.clear();
   simHitData.theta.clear();
   simHitData.phi.clear();
   simHitData.pabs.clear();
