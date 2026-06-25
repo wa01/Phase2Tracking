@@ -84,6 +84,8 @@ if __name__=="__main__":
 
     import argparse
 
+    modTypeToCanvas = { 23 : 1, 24 : 2, 25 : 3 }
+    
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--thickness', '-t', help="sensor thickness (in um)", type=float, default=200.)
     #parser.add_argument('--nbPosX', help="number of bins for position", type=int, default=180)
@@ -93,17 +95,32 @@ if __name__=="__main__":
     #parser.add_argument('--nbTanLambda', help="number of bins for tan(#lambda)", type=int, default=201)
     #parser.add_argument('--maxTanLambda',  help="max. track dx/dz", type=float, default=2.01)
     #parser.add_argument('--deltaX', help='offset for x position', type=float, default=0.)
-    parser.add_argument('--canvasNumber', help='number of canvas to use (between 1 and 3)', type=int, default=3)
+    #parser.add_argument('--canvasNumber', help='number of canvas to use (between 1 and 3)', type=int, default=3)
+    parser.add_argument('--modType', help='module type', choices=sorted(modTypeToCanvas.keys()), type=int, default=25)
+    parser.add_argument('--outputName', help='basic name for output file', type=str, default=None)
+    parser.add_argument('--outputDir', '-o', help='directory for output file', type=str, default=None)
+    parser.add_argument('--maxSize', help='max. cluster size in plot', type=int, default=6)
     parser.add_argument('file',help='input root file with canvases', type=str, nargs=1)
     args = parser.parse_args()
 
     infile = args.file[0]
     tanAlpha = args.refTanLorentzAngle*args.bfield
-    assert args.canvasNumber>=1 and args.canvasNumber<=3
+
+    canvasNumber = modTypeToCanvas[args.modType]
+    assert canvasNumber>=1 and canvasNumber<=3
+
+    outFile = None
+    if args.outputDir!=None:
+        outFile = args.outputDir
+        assert os.path.isdir(outFile)
+        outFileName = args.outputName
+        if outFileName==None:
+            outFileName = os.path.splitext(os.path.basename(infile))[0]
+        outFile = os.path.join(outFile,outFileName)
 
     ROOT.gStyle.SetOptStat(0)
     ROOT.gStyle.SetPadRightMargin(0.15)
-    h = getHisto(sys.argv[1],"cWidth3DVsDxDzModX",args.canvasNumber)
+    h = getHisto(sys.argv[1],"cWidth3DVsDxDzModX",canvasNumber)
     print(type(h))
     xaxis = h.GetXaxis()
     yaxis = h.GetYaxis()
@@ -114,7 +131,7 @@ if __name__=="__main__":
     cnvH = ROOT.TCanvas("ch","ch",600,800)
     cnvH.SetBottomMargin(0.25)
     print("Max",h.GetBinContent(h.GetMaximumBin()))
-    ivmax = int(h.GetBinContent(h.GetMaximumBin())+1)
+    ivmax = min(args.maxSize,int(h.GetBinContent(h.GetMaximumBin())+1))
     h.SetMinimum(1)
     h.SetMaximum(ivmax)
     h.GetZaxis().SetNdivisions(-(ivmax-1))
@@ -156,6 +173,9 @@ if __name__=="__main__":
     m1.SetMarkerColor(2)
     m1.DrawMarker(sx/ns,sy/ns)
     ROOT.gPad.Update()
+    if outFile!=None:
+        cnv.SaveAs(outFile+"_mt"+str(args.modType)+"-chi2.pdf")
+    
 
     linesFit = drawLines(args.stripWidth,args.thickness,sx/ns,1, \
                              h.GetXaxis().GetXmin(),h.GetYaxis().GetXmin(),
@@ -195,6 +215,6 @@ if __name__=="__main__":
     pave2.Draw()
     cnvH.Update()
 
-    #
-    # brute force minimization
-    #
+    if outFile!=None:
+        cnvH.SaveAs(outFile+"_mt"+str(args.modType)+".pdf")
+        
