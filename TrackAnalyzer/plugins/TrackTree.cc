@@ -79,12 +79,12 @@ TrackTree::TrackTree(const edm::ParameterSet& cfg)
     tokenSimTracks_(consumes<edm::SimTrackContainer>(cfg.getParameter<edm::InputTag>("simtracks"))),
     tokenSimVertices_(consumes<edm::SimVertexContainer>(cfg.getParameter<edm::InputTag>("simvertices")))
 {
-  //
-  // create TTree
-  //
-  edm::Service<TFileService> fs;
-  trackTree_ = fs->make<TTree>( "TrackTree", "TrackTree" );
-  trackInfo_.setBranches(*trackTree);
+  // //
+  // // create TTree
+  // //
+  // edm::Service<TFileService> fs;
+  // trackTree_ = fs->make<TTree>( "TrackTree", "TrackTree" );
+  // trackInfo_.setBranches(*trackTree_);
 }
 
 void TrackTree::analyze(const edm::Event& event, const edm::EventSetup& eventSetup) {
@@ -169,9 +169,11 @@ void TrackTree::analyze(const edm::Event& event, const edm::EventSetup& eventSet
       //
       trackInfo_.fillTrackInfo(&(*rt),stMin,simVertex);
     }
+    
     //
     // Fill tree
     //
+    std::cout << "Filling trackTree with " << trackInfo_.trackData.Track_chi2.size() << " entries" << std::endl;
     trackTree_->Fill();
     //
     // loop over reconstruct
@@ -264,12 +266,12 @@ void TrackTree::analyze(const edm::Event& event, const edm::EventSetup& eventSet
   // recHitTree->Fill();
 
 }
-
+ 
 void TrackTree::beginJob()
 {
   edm::Service<TFileService> fs;
-  trackTree = fs->make<TTree>( "TrackTree", "TrackTree" );
-  trackInfo_.setBranches(*trackTree);
+  trackTree_ = fs->make<TTree>( "TrackTree", "TrackTree" );
+  trackInfo_.setBranches(*trackTree_);
 }
 
 void TrackTree::endJob()
