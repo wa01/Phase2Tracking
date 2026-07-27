@@ -17,6 +17,7 @@
 #include "FWCore/PluginManager/interface/ModuleDef.h"
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/Math/interface/deltaR.h"
 
 #include "Phase2Tracking/TrackAnalyzer/interface/TrackInfo.h"
 
@@ -53,7 +54,7 @@ class TrackTree : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 
     TrackInfo trackInfo_;
   
-    TTree* trackTree;
+    TTree* trackTree_;
 
 };
 
@@ -77,45 +78,103 @@ TrackTree::TrackTree(const edm::ParameterSet& cfg)
   : tokenRecTracks_(consumes<reco::TrackCollection>(cfg.getParameter<edm::InputTag>("rectracks"))),
     tokenSimTracks_(consumes<edm::SimTrackContainer>(cfg.getParameter<edm::InputTag>("simtracks"))),
     tokenSimVertices_(consumes<edm::SimVertexContainer>(cfg.getParameter<edm::InputTag>("simvertices")))
-//   simtrackminpt_(cfg.getParameter<double>("SimTrackMinPt")),
-  //   debugHitMatch_(cfg.getParameter<bool>("debugHitMatch"))
 {
-  // const edm::ParameterSet shInfoPSet(cfg.getParameter<edm::ParameterSet>("simHitInfo"));
-  // const std::vector<edm::InputTag>
-  //   shInfoSimHitTags(shInfoPSet.getParameter<std::vector<edm::InputTag>>("simHits"));
-  // for ( auto vpsetIt=shInfoSimHitTags.begin(); vpsetIt!=shInfoSimHitTags.end(); ++vpsetIt ) {
-  //   std::cout << "Getting shInfoSimHitToken" << std::endl;
-  //   shInfoSimHitTokens_.push_back(consumes<edm::PSimHitContainer>(*vpsetIt));
-  // }
-  // const edm::ParameterSet rhInfoPSet(cfg.getParameter<edm::ParameterSet>("recHitInfo"));
-  // const std::vector<edm::InputTag>
-  //   rhInfoSimHitTags(rhInfoPSet.getParameter<std::vector<edm::InputTag>>("simHits"));
-  // for ( auto vpsetIt=rhInfoSimHitTags.begin(); vpsetIt!=rhInfoSimHitTags.end(); ++vpsetIt ) {
-  //   std::cout << "Getting rhInfoSimHitToken" << std::endl;
-  //   rhInfoSimHitTokens_.push_back(consumes<edm::PSimHitContainer>(*vpsetIt));
-  // }
+  //
+  // create TTree
+  //
+  edm::Service<TFileService> fs;
+  trackTree_ = fs->make<TTree>( "TrackTree", "TrackTree" );
+  trackInfo_.setBranches(*trackTree);
 }
 
 void TrackTree::analyze(const edm::Event& event, const edm::EventSetup& eventSetup) {
     initEventStructure();
-
+    //
+    // access to and selection of reconstructed tracks
+    //
     edm::Handle<reco::TrackCollection> recTrackHandle;
     event.getByToken(tokenRecTracks_,recTrackHandle);
-    const reco::TrackCollection& recTracks(*recTrackHandle.product());
-    
+    reco::TrackCollection recTracks;
+    for ( auto rt=recTrackHandle.product()->begin(); rt!=recTrackHandle.product()->end(); ++rt ) {
+      // cuts need to be added to cfg !!!
+      if ( rt->pt()>0.3 ) {
+	recTracks.push_back(*rt);
+      }
+    }
+    //
+    // access to and selection of simulated tracks
+    //
     edm::Handle<edm::SimTrackContainer> simTrackHandle;
     event.getByToken(tokenSimTracks_,simTrackHandle);
-    const edm::SimTrackContainer& simTracks(*simTrackHandle.product());
-    
+    edm::SimTrackContainer simTracks;
+    for ( auto st=simTrackHandle.product()->begin(); st!=simTrackHandle.product()->end(); ++st ) {
+      // cuts need to be added to cfg !!!
+      if ( st->momentum().pt()>0.3 && abs(st->type())==13 ) {
+	simTracks.push_back(*st);
+      }
+    }
+    //
+    // access to simulated vertices
+    //      
     edm::Handle<edm::SimVertexContainer> simVertexHandle;
     event.getByToken(tokenSimVertices_,simVertexHandle);
     const edm::SimVertexContainer& simVertices(*simVertexHandle.product());
 
-    std::cout << "#RecTracks = " << recTracks.size() << std::endl;
-    std::cout << "#SimTracks = " << simTracks.size() << std::endl;
+    std::cout << "#selected RecTracks = " << recTracks.size() << std::endl;
+    std::cout << "#selected SimTracks = " << simTracks.size() << std::endl;
     std::cout << "#SimVertices = " << simVertices.size() << std::endl;
     std::cout << std::endl;
-
+    //
+    if ( recTracks.size()==0 || simTracks.size()==0 )  return;
+    //
+    // match SimTracks to RecTracks by deltaR
+    //
+    for ( auto rt=recTracks.begin(); rt!=recTracks.end(); ++rt ) {
+      //
+      // find SimTrack with smallest deltaR
+      //
+      double dr2Min(999999.);
+      const SimTrack* stMin(nullptr);
+      for ( auto st=simTracks.begin(); st!=simTracks.end(); ++st ) {
+	double dr2 = deltaR2<math::XYZVector,math::XYZTLorentzVectorD>(rt->momentum(),st->momentum());
+	if ( dr2<dr2Min ) {
+	  dr2Min = dr2;
+	  stMin = &(*st);
+	}
+      }
+      if ( stMin==nullptr ) {
+	std::cout << "*** Did not find matching SimTrack!!!" << std::endl;
+	continue;
+      }
+      std::cout << "*** Found SimTrack with deltaR**2 = " << dr2Min << std::endl;
+      //
+      // get SimVertex corresponding to SimTrack
+      //
+      int iv(stMin->vertIndex());
+      const SimVertex* simVertex(nullptr);
+      if ( iv>=0 ) {
+	if ( iv>=(int)simVertices.size() ) {
+	  std::cout << "*** mismatch between SimVertex index (" << iv << ") and #SimVertices ("
+		    << simVertices.size() << ")" << std::endl;
+	}
+	else {
+	  simVertex = &simVertices[iv];
+	}
+      }
+      else {
+	std::cout << "*** no SimVertex associated to SimTrack" << std::endl;
+      }
+      //
+      // Fill info for this track
+      //
+      trackInfo_.fillTrackInfo(&(*rt),stMin,simVertex);
+    }
+    //
+    // Fill tree
+    //
+    trackTree_->Fill();
+    //
+    // loop over reconstruct
    // const TrackerGeometry* tkGeom = &eventSetup.getData(esTokenGeom_);
   // const TrackerTopology* tTopo = &eventSetup.getData(esTokenTopo_);
 
