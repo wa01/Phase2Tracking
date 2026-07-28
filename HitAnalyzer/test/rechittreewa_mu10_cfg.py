@@ -23,17 +23,10 @@ process.maxEvents = cms.untracked.PSet(
 # Dataset: /RelValSingleMuPt10/CMSSW_15_1_0-150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/GEN-SIM-RECO
 # Input file
 process.source = cms.Source('PoolSource',
-    fileNames = cms.untracked.vstring( \
-      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/0166e3ce-e26d-483c-8226-cac472af699c.root', \
-      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/0562962b-66c8-488b-89d5-6df21d71f0b6.root', \
-      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/319ecc54-5d83-4e72-8d4a-3f73563e6d37.root', \
-      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/34e25999-54a2-4134-8703-241898703fed.root', \
-      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/37360339-d4dc-4270-85d1-8b89448a6504.root', \
-      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/49967669-571d-4a2b-aca2-6a148ebdb729.root', \
-      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/a88d679b-a909-47a4-8006-2455d1db2d5c.root', \
-      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/ae60ec5b-9009-4a17-8bcb-760c22430149.root', \
-      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/f931e711-1c11-47ce-9de3-49bd3966438d.root'
-      )
+    fileNames = cms.untracked.vstring(
+            '/store/relval/CMSSW_15_1_0/RelValTTbar_14TeV/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/002a6949-6471-46fd-8c44-1f09e7717c8f.root',
+            '/store/relval/CMSSW_15_1_0/RelValTTbar_14TeV/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/0e60c3b1-0c21-41d2-94de-435382ae2b44.root'
+                                      )
 )
 
 # Output
