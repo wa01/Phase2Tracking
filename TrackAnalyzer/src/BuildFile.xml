@@ -1,16 +1,17 @@
 <use name="CommonTools/UtilAlgos"/>
 <use name="CommonTools/Utils"/>
+<use name="DataFormats/BeamSpot"/>
 <use name="DataFormats/Common"/>
 <use name="DataFormats/DetId"/>
 <use name="DataFormats/GeometrySurface"/>
 <use name="DataFormats/GeometryVector"/>
 <use name="DataFormats/Math"/>
 <use name="DataFormats/TrackReco"/>
-<use name="DataFormats/BeamSpot"/>
+<use name="DataFormats/TrackerRecHit2D"/>
 <use name="DataFormats/VertexReco"/>
+<use name="Geometry/TrackerGeometryBuilder"/>
 <use name="SimDataFormats/Track"/>
 <use name="SimDataFormats/Vertex"/>
-
 <use name="root"/>
 
 <export>
