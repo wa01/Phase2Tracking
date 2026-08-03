@@ -16,8 +16,8 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T33', ''
 
 # Number of events (-1 = all)
 process.maxEvents = cms.untracked.PSet(
-    #input = cms.untracked.int32(-1)
-    input = cms.untracked.int32(10)
+    input = cms.untracked.int32(-1)
+    #input = cms.untracked.int32(10)
 )
 # Dataset: /RelValSingleMuPt10/CMSSW_15_1_0-150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/GEN-SIM-RECO
 # Input file
@@ -61,3 +61,4 @@ process.analysis = cms.EDAnalyzer('TrackTree',
 process.analyze_step = cms.Path(process.analysis)
 
 process.schedule = cms.Schedule(process.analyze_step)
+

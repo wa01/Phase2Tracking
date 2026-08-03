@@ -20,8 +20,20 @@
 #include "TTree.h"
 
 class TrackInfo {
-
+  //
+  // Class filling / holding track and hit information needed to fill TrackTree
+  // In order to add new variables;
+  //   add variable to the TrackData struct
+  //   define branch in TrackInfo::setBranches
+  //   fill in TrackInfo::fillTrackInfo
+  //   For vectors:
+  //     clear at each event in TrackInfo::clear
+  //     consistently add elements to each vector in fillTrackInfo
+  //
 public:
+  //
+  // Structure holding data to be filled
+  //
   struct TrackData {
     float Track_chi2;
     unsigned short Track_ndof;
@@ -48,8 +60,9 @@ public:
 
     std::vector<short int> Hit_clusterSize;
     std::vector<unsigned short> Hit_layer;
+    std::vector<unsigned short> Hit_mType;
     /* std::vector<ROOT::Math::XYZPointF> Hit_globPos; */
-    /* std::vector<ROOT::Math::XYZPointF> Hit_locPos; */
+    std::vector<ROOT::Math::XYZPointF> Hit_locPos;
     
     /* std::vector<ROOT::Math::XYZPointF> SimTrack_posTk; */
     /* std::vector<ROOT::Math::XYZVectorF> SimTrack_momTk; */
@@ -60,11 +73,16 @@ public:
     int SimTrack_trackId;
   };
   TrackData trackData;
-
+  //
+  // access to tracker geometry and topology
+  //
   const TrackerGeometry* tkGeom_;
   const TrackerTopology* tkTopo_;
 
   TrackInfo() {
+    //
+    // Initialize geometry and topology pointers
+    //
     tkGeom_ = 0;
     tkTopo_ = 0;
   }
@@ -72,6 +90,9 @@ public:
   ~TrackInfo() {}
 
   void setupEvent(const TrackerGeometry* geom, const TrackerTopology* topo) {
+    //
+    // Update geometry and topology
+    //
     tkGeom_ = geom;
     tkTopo_ = topo;
   }
@@ -84,5 +105,5 @@ public:
   void clear();
   
 };
-
+ 
 #endif

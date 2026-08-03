@@ -26,6 +26,9 @@
 #include "TTree.h"
 
 class TrackTree : public edm::one::EDAnalyzer<edm::one::SharedResources> {
+  //
+  // Analyzer to store reco::Track-related information in a tree
+  //
   public:
     explicit TrackTree(const edm::ParameterSet&);
     void analyze(const edm::Event&, const edm::EventSetup&);
@@ -34,10 +37,9 @@ class TrackTree : public edm::one::EDAnalyzer<edm::one::SharedResources> {
     virtual void beginJob() override;
     virtual void endJob() override;
     void initEventStructure();
-    // std::vector<unsigned int> getSimTrackId(edm::Handle<edm::DetSetVector<PixelDigiSimLink> >&,
-    // 					    const DetId&, unsigned int);
-
-
+    //
+    // tokens for access to geometry, topology, and data collections
+    //
     const edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> esTokenGeom_;
     const edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> esTokenTopo_;
     // const edm::EDGetTokenT<Phase2TrackerRecHit1DCollectionNew> tokenRecHits_;
@@ -48,16 +50,10 @@ class TrackTree : public edm::one::EDAnalyzer<edm::one::SharedResources> {
     const edm::EDGetTokenT<reco::TrackCollection> tokenRecTracks_;
     const edm::EDGetTokenT<edm::SimTrackContainer> tokenSimTracks_;
     const edm::EDGetTokenT<edm::SimVertexContainer> tokenSimVertices_;
-
-    // std::vector<edm::EDGetTokenT<edm::PSimHitContainer>> shInfoSimHitTokens_;
-    // std::vector<edm::EDGetTokenT<edm::PSimHitContainer>> rhInfoSimHitTokens_;
-
-    // const double simtrackminpt_;
-
+    //
     TrackInfo trackInfo_;
-  
+    //
     TTree* trackTree_;
-
 };
 
 
@@ -155,11 +151,6 @@ void TrackTree::analyze(const edm::Event& event, const edm::EventSetup& eventSet
       // Fill info for this track
       //
       trackInfo_.fillTrackInfo(&(*rt),stMin,simVertex,*trackTree_);
-
-      // //
-      // // Fill tree
-      // //
-      // trackTree_->Fill();
 
     }
     
