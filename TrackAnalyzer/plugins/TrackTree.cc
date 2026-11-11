@@ -2,9 +2,11 @@
 
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "CommonTools/Utils/interface/TFileDirectory.h"
+// #include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
 
 #include "Geometry/Records/interface/TrackerDigiGeometryRecord.h"
 #include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
+// #include "TrackingTools/Records/interface/TransientTrackRecord.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "FWCore/Framework/interface/ConsumesCollector.h"
 #include "FWCore/Framework/interface/ESHandle.h"
@@ -17,6 +19,7 @@
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/PluginManager/interface/ModuleDef.h"
+#include "MagneticField/Engine/interface/MagneticField.h"
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/Math/interface/deltaR.h"
@@ -42,6 +45,7 @@ class TrackTree : public edm::one::EDAnalyzer<edm::one::SharedResources> {
     //
     const edm::ESGetToken<TrackerGeometry, TrackerDigiGeometryRecord> esTokenGeom_;
     const edm::ESGetToken<TrackerTopology, TrackerTopologyRcd> esTokenTopo_;
+  // const edm::ESGetToken<TransientTrackBuilder, TransientTrackRecord> esTokenTTBuilder_;
     // const edm::EDGetTokenT<Phase2TrackerRecHit1DCollectionNew> tokenRecHits_;
     // const edm::EDGetTokenT<Phase2TrackerCluster1DCollectionNew> tokenClusters_;
     // const edm::EDGetTokenT<edm::DetSetVector<PixelDigiSimLink> > tokenLinks_;
@@ -60,6 +64,7 @@ class TrackTree : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 TrackTree::TrackTree(const edm::ParameterSet& cfg)
   : esTokenGeom_(esConsumes()),
     esTokenTopo_(esConsumes()),
+    //esTokenTTBuilder_(esConsumes<TransientTrackBuilder, TransientTrackRecord>(edm::ESInputTag("", "TransientTrackBuilder"))),
     tokenRecTracks_(consumes<reco::TrackCollection>(cfg.getParameter<edm::InputTag>("rectracks"))),
     tokenSimTracks_(consumes<edm::SimTrackContainer>(cfg.getParameter<edm::InputTag>("simtracks"))),
     tokenSimVertices_(consumes<edm::SimVertexContainer>(cfg.getParameter<edm::InputTag>("simvertices"))) {}
@@ -70,6 +75,7 @@ void TrackTree::analyze(const edm::Event& event, const edm::EventSetup& eventSet
     // Get the geometry
     const TrackerGeometry* tkGeom = &eventSetup.getData(esTokenGeom_);
     const TrackerTopology* tkTopo = &eventSetup.getData(esTokenTopo_);
+    // const TransientTrackBuilder* ttBuilder = &eventSetup.getData(esTokenTTBuilder_);
     trackInfo_.setupEvent(tkGeom,tkTopo);
     
     //
@@ -147,6 +153,21 @@ void TrackTree::analyze(const edm::Event& event, const edm::EventSetup& eventSet
       else {
 	std::cout << "*** no SimVertex associated to SimTrack" << std::endl;
       }
+      //
+      // get tramsoemt tracl
+      //
+      // reco::TransientTrack tt(ttBuilder->build(*rt));
+      // GlobalPoint tscpRef(0.,0.,0.);
+      // if ( simVertex!=nullptr ) {
+      // 	const math::XYZTLorentzVectorD& position(simVertex->position());
+      // 	tscpRef = GlobalPoint(position.X(),position.Y(),position.Z());
+      // }
+      // TrajectoryStateClosestToPoint tscp(tt.trajectoryStateClosestToPoint(tscpRef));
+      // std::cout << "TransientTrack field " << tt.field()->inTesla(tscpRef).z() << std::endl;
+      // std::cout << "Reference point "
+      // 		<< tscp.referencePoint().x() << " "
+      // 		<< tscp.referencePoint().y() << " "
+      // 		<< tscp.referencePoint().z() << std::endl;
       //
       // Fill info for this track
       //

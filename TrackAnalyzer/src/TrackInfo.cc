@@ -58,6 +58,11 @@ void TrackInfo::fillTrackInfo(const reco::Track* track, const SimTrack* simTrack
   //
   // fill TTree "tree" with information of a reco::Track, possibly with associated SimTrack / SimVertex
   //
+  std::cout << "outerOK " << track->outerOk() << std::endl;
+  if ( track->outerOk() ) {
+    std::cout << "outerPt, outerRadius, outerDetId " << track->outerPt() << " "
+	      << track->outerRadius() << " " << track->outerDetId() << std::endl;
+  }
   //
   // define & store reference point for impacts (default = origin)
   // TO BE IMPROVED:

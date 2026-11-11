@@ -14,15 +14,23 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T33', '')
 
+#process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
+#from TrackingTools.TransientTrack.TransientTrackBuilder_cfi import TransientTrackBuilderESProducer
+#process.TransientTrackBuilderESProducer = cms.ESProducer( "TransientTrackBuilderESProducer",
+#  ComponentName = cms.string( "TransientTrackBuilder" ),
+#  appendToDataLabel = cms.string( "" )
+#)
+
 # Number of events (-1 = all)
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(-1)
-    #input = cms.untracked.int32(10)
+    #input = cms.untracked.int32(-1)
+    input = cms.untracked.int32(10)
 )
 # Dataset: /RelValSingleMuPt10/CMSSW_15_1_0-150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/GEN-SIM-RECO
 # Input file
 process.source = cms.Source('PoolSource',
     fileNames = cms.untracked.vstring( \
+#      'file:0166e3ce-e26d-483c-8226-cac472af699c.root'
       '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/0166e3ce-e26d-483c-8226-cac472af699c.root' #, \
 #      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_n#oPU-v1/2590000/0562962b-66c8-488b-89d5-6df21d71f0b6.root', \
 #      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_n#oPU-v1/2590000/319ecc54-5d83-4e72-8d4a-3f73563e6d37.root', \
@@ -61,4 +69,3 @@ process.analysis = cms.EDAnalyzer('TrackTree',
 process.analyze_step = cms.Path(process.analysis)
 
 process.schedule = cms.Schedule(process.analyze_step)
-

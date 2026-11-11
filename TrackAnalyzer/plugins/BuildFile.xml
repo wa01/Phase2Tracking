@@ -11,6 +11,9 @@
 <use name="FWCore/ServiceRegistry"/>
 <use name="FWCore/Utilities"/>
 <use name="Geometry/Records"/>
+<!-- <use name="TrackingTools/TransientTrack"/> -->
+<use name="MagneticField/Engine"/>
+<use name="TrackingTools/Records"/>
 <use name="Phase2Tracking/TrackAnalyzer"/>
 <use name="SimDataFormats/Track"/>
 <use name="SimDataFormats/TrackerDigiSimLink"/>
@@ -22,3 +25,4 @@
 <library name="Phase2TrackingTrackAnalyzerPlugin" file="TrackTree.cc">
   <flags EDM_PLUGIN="1"/>
 </library>
+
