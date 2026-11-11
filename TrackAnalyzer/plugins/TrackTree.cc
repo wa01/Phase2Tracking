@@ -23,6 +23,13 @@
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "DataFormats/TrackReco/interface/Track.h"
 #include "DataFormats/Math/interface/deltaR.h"
+//
+// begin outermost SimHit
+//
+#include "SimDataFormats/TrackingHit/interface/PSimHitContainer.h"
+//
+// end outermost SimHit
+//
 
 #include "Phase2Tracking/TrackAnalyzer/interface/TrackInfo.h"
 
@@ -49,11 +56,21 @@ class TrackTree : public edm::one::EDAnalyzer<edm::one::SharedResources> {
     // const edm::EDGetTokenT<Phase2TrackerRecHit1DCollectionNew> tokenRecHits_;
     // const edm::EDGetTokenT<Phase2TrackerCluster1DCollectionNew> tokenClusters_;
     // const edm::EDGetTokenT<edm::DetSetVector<PixelDigiSimLink> > tokenLinks_;
-    // const edm::EDGetTokenT<edm::PSimHitContainer> tokenSimHitsB_;
-    // const edm::EDGetTokenT<edm::PSimHitContainer> tokenSimHitsE_;
     const edm::EDGetTokenT<reco::TrackCollection> tokenRecTracks_;
     const edm::EDGetTokenT<edm::SimTrackContainer> tokenSimTracks_;
     const edm::EDGetTokenT<edm::SimVertexContainer> tokenSimVertices_;
+    //
+    // begin outermost SimHit
+    //
+    const edm::EDGetTokenT<edm::PSimHitContainer> tokenSimHitsB_;
+    const edm::EDGetTokenT<edm::PSimHitContainer> tokenSimHitsE_;
+    std::vector<edm::EDGetTokenT<edm::PSimHitContainer>> shInfoSimHitTokens_;
+    typedef std::map< unsigned int, std::vector<const PSimHit*> > DetSimHitsMap;
+    typedef std::pair< unsigned int, std::vector<const PSimHit*> > DetSimHitsPair;
+    DetSimHitsMap simHitsPerDet_;
+    //
+    // end outermost SimHit
+    //
     //
     TrackInfo trackInfo_;
     //
@@ -67,7 +84,27 @@ TrackTree::TrackTree(const edm::ParameterSet& cfg)
     //esTokenTTBuilder_(esConsumes<TransientTrackBuilder, TransientTrackRecord>(edm::ESInputTag("", "TransientTrackBuilder"))),
     tokenRecTracks_(consumes<reco::TrackCollection>(cfg.getParameter<edm::InputTag>("rectracks"))),
     tokenSimTracks_(consumes<edm::SimTrackContainer>(cfg.getParameter<edm::InputTag>("simtracks"))),
-    tokenSimVertices_(consumes<edm::SimVertexContainer>(cfg.getParameter<edm::InputTag>("simvertices"))) {}
+    tokenSimVertices_(consumes<edm::SimVertexContainer>(cfg.getParameter<edm::InputTag>("simvertices"))),
+    //
+    // begin outermost SimHit
+    //
+    tokenSimHitsB_(consumes<edm::PSimHitContainer>(cfg.getParameter<edm::InputTag>("simhitsbarrel"))),
+    tokenSimHitsE_(consumes<edm::PSimHitContainer>(cfg.getParameter<edm::InputTag>("simhitsendcap")))
+    //
+    // end outermost SimHit
+    //
+  {
+
+    //
+    // begin outermost SimHit
+    //
+    shInfoSimHitTokens_.push_back(tokenSimHitsB_);
+    shInfoSimHitTokens_.push_back(tokenSimHitsE_);
+    //
+    // end outermost SimHit
+    //
+
+}
 
 void TrackTree::analyze(const edm::Event& event, const edm::EventSetup& eventSetup) {
     initEventStructure();
@@ -102,6 +139,37 @@ void TrackTree::analyze(const edm::Event& event, const edm::EventSetup& eventSet
 	simTracks.push_back(*st);
       }
     }
+    //
+    // begin outermost SimHit
+    //
+    edm::Handle<edm::PSimHitContainer> simHitHandle;
+    std::vector<const edm::PSimHitContainer*> simHitsRaw;
+    for ( auto tokenIt=shInfoSimHitTokens_.begin(); tokenIt!=shInfoSimHitTokens_.end(); ++tokenIt ) {
+      event.getByToken(*tokenIt, simHitHandle);
+      simHitsRaw.push_back(simHitHandle.product());
+    }
+    
+    simHitsPerDet_.clear();
+    for (auto simhitsIt=simHitsRaw.begin(); simhitsIt!=simHitsRaw.end(); ++simhitsIt) {
+      for (auto simhitIt=(**simhitsIt).begin(); simhitIt!=(**simhitsIt).end(); ++simhitIt) {
+	const PSimHit* simhit(&*simhitIt);
+	unsigned int rawid(simhit->detUnitId());
+	DetSimHitsMap::iterator idet(simHitsPerDet_.find(rawid));
+	if ( idet!=simHitsPerDet_.end() ) {
+	  // std::cout << "CommonHitInfoadding sim entry for det id " << rawid << std::endl;
+	  idet->second.push_back(simhit);
+	}
+	else {
+	  // std::cout << "CommonHitInfonew sim entry for det id " << rawid << std::endl;
+	  simHitsPerDet_.insert(DetSimHitsPair(rawid,std::vector<const PSimHit*>{simhit}));
+	}
+      }
+    }
+    std::cout << "#dets in SimHitMap: " << simHitsPerDet_.size() << std::endl;
+    //
+    // end outermost SimHit
+    //
+
     //
     // access to simulated vertices
     //      
@@ -171,10 +239,10 @@ void TrackTree::analyze(const edm::Event& event, const edm::EventSetup& eventSet
       //
       // Fill info for this track
       //
-      trackInfo_.fillTrackInfo(&(*rt),stMin,simVertex,*trackTree_);
+      trackInfo_.fillTrackInfo(&(*rt),stMin,simHitsPerDet_,simVertex,*trackTree_);
+
 
     }
-    
 
 
 }

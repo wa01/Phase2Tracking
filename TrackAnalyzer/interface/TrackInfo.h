@@ -16,7 +16,13 @@
 
 #include "DataFormats/Math/interface/Point3D.h"
 #include "DataFormats/Math/interface/Vector3D.h"
-
+//
+// begin outermost SimHit
+//
+#include "SimDataFormats/TrackingHit/interface/PSimHitContainer.h"
+//
+// end outermost SimHit
+//
 #include "TTree.h"
 
 class TrackInfo {
@@ -71,6 +77,7 @@ public:
     int SimTrack_charge;
     unsigned short SimTrack_trackInfo;
     int SimTrack_trackId;
+
   };
   TrackData trackData;
   //
@@ -78,7 +85,15 @@ public:
   //
   const TrackerGeometry* tkGeom_;
   const TrackerTopology* tkTopo_;
-
+  //
+  // begin outermost SimHit
+  //
+  typedef std::map< unsigned int, std::vector<const PSimHit*> > DetSimHitsMap;
+  typedef std::pair< unsigned int, std::vector<const PSimHit*> > DetSimHitsPair;
+  //
+  // end outermost SimHit
+  //
+  
   TrackInfo() {
     //
     // Initialize geometry and topology pointers
@@ -99,11 +114,14 @@ public:
   
   void setBranches(TTree& tree);
   
-  void fillTrackInfo(const reco::Track* track, const SimTrack* simTrack, const SimVertex* simVertex,
-		     TTree& tree);
+  void fillTrackInfo(const reco::Track* track, const SimTrack* simTrack, const DetSimHitsMap& simHitsPerDet,
+		     const SimVertex* simVertex, TTree& tree);
   
   void clear();
+
+
   
 };
  
 #endif
+

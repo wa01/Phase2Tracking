@@ -53,8 +53,8 @@ void TrackInfo::setBranches(TTree& tree) {
 
 };
 
-void TrackInfo::fillTrackInfo(const reco::Track* track, const SimTrack* simTrack, const SimVertex* simVertex,
-			      TTree& tree) {
+void TrackInfo::fillTrackInfo(const reco::Track* track, const SimTrack* simTrack,
+			      const DetSimHitsMap& simHitsPerDet, const SimVertex* simVertex, TTree& tree) {
   //
   // fill TTree "tree" with information of a reco::Track, possibly with associated SimTrack / SimVertex
   //
@@ -63,6 +63,33 @@ void TrackInfo::fillTrackInfo(const reco::Track* track, const SimTrack* simTrack
     std::cout << "outerPt, outerRadius, outerDetId " << track->outerPt() << " "
 	      << track->outerRadius() << " " << track->outerDetId() << std::endl;
   }
+
+  //
+  // begin outermost SimHit
+  //
+  const PSimHit* matchedHit(nullptr);
+  DetSimHitsMap::const_iterator idet(simHitsPerDet.find(track->outerDetId()));
+  if ( idet!=simHitsPerDet.end() ) {
+    std::cout << "Found " << idet->second.size() << " simhits on det " << track->outerDetId() << std::endl;
+    for ( auto ihit=idet->second.begin(); ihit!=idet->second.end(); ++ihit ) {
+      if ( (**ihit).trackId()==simTrack->trackId() ) matchedHit = *ihit;
+      // std::cout << "  SimHit track id = " << (**ihit).trackId() << std::endl;
+    }
+    //std::cout << "  SimTrackId = " << simTrack->trackId() << std::endl;
+  }
+  else {
+    std::cout << "Did not find any on det " << track->outerDetId() << std::endl;
+  }
+  if ( matchedHit!=nullptr ) {
+    std::cout << "Found matching SimHit on last Det of reco track" << std::endl;
+  }
+  else {
+    std::cout << "Did not find matching SimHit on last Det of reco track" << std::endl;
+  }
+  //
+  // end outermost SimHit
+  //
+
   //
   // define & store reference point for impacts (default = origin)
   // TO BE IMPROVED:

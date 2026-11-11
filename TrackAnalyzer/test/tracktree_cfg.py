@@ -60,7 +60,9 @@ process.TFileService = cms.Service('TFileService',
 process.analysis = cms.EDAnalyzer('TrackTree',
     rectracks = cms.InputTag("generalTracks"),
     simtracks = cms.InputTag("g4SimHits"),
-    simvertices = cms.InputTag("g4SimHits")
+    simvertices = cms.InputTag("g4SimHits"),
+    simhitsbarrel = cms.InputTag("g4SimHits", "TrackerHitsPixelBarrelLowTof"),
+    simhitsendcap = cms.InputTag("g4SimHits", "TrackerHitsPixelEndcapLowTof")
 )
 
 # Processes to run
