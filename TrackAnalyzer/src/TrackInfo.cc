@@ -68,9 +68,11 @@ void TrackInfo::fillTrackInfo(const reco::Track* track, const SimTrack* simTrack
   // begin outermost SimHit
   //
   const PSimHit* matchedHit(nullptr);
-  DetSimHitsMap::const_iterator idet(simHitsPerDet.find(track->outerDetId()));
+  unsigned int iDetId(track->outerDetId());
+  DetId detId(iDetId);
+  DetSimHitsMap::const_iterator idet(simHitsPerDet.find(iDetId));
   if ( idet!=simHitsPerDet.end() ) {
-    std::cout << "Found " << idet->second.size() << " simhits on det " << track->outerDetId() << std::endl;
+    std::cout << "Found " << idet->second.size() << " simhits on det " << iDetId << std::endl;
     for ( auto ihit=idet->second.begin(); ihit!=idet->second.end(); ++ihit ) {
       if ( (**ihit).trackId()==simTrack->trackId() ) matchedHit = *ihit;
       // std::cout << "  SimHit track id = " << (**ihit).trackId() << std::endl;
@@ -78,13 +80,38 @@ void TrackInfo::fillTrackInfo(const reco::Track* track, const SimTrack* simTrack
     //std::cout << "  SimTrackId = " << simTrack->trackId() << std::endl;
   }
   else {
-    std::cout << "Did not find any on det " << track->outerDetId() << std::endl;
+    std::cout << "Did not find any on det " << iDetId << std::endl;
   }
   if ( matchedHit!=nullptr ) {
     std::cout << "Found matching SimHit on last Det of reco track" << std::endl;
   }
   else {
     std::cout << "Did not find matching SimHit on last Det of reco track" << std::endl;
+  }
+
+  const GeomDetUnit* geomDetUnit(tkGeom_->idToDetUnit(detId));
+  const math::XYZPoint& outerPos(track->outerPosition());
+  GlobalPoint trkGlobPos(outerPos.x(),outerPos.y(),outerPos.z());
+  LocalPoint trkLocPos(geomDetUnit->toLocal(trkGlobPos));
+  const math::XYZVector& outerMom(track->outerMomentum());
+  GlobalVector trkGlobMom(outerMom.x(),outerMom.y(),outerMom.z());
+  std::cout << "Track global position (r,z,phi) " << trkGlobPos.perp() << " " << trkGlobPos.z()
+	    << " " << trkGlobPos.phi() << std::endl;
+  std::cout << "Track local position (x,y,z) " << trkLocPos.x() << " " << trkLocPos.y() << " " << trkLocPos.z() << std::endl;
+  std::cout << "Track global momentum (pt,eta,phi) " << trkGlobMom.perp() << " " << trkGlobMom.eta()
+	    << " " << trkGlobMom.phi() << std::endl;
+  if ( matchedHit!=nullptr ) {
+    LocalPoint simLocPos(matchedHit->localPosition());
+    GlobalPoint simGlobPos(geomDetUnit->toGlobal(matchedHit->localPosition()));
+    GlobalVector simGlobDir(geomDetUnit->toGlobal(matchedHit->localDirection()));
+    float simPabs(matchedHit->pabs());
+    GlobalVector simGlobMom(simPabs*simGlobDir);
+    std::cout << "SimHit global position (r,z,phi) " << simGlobPos.perp() << " " << simGlobPos.z()
+	      << " " << simGlobPos.phi() << std::endl;
+    std::cout << "SimHit local position (x,y,z) " << simLocPos.x() << " " << simLocPos.y()
+	      << " " << simLocPos.z() << std::endl;
+    std::cout << "SimHit global momentum (pt,eta,phi) " << simGlobMom.perp() << " " << simGlobMom.eta()
+	      << " " << simGlobMom.phi() << std::endl;
   }
   //
   // end outermost SimHit
