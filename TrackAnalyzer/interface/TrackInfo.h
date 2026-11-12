@@ -77,6 +77,15 @@ public:
     int SimTrack_charge;
     unsigned short SimTrack_trackInfo;
     int SimTrack_trackId;
+    //
+    // outer state
+    //
+    unsigned short SimHOuter_layer;
+    unsigned short SimHOuter_mType;
+    ROOT::Math::XYZPointF TrackOuter_locPos;
+    ROOT::Math::XYZPointF SimHOuter_locPos;
+    ROOT::Math::XYZVectorF TrackOuter_globMom;
+    ROOT::Math::XYZVectorF SimHOuter_globMom;
 
   };
   TrackData trackData;

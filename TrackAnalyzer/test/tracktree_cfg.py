@@ -2,17 +2,22 @@
 import FWCore.ParameterSet.Config as cms
 
 # Create a new CMS process
-process = cms.Process('tracktree')
+from Configuration.Eras.Era_Phase2C22I13M9_cff import Phase2C22I13M9
+process = cms.Process('tracktree',Phase2C22I13M9)
+
+#process = cms.Process('tracktree')
 
 # Import all the necessary files
 process.load('Configuration.StandardSequences.Services_cff')
 process.load('FWCore.MessageService.MessageLogger_cfi')
-process.load('Configuration.Geometry.GeometryExtendedRun4D110Reco_cff')
+#process.load('Configuration.Geometry.GeometryExtendedRun4D110Reco_cff')
+process.load('Configuration.Geometry.GeometryExtendedRun4D121Reco_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T33', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T35', '')
+#process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T33', '')
 
 #process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 #from TrackingTools.TransientTrack.TransientTrackBuilder_cfi import TransientTrackBuilderESProducer
@@ -23,15 +28,20 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T33', ''
 
 # Number of events (-1 = all)
 process.maxEvents = cms.untracked.PSet(
-    #input = cms.untracked.int32(-1)
-    input = cms.untracked.int32(10)
+    input = cms.untracked.int32(-1)
+    #input = cms.untracked.int32(10)
 )
 # Dataset: /RelValSingleMuPt10/CMSSW_15_1_0-150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/GEN-SIM-RECO
 # Input file
 process.source = cms.Source('PoolSource',
     fileNames = cms.untracked.vstring( \
+'/store/relval/CMSSW_20_0_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_D121_RecycledGEN_noPU_16Aug26-v4/2590000/06b5209d-2ee5-4406-88a0-20610cdb7f07.root', \
+'/store/relval/CMSSW_20_0_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_D121_RecycledGEN_noPU_16Aug26-v4/2590000/385d0125-1061-4587-b011-60b38fdd299b.root', \
+'/store/relval/CMSSW_20_0_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_D121_RecycledGEN_noPU_16Aug26-v4/2590000/9fe4df4e-3095-4b53-b6de-7ca59cbdecf9.root', \
+'/store/relval/CMSSW_20_0_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_D121_RecycledGEN_noPU_16Aug26-v4/2590000/aacffc32-4e49-4580-8d7e-74d4fea0c8b0.root', \
+'/store/relval/CMSSW_20_0_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_D121_RecycledGEN_noPU_16Aug26-v4/2590000/ba0e16b2-36ca-43fe-b99b-ac92599ab49a.root'
 #      'file:0166e3ce-e26d-483c-8226-cac472af699c.root'
-      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/0166e3ce-e26d-483c-8226-cac472af699c.root' #, \
+#      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_noPU-v1/2590000/0166e3ce-e26d-483c-8226-cac472af699c.root', \
 #      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_n#oPU-v1/2590000/0562962b-66c8-488b-89d5-6df21d71f0b6.root', \
 #      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_n#oPU-v1/2590000/319ecc54-5d83-4e72-8d4a-3f73563e6d37.root', \
 #      '/store/relval/CMSSW_15_1_0/RelValSingleMuPt10/GEN-SIM-RECO/150X_mcRun4_realistic_v1_STD_RegeneratedGS_Run4D110_n#oPU-v1/2590000/34e25999-54a2-4134-8703-241898703fed.root', \

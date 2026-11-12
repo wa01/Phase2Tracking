@@ -50,7 +50,15 @@ void TrackInfo::setBranches(TTree& tree) {
   tree.Branch("SimTrack_charge", &trackData.SimTrack_charge);
   tree.Branch("SimTrack_trackInfo", &trackData.SimTrack_trackInfo);
   tree.Branch("SimTrack_trackId", &trackData.SimTrack_trackId);
-
+  //
+  // outer state
+  //
+  tree.Branch("SimHitOuter_layer",&trackData.SimHOuter_layer);
+  tree.Branch("SimHitOuter_mType",&trackData.SimHOuter_mType);
+  tree.Branch("TrackOuter_locPos",&trackData.TrackOuter_locPos);
+  tree.Branch("SimHitOuter_locPos",&trackData.SimHOuter_locPos);
+  tree.Branch("TrackOuter_momentum",&trackData.TrackOuter_globMom);
+  tree.Branch("SimHitOuter_momentum",&trackData.SimHOuter_globMom);
 };
 
 void TrackInfo::fillTrackInfo(const reco::Track* track, const SimTrack* simTrack,
@@ -82,10 +90,10 @@ void TrackInfo::fillTrackInfo(const reco::Track* track, const SimTrack* simTrack
   else {
     std::cout << "Did not find any on det " << iDetId << std::endl;
   }
-  if ( matchedHit!=nullptr ) {
-    std::cout << "Found matching SimHit on last Det of reco track" << std::endl;
-  }
-  else {
+  // if ( matchedHit!=nullptr ) {
+  //   std::cout << "Found matching SimHit on last Det of reco track" << std::endl;
+  // }
+  if ( matchedHit==nullptr ) {
     std::cout << "Did not find matching SimHit on last Det of reco track" << std::endl;
   }
 
@@ -95,23 +103,36 @@ void TrackInfo::fillTrackInfo(const reco::Track* track, const SimTrack* simTrack
   LocalPoint trkLocPos(geomDetUnit->toLocal(trkGlobPos));
   const math::XYZVector& outerMom(track->outerMomentum());
   GlobalVector trkGlobMom(outerMom.x(),outerMom.y(),outerMom.z());
-  std::cout << "Track global position (r,z,phi) " << trkGlobPos.perp() << " " << trkGlobPos.z()
-	    << " " << trkGlobPos.phi() << std::endl;
-  std::cout << "Track local position (x,y,z) " << trkLocPos.x() << " " << trkLocPos.y() << " " << trkLocPos.z() << std::endl;
-  std::cout << "Track global momentum (pt,eta,phi) " << trkGlobMom.perp() << " " << trkGlobMom.eta()
-	    << " " << trkGlobMom.phi() << std::endl;
+  // std::cout << "Track global position (r,z,phi) " << trkGlobPos.perp() << " " << trkGlobPos.z()
+  // 	    << " " << trkGlobPos.phi() << std::endl;
+  // std::cout << "Track local position (x,y,z) " << trkLocPos.x() << " " << trkLocPos.y()
+  // 	    << " " << trkLocPos.z() << std::endl;
+  // std::cout << "Track global momentum (pt,eta,phi) " << trkGlobMom.perp() << " " << trkGlobMom.eta()
+  // 	    << " " << trkGlobMom.phi() << std::endl;
+  trackData.TrackOuter_locPos.SetXYZ(trkLocPos.x(),trkLocPos.y(),trkLocPos.z());
+  trackData.TrackOuter_globMom.SetXYZ(trkGlobMom.x(),trkGlobMom.y(),trkGlobMom.z());
   if ( matchedHit!=nullptr ) {
     LocalPoint simLocPos(matchedHit->localPosition());
     GlobalPoint simGlobPos(geomDetUnit->toGlobal(matchedHit->localPosition()));
     GlobalVector simGlobDir(geomDetUnit->toGlobal(matchedHit->localDirection()));
     float simPabs(matchedHit->pabs());
     GlobalVector simGlobMom(simPabs*simGlobDir);
-    std::cout << "SimHit global position (r,z,phi) " << simGlobPos.perp() << " " << simGlobPos.z()
-	      << " " << simGlobPos.phi() << std::endl;
-    std::cout << "SimHit local position (x,y,z) " << simLocPos.x() << " " << simLocPos.y()
-	      << " " << simLocPos.z() << std::endl;
-    std::cout << "SimHit global momentum (pt,eta,phi) " << simGlobMom.perp() << " " << simGlobMom.eta()
-	      << " " << simGlobMom.phi() << std::endl;
+    // std::cout << "SimHit global position (r,z,phi) " << simGlobPos.perp() << " " << simGlobPos.z()
+    // 	      << " " << simGlobPos.phi() << std::endl;
+    // std::cout << "SimHit local position (x,y,z) " << simLocPos.x() << " " << simLocPos.y()
+    // 	      << " " << simLocPos.z() << std::endl;
+    // std::cout << "SimHit global momentum (pt,eta,phi) " << simGlobMom.perp() << " " << simGlobMom.eta()
+    // 	      << " " << simGlobMom.phi() << std::endl;
+    trackData.SimHOuter_locPos.SetXYZ(simLocPos.x(),simLocPos.y(),simLocPos.z());
+    trackData.SimHOuter_globMom.SetXYZ(simGlobMom.x(),simGlobMom.y(),simGlobMom.z());
+    trackData.SimHOuter_layer = (tkTopo_->side(detId) != 0) * 1000 + tkTopo_->layer(detId);
+    trackData.SimHOuter_mType = (unsigned short)tkGeom_->getDetectorType(detId);
+  }
+  else {
+    trackData.SimHOuter_locPos.SetXYZ(0.,0.,0.);
+    trackData.SimHOuter_globMom.SetXYZ(0.,0.,0.);
+    trackData.SimHOuter_layer = 0;
+    trackData.SimHOuter_mType = 0;
   }
   //
   // end outermost SimHit
