@@ -82,8 +82,10 @@ public:
     //
     unsigned short SimHOuter_layer;
     unsigned short SimHOuter_mType;
+    int SimHOuter_partId;
     ROOT::Math::XYZPointF TrackOuter_locPos;
     ROOT::Math::XYZPointF SimHOuter_locPos;
+    ROOT::Math::XYZPointF TrackOuter_globPos;
     ROOT::Math::XYZVectorF TrackOuter_globMom;
     ROOT::Math::XYZVectorF SimHOuter_globMom;
 
@@ -133,4 +135,3 @@ public:
 };
  
 #endif
-

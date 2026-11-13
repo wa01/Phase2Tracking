@@ -55,8 +55,10 @@ void TrackInfo::setBranches(TTree& tree) {
   //
   tree.Branch("SimHitOuter_layer",&trackData.SimHOuter_layer);
   tree.Branch("SimHitOuter_mType",&trackData.SimHOuter_mType);
+  tree.Branch("SimHitOuter_partId",&trackData.SimHOuter_partId);
   tree.Branch("TrackOuter_locPos",&trackData.TrackOuter_locPos);
   tree.Branch("SimHitOuter_locPos",&trackData.SimHOuter_locPos);
+  tree.Branch("TrackOuter_globPos",&trackData.TrackOuter_globPos);
   tree.Branch("TrackOuter_momentum",&trackData.TrackOuter_globMom);
   tree.Branch("SimHitOuter_momentum",&trackData.SimHOuter_globMom);
 };
@@ -75,29 +77,48 @@ void TrackInfo::fillTrackInfo(const reco::Track* track, const SimTrack* simTrack
   //
   // begin outermost SimHit
   //
+  //
+  // look for SimHit on othermost Det of the reconstructed track
+  //
   const PSimHit* matchedHit(nullptr);
+  std::vector<const PSimHit*> matchedHits;
+  // loop over hits on Det
   unsigned int iDetId(track->outerDetId());
   DetId detId(iDetId);
   DetSimHitsMap::const_iterator idet(simHitsPerDet.find(iDetId));
   if ( idet!=simHitsPerDet.end() ) {
-    std::cout << "Found " << idet->second.size() << " simhits on det " << iDetId << std::endl;
+    // std::cout << "Found " << idet->second.size() << " simhits on det " << iDetId << std::endl;
     for ( auto ihit=idet->second.begin(); ihit!=idet->second.end(); ++ihit ) {
-      if ( (**ihit).trackId()==simTrack->trackId() ) matchedHit = *ihit;
+      //
+      // Make sure that the simhit is part of the simtrack and corresponds to the same particle type
+      //  (exclude electron emission)
+      //
+      if ( (**ihit).trackId()==simTrack->trackId() && (**ihit).particleType()==simTrack->type() ) {
+	matchedHits.push_back(*ihit);
+	matchedHit = *ihit;
+      }
+      if ( matchedHits.size()>1 ) {
+	std::cout << "Found multiple matched simhits on det " << iDetId
+		  << "( track particle type " << simTrack->type() << ")" << std::endl;
+	for ( auto im=matchedHits.begin(); im!=matchedHits.end(); ++im ) {
+	  std::cout << "  pabs / particleType / locx = " << (**im).pabs() << " " << (**im).particleType()
+		    << " " << (**im).localPosition().x() << std::endl;
+	}
+      }
       // std::cout << "  SimHit track id = " << (**ihit).trackId() << std::endl;
     }
     //std::cout << "  SimTrackId = " << simTrack->trackId() << std::endl;
   }
   else {
-    std::cout << "Did not find any on det " << iDetId << std::endl;
+    std::cout << "Did not find matching SimHit on last Det of reco track " << iDetId << std::endl;
   }
-  // if ( matchedHit!=nullptr ) {
-  //   std::cout << "Found matching SimHit on last Det of reco track" << std::endl;
-  // }
-  if ( matchedHit==nullptr ) {
-    std::cout << "Did not find matching SimHit on last Det of reco track" << std::endl;
-  }
-
+  //
+  // DetUnit for transformations
+  //
   const GeomDetUnit* geomDetUnit(tkGeom_->idToDetUnit(detId));
+  //
+  // reco track related quantities
+  //
   const math::XYZPoint& outerPos(track->outerPosition());
   GlobalPoint trkGlobPos(outerPos.x(),outerPos.y(),outerPos.z());
   LocalPoint trkLocPos(geomDetUnit->toLocal(trkGlobPos));
@@ -110,7 +131,10 @@ void TrackInfo::fillTrackInfo(const reco::Track* track, const SimTrack* simTrack
   // std::cout << "Track global momentum (pt,eta,phi) " << trkGlobMom.perp() << " " << trkGlobMom.eta()
   // 	    << " " << trkGlobMom.phi() << std::endl;
   trackData.TrackOuter_locPos.SetXYZ(trkLocPos.x(),trkLocPos.y(),trkLocPos.z());
+  trackData.TrackOuter_globPos.SetXYZ(trkGlobPos.x(),trkGlobPos.y(),trkGlobPos.z());
   trackData.TrackOuter_globMom.SetXYZ(trkGlobMom.x(),trkGlobMom.y(),trkGlobMom.z());
+  //
+  // simhit related quantities
   if ( matchedHit!=nullptr ) {
     LocalPoint simLocPos(matchedHit->localPosition());
     GlobalPoint simGlobPos(geomDetUnit->toGlobal(matchedHit->localPosition()));
@@ -127,12 +151,14 @@ void TrackInfo::fillTrackInfo(const reco::Track* track, const SimTrack* simTrack
     trackData.SimHOuter_globMom.SetXYZ(simGlobMom.x(),simGlobMom.y(),simGlobMom.z());
     trackData.SimHOuter_layer = (tkTopo_->side(detId) != 0) * 1000 + tkTopo_->layer(detId);
     trackData.SimHOuter_mType = (unsigned short)tkGeom_->getDetectorType(detId);
+    trackData.SimHOuter_partId = matchedHit->particleType();
   }
   else {
     trackData.SimHOuter_locPos.SetXYZ(0.,0.,0.);
     trackData.SimHOuter_globMom.SetXYZ(0.,0.,0.);
     trackData.SimHOuter_layer = 0;
     trackData.SimHOuter_mType = 0;
+    trackData.SimHOuter_partId = 0;
   }
   //
   // end outermost SimHit
@@ -268,3 +294,4 @@ void TrackInfo::clear() {
   trackData.Hit_locPos.clear();
 
 };
+
